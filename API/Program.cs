@@ -6,12 +6,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddDbContext<AduDbcontext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -88,8 +92,8 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
     options.AddPolicy("CreateUS", policy => policy.RequireClaim("Permisson", "Create"));
-
-    options.AddPolicy("Edit", policy => policy.RequireClaim("Permisson", "Edit"));
+    options.AddPolicy("DetailUS", policy => policy.RequireClaim("Permisson", "Detail"));
+    options.AddPolicy("EditUS", policy => policy.RequireClaim("Permisson", "Edit"));
 });
 
 var app = builder.Build();

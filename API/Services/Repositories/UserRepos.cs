@@ -134,20 +134,90 @@ namespace API.Services.Repositories
             return tokenHandler.WriteToken(token);
         }
 
-        public Task<IEnumerable<User>> GetAllUsers()
+        public async Task<IEnumerable<UserDTO>> GetAllUsers()
         {
-            throw new NotImplementedException();
+            var lst = await _context.Users
+                .Include(u => u.UserProfile)
+                .Include(u => u.Roles)
+                .AsSplitQuery()
+                .ToListAsync();
+            var userDtos = lst.Select(u => new UserDTO
+            {
+                UserName = u.UserName,
+                PassWordHash = u.PassWordHash,
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                Statuss = u.Statuss ?? true,
+                CreateAt = u.CreateAt,
+
+                // UserProfile
+                FullName = u.UserProfile?.FullName,
+                Gender = u.UserProfile?.Gender,
+                Avatar = u.UserProfile?.Avatar,
+                Address = u.UserProfile?.Address,
+                Dob = u.UserProfile?.Dob.HasValue == true ? u.UserProfile.Dob.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null,
+
+                // RoleIds lấy danh sách Id role
+                RoleIds = u.Roles.Select(r => r.Id).ToList()
+            });
+
+            return userDtos;
         }
 
-        public Task<User> GetUserById(Guid id)
+        public async Task<UserDTO> GetUserByName(string username)
         {
-            throw new NotImplementedException();
+            var user = await _context.Users.Include(u => u.UserProfile)
+                .Include(u => u.Roles)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(u => u.UserName == username);
+            if (user == null)
+                throw new Exception("Không tìm thấy người dùng với username đã cho.");
+            var userDto = new UserDTO
+            {
+                UserName = user.UserName,
+                PassWordHash = user.PassWordHash,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                Statuss = user.Statuss ?? true,
+                CreateAt = user.CreateAt,
+
+                FullName = user.UserProfile?.FullName,
+                Gender = user.UserProfile?.Gender,
+                Avatar = user.UserProfile?.Avatar,
+                Address = user.UserProfile?.Address,
+                Dob = user.UserProfile?.Dob.HasValue == true ? user.UserProfile.Dob.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null,
+
+                RoleIds = user.Roles.Select(r => r.Id).ToList()
+            };
+
+            return userDto;
         }
 
 
-        public Task<User> UpdateUser(User user)
+        public async Task UpdateUser(UserDTO userd)
         {
-            throw new NotImplementedException();
+            var upinsv = await _context.Users
+                  .Include(p => p.UserProfile)
+                  .FirstOrDefaultAsync(d => d.UserName == userd.UserName);
+            if (upinsv == null)
+                throw new Exception("Không tìm thấy người dùng.");
+            if (await _context.Users.AnyAsync(u => u.UserName == userd.UserName && u.Id != upinsv.Id))
+                throw new Exception("Tên đăng nhập đã tồn tại.");
+
+            if (await _context.Users.AnyAsync(u => u.Email == userd.Email && u.Id != upinsv.Id))
+                throw new Exception("Email đã được sử dụng.");
+            upinsv.PassWordHash = userd.PassWordHash;
+            upinsv.Email = userd.Email;
+            upinsv.UserProfile.FullName = userd.FullName;
+            upinsv.UserProfile.Gender = userd.Gender;
+            upinsv.PhoneNumber = userd.PhoneNumber;
+            upinsv.UserProfile.Avatar = userd.Avatar;
+            upinsv.UserProfile.Address = userd.Address;
+            upinsv.Statuss = userd.Statuss;
+            upinsv.UserProfile.Dob = userd.Dob.HasValue ? DateOnly.FromDateTime(userd.Dob.Value) : null;
+            
+            _context.Users.Update(upinsv);
+            await _context.SaveChangesAsync();
         }
         public static class PasswordHasher
         {

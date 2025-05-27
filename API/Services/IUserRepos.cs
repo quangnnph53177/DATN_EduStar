@@ -5,10 +5,10 @@ namespace API.Services
 {
     public interface IUserRepos
     {
-        Task<User> GetUserById(Guid id);
-        Task<IEnumerable<User>> GetAllUsers();
+        Task<UserDTO> GetUserByName(string username);
+        Task<IEnumerable<UserDTO>> GetAllUsers();
         Task<User> Register(UserDTO user);
         Task<string> Login(string userName, string password);
-        Task<User> UpdateUser(User user);
+        Task UpdateUser(UserDTO userd);
     }
 }

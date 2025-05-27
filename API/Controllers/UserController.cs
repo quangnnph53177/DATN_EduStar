@@ -17,8 +17,7 @@ namespace API.Controllers
         {
             _userRepos = userRepos;
         }
-        [Authorize(Policy = "CreateUS")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Policy = "CreateUS")]//Nếu chưa có tài khoản thì commit cái này lại để tạo tài khoản để đăng nhập
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserDTO userDto)
         {
@@ -124,6 +123,50 @@ namespace API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { error = "Lỗi khi xử lý file Excel: " + ex.Message });
+            }
+        }
+
+        [Authorize(Policy = "DetailUS")]
+        [HttpGet("user")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            try
+            {
+                var users = await _userRepos.GetAllUsers();
+                
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+        [Authorize(Policy = "DetailUS")]
+        [HttpGet("{username}")]
+        public async Task<IActionResult> GetUserByName(string username)
+        {
+            try
+            {
+                return Ok(await _userRepos.GetUserByName(username));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+        [HttpPatch("{username}")]
+        public async Task<IActionResult> UpdateUser(string username, [FromBody] UserDTO userDto)
+        {
+            if (username != userDto.UserName || !ModelState.IsValid)
+                return BadRequest("Dữ liệu không hợp lệ hoặc ID không khớp.");
+            try
+            {
+                await _userRepos.UpdateUser(userDto);
+                return Ok(new { message = "Cập nhật thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
         }
     }
