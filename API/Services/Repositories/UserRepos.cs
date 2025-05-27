@@ -65,6 +65,19 @@ namespace API.Services.Repositories
                 Avatar = usd.Avatar,
                 Address = usd.Address
             };
+            // Đếm số lượng sinh viên hiện tại
+            int count = await _context.StudentsInfors.CountAsync();
+
+            if (roles.Any(r => r.Id == 3))
+            {
+                var student = new StudentsInfor
+                {
+                    UserId = user.Id,
+                    StudentsCode = $"SV{(count + 1).ToString("D5")}",  // D4: padding với 0 thành 5 chữ số
+                    ClassCode = "Chưa rõ",
+                };
+                _context.StudentsInfors.Add(student);
+            }
             _context.Users.Add(user);
             _context.UserProfiles.Add(userProfile);
 

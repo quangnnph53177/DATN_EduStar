@@ -50,7 +50,14 @@ namespace API.Services.Repositories
 
         public async Task<List<StudentsInfor>> GetAllStudents()
         {
-            var lstSv = await _context.StudentsInfors.Include(u=>u.User).ThenInclude(p=>p.UserProfile).AsSplitQuery().ToListAsync();
+            var lstSv = await _context.StudentsInfors
+                .Include(s => s.User)
+                    .ThenInclude(u => u.UserProfile)
+                .Include(s => s.User)
+                    .ThenInclude(u => u.Roles)
+                .Where(s => s.User.Roles.Any(r => r.Id == 3))
+                .AsSplitQuery()
+                .ToListAsync();
             return lstSv;
         }
 

@@ -154,7 +154,7 @@ namespace API.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-        [HttpPatch("{username}")]
+        [HttpPut("{username}")]
         public async Task<IActionResult> UpdateUser(string username, [FromBody] UserDTO userDto)
         {
             if (username != userDto.UserName || !ModelState.IsValid)
