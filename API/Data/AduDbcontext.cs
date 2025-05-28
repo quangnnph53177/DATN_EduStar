@@ -30,9 +30,9 @@ public partial class AduDbcontext : DbContext
 
     public virtual DbSet<Complaint> Complaints { get; set; }
 
-    public virtual DbSet<DayOfWeekss> DayOfWeeksses { get; set; }
+    public virtual DbSet<Models.DayOfWeek> DayOfWeeks { get; set; }
 
-    public virtual DbSet<Permisson> Permissons { get; set; }
+    public virtual DbSet<Permission> Permissions { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
 
@@ -51,18 +51,16 @@ public partial class AduDbcontext : DbContext
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    { }
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=TRANGPTH\\TRANG;Database=Eghitvebinh3;Trusted_Connection=True; TrustServerCertificate =True");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Attendance>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Attendan__3214EC07B5C5ABA7");
+            entity.HasKey(e => e.Id).HasName("PK__Attendan__3214EC076DAB41EB");
 
             entity.ToTable("Attendance");
-
-            entity.HasIndex(e => e.SchedulesId, "IX_Attendance_SchedulesId");
-
-            entity.HasIndex(e => e.UserId, "IX_Attendance_UserId");
 
             entity.Property(e => e.CreateAt)
                 .HasDefaultValueSql("(getdate())")
@@ -70,25 +68,24 @@ public partial class AduDbcontext : DbContext
 
             entity.HasOne(d => d.Schedules).WithMany(p => p.Attendances)
                 .HasForeignKey(d => d.SchedulesId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK__Attendanc__Sched__6477ECF3");
 
             entity.HasOne(d => d.User).WithMany(p => p.Attendances)
                 .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK__Attendanc__UserI__656C112C");
         });
 
         modelBuilder.Entity<AttendanceDetail>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Attendan__3214EC07F7A7BC5B");
-
-            entity.HasIndex(e => e.AttendanceId, "IX_AttendanceDetails_AttendanceId");
-
-            entity.HasIndex(e => e.StudentId, "IX_AttendanceDetails_StudentId");
+            entity.HasKey(e => e.Id).HasName("PK__Attendan__3214EC07676DEB47");
 
             entity.Property(e => e.Statuss).HasMaxLength(20);
 
             entity.HasOne(d => d.Attendance).WithMany(p => p.AttendanceDetails)
                 .HasForeignKey(d => d.AttendanceId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK__Attendanc__Atten__6A30C649");
 
             entity.HasOne(d => d.Student).WithMany(p => p.AttendanceDetails)
@@ -98,29 +95,25 @@ public partial class AduDbcontext : DbContext
 
         modelBuilder.Entity<AttendanceDetailsComplaint>(entity =>
         {
-            entity.HasKey(e => e.ComplaintId).HasName("PK__Attendan__740D898FFAF8FE6D");
-
-            entity.HasIndex(e => e.SchedulesId, "IX_AttendanceDetailsComplaints_SchedulesId");
+            entity.HasKey(e => e.ComplaintId).HasName("PK__Attendan__740D898FC96B649B");
 
             entity.Property(e => e.ComplaintId).ValueGeneratedNever();
 
             entity.HasOne(d => d.Complaint).WithOne(p => p.AttendanceDetailsComplaint)
                 .HasForeignKey<AttendanceDetailsComplaint>(d => d.ComplaintId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Attendanc__Compl__71D1E811");
 
             entity.HasOne(d => d.Schedules).WithMany(p => p.AttendanceDetailsComplaints)
                 .HasForeignKey(d => d.SchedulesId)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK__Attendanc__Sched__72C60C4A");
         });
 
         modelBuilder.Entity<Auditlog>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__auditlog__3214EC0758574D22");
+            entity.HasKey(e => e.Id).HasName("PK__auditlog__3214EC074C8DE149");
 
             entity.ToTable("auditlog");
-
-            entity.HasIndex(e => e.Userid, "IX_auditlog_Userid");
 
             entity.Property(e => e.Timestamp)
                 .HasDefaultValueSql("(getdate())")
@@ -128,14 +121,13 @@ public partial class AduDbcontext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.Auditlogs)
                 .HasForeignKey(d => d.Userid)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK__auditlog__Userid__49C3F6B7");
         });
 
         modelBuilder.Entity<Class>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Classes__3214EC07FD6ABBBE");
-
-            entity.HasIndex(e => e.SubjectId, "IX_Classes_SubjectId");
+            entity.HasKey(e => e.Id).HasName("PK__Classes__3214EC07EDA37A0C");
 
             entity.Property(e => e.NameClass).HasMaxLength(90);
             entity.Property(e => e.Semester).HasMaxLength(10);
@@ -149,53 +141,41 @@ public partial class AduDbcontext : DbContext
                     "StudentInClass",
                     r => r.HasOne<StudentsInfor>().WithMany()
                         .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("FK__StudentIn__Stude__5629CD9C"),
                     l => l.HasOne<Class>().WithMany()
                         .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("FK__StudentIn__Class__5535A963"),
                     j =>
                     {
-                        j.HasKey("ClassId", "StudentId").HasName("PK__StudentI__483575793B8F90FF");
+                        j.HasKey("ClassId", "StudentId").HasName("PK__StudentI__483575791F083B9F");
                         j.ToTable("StudentInClass");
-                        j.HasIndex(new[] { "StudentId" }, "IX_StudentInClass_StudentId");
                     });
         });
 
         modelBuilder.Entity<ClassChange>(entity =>
         {
-            entity.HasKey(e => e.ComplaintId).HasName("PK__ClassCha__740D898F85918622");
+            entity.HasKey(e => e.ComplaintId).HasName("PK__ClassCha__740D898F5A03A251");
 
             entity.ToTable("ClassChange");
-
-            entity.HasIndex(e => e.CurrentClassId, "IX_ClassChange_CurrentClassId");
-
-            entity.HasIndex(e => e.RequestedClassId, "IX_ClassChange_RequestedClassId");
 
             entity.Property(e => e.ComplaintId).ValueGeneratedNever();
 
             entity.HasOne(d => d.Complaint).WithOne(p => p.ClassChange)
                 .HasForeignKey<ClassChange>(d => d.ComplaintId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ClassChan__Compl__75A278F5");
+                .HasConstraintName("FK__ClassChan__Compl__7A672E12");
 
             entity.HasOne(d => d.CurrentClass).WithMany(p => p.ClassChangeCurrentClasses)
                 .HasForeignKey(d => d.CurrentClassId)
-                .HasConstraintName("FK__ClassChan__Curre__76969D2E");
+                .HasConstraintName("FK__ClassChan__Curre__7B5B524B");
 
             entity.HasOne(d => d.RequestedClass).WithMany(p => p.ClassChangeRequestedClasses)
                 .HasForeignKey(d => d.RequestedClassId)
-                .HasConstraintName("FK__ClassChan__Reque__778AC167");
+                .HasConstraintName("FK__ClassChan__Reque__7C4F7684");
         });
 
         modelBuilder.Entity<Complaint>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Complain__3214EC07F8F87128");
-
-            entity.HasIndex(e => e.ProcessedBy, "IX_Complaints_ProcessedBy");
-
-            entity.HasIndex(e => e.StudentId, "IX_Complaints_StudentId");
+            entity.HasKey(e => e.Id).HasName("PK__Complain__3214EC076F183F2B");
 
             entity.Property(e => e.ComplaintType).HasMaxLength(50);
             entity.Property(e => e.CreateAt)
@@ -214,50 +194,45 @@ public partial class AduDbcontext : DbContext
                 .HasConstraintName("FK__Complaint__Stude__6D0D32F4");
         });
 
-        modelBuilder.Entity<DayOfWeekss>(entity =>
+        modelBuilder.Entity<Models.DayOfWeek>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__DayOfWee__3214EC0709D6F10E");
-
-            entity.ToTable("DayOfWeekss");
+            entity.HasKey(e => e.Id).HasName("PK__DayOfWee__3214EC079A470A2D");
 
             entity.Property(e => e.Weekdays).HasMaxLength(10);
         });
 
-        modelBuilder.Entity<Permisson>(entity =>
+        modelBuilder.Entity<Permission>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Permisso__3214EC07EC7EDBB3");
+            entity.HasKey(e => e.Id).HasName("PK__Permissi__3214EC07B10A1991");
 
-            entity.ToTable("Permisson");
+            entity.ToTable("Permission");
         });
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC078AFC3E58");
+            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC0791E90BA9");
 
             entity.Property(e => e.RoleName).HasMaxLength(28);
 
-            entity.HasMany(d => d.Permissons).WithMany(p => p.Roles)
+            entity.HasMany(d => d.Permissions).WithMany(p => p.Roles)
                 .UsingEntity<Dictionary<string, object>>(
-                    "RolePermisson",
-                    r => r.HasOne<Permisson>().WithMany()
-                        .HasForeignKey("PermissonId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
+                    "RolePermission",
+                    r => r.HasOne<Permission>().WithMany()
+                        .HasForeignKey("PermissionId")
                         .HasConstraintName("FK__RolePermi__Permi__3C69FB99"),
                     l => l.HasOne<Role>().WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("FK__RolePermi__RoleI__3B75D760"),
                     j =>
                     {
-                        j.HasKey("RoleId", "PermissonId").HasName("PK__RolePerm__F57FC50055398B68");
-                        j.ToTable("RolePermisson");
-                        j.HasIndex(new[] { "PermissonId" }, "IX_RolePermisson_PermissonId");
+                        j.HasKey("RoleId", "PermissionId").HasName("PK__RolePerm__6400A1A882414258");
+                        j.ToTable("RolePermission");
                     });
         });
 
         modelBuilder.Entity<Room>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Rooms__3214EC077E5856B4");
+            entity.HasKey(e => e.Id).HasName("PK__Rooms__3214EC073B8FA24F");
 
             entity.Property(e => e.Device).HasMaxLength(90);
             entity.Property(e => e.RoomCode).HasMaxLength(50);
@@ -265,36 +240,32 @@ public partial class AduDbcontext : DbContext
 
         modelBuilder.Entity<Schedule>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Schedule__3214EC07335A7346");
-
-            entity.HasIndex(e => e.ClassId, "IX_Schedules_ClassId");
-
-            entity.HasIndex(e => e.DayId, "IX_Schedules_DayId");
-
-            entity.HasIndex(e => e.RoomId, "IX_Schedules_RoomId");
-
-            entity.HasIndex(e => e.StudyShiftId, "IX_Schedules_StudyShiftId");
+            entity.HasKey(e => e.Id).HasName("PK__Schedule__3214EC0741018C97");
 
             entity.HasOne(d => d.Class).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.ClassId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK__Schedules__Class__5EBF139D");
 
             entity.HasOne(d => d.Day).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.DayId)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK__Schedules__DayId__60A75C0F");
 
             entity.HasOne(d => d.Room).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK__Schedules__RoomI__5FB337D6");
 
             entity.HasOne(d => d.StudyShift).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.StudyShiftId)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK__Schedules__Study__619B8048");
         });
 
         modelBuilder.Entity<StudentsInfor>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Students__1788CC4C5F39F787");
+            entity.HasKey(e => e.UserId).HasName("PK__Students__1788CC4CCCC2035F");
 
             entity.ToTable("StudentsInfor");
 
@@ -304,20 +275,19 @@ public partial class AduDbcontext : DbContext
 
             entity.HasOne(d => d.User).WithOne(p => p.StudentsInfor)
                 .HasForeignKey<StudentsInfor>(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__StudentsI__UserI__52593CB8");
         });
 
         modelBuilder.Entity<StudyShift>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__StudyShi__3214EC07C4CACDDA");
+            entity.HasKey(e => e.Id).HasName("PK__StudyShi__3214EC07D946077D");
 
             entity.Property(e => e.StudyShiftName).HasMaxLength(90);
         });
 
         modelBuilder.Entity<Subject>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Subjects__3214EC07ADBCE78F");
+            entity.HasKey(e => e.Id).HasName("PK__Subjects__3214EC0750D0CDEB");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.SubjectName).HasMaxLength(200);
@@ -325,7 +295,7 @@ public partial class AduDbcontext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__User__3214EC07EE68BB21");
+            entity.HasKey(e => e.Id).HasName("PK__User__3214EC079BED008F");
 
             entity.ToTable("User");
 
@@ -347,29 +317,27 @@ public partial class AduDbcontext : DbContext
                         .HasConstraintName("FK__UserRole__Roleid__440B1D61"),
                     l => l.HasOne<User>().WithMany()
                         .HasForeignKey("Userid")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("FK__UserRole__Userid__4316F928"),
                     j =>
                     {
-                        j.HasKey("Userid", "Roleid").HasName("PK__UserRole__2F388C87A201A5ED");
+                        j.HasKey("Userid", "Roleid").HasName("PK__UserRole__2F388C87DEAF1C0D");
                         j.ToTable("UserRole");
-                        j.HasIndex(new[] { "Roleid" }, "IX_UserRole_Roleid");
                     });
         });
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__UserProf__1788CC4C8BEB2910");
+            entity.HasKey(e => e.UserId).HasName("PK__UserProf__1788CC4C445D0929");
 
             entity.Property(e => e.UserId).ValueGeneratedNever();
             entity.Property(e => e.Address).HasMaxLength(225);
             entity.Property(e => e.Avatar).HasMaxLength(255);
             entity.Property(e => e.Dob).HasColumnName("DOB");
             entity.Property(e => e.FullName).HasMaxLength(90);
+            entity.Property(e => e.UserCode).HasMaxLength(50);
 
             entity.HasOne(d => d.User).WithOne(p => p.UserProfile)
                 .HasForeignKey<UserProfile>(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__UserProfi__UserI__46E78A0C");
         });
 

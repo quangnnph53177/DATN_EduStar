@@ -34,7 +34,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Phan quyen", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "EduStar", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -91,11 +91,11 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("CreateUS", policy => policy.RequireClaim("Permisson", "Create"));
-    options.AddPolicy("DetailUS", policy => policy.RequireClaim("Permisson", "Detail"));
-    options.AddPolicy("EditUS", policy => policy.RequireClaim("Permisson", "Edit"));
+    options.AddPolicy("CreateUS", policy => policy.RequireClaim("Permission", "Create"));
+    options.AddPolicy("DetailUS", policy => policy.RequireClaim("Permission", "Detail"));
+    options.AddPolicy("EditUS", policy => policy.RequireClaim("Permission", "Edit"));
 });
-
+    
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -104,7 +104,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -21,7 +21,7 @@ public partial class Schedule
 
     public virtual Class? Class { get; set; }
 
-    public virtual DayOfWeekss? Day { get; set; }
+    public virtual DayOfWeek? Day { get; set; }
 
     public virtual Room? Room { get; set; }
 

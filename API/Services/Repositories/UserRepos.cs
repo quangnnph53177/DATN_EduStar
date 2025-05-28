@@ -21,6 +21,7 @@ namespace API.Services.Repositories
         }
         public async Task<User> Register(UserDTO usd)
         {
+
             // Kiểm tra thông tin đầu vào
             if (string.IsNullOrWhiteSpace(usd.UserName) ||
                 string.IsNullOrWhiteSpace(usd.PassWordHash) ||
@@ -43,7 +44,33 @@ namespace API.Services.Repositories
             if (!roles.Any())
                 throw new Exception("Không tìm thấy role hợp lệ để gán.");
 
+            string userCode = "";
 
+            if (roles.Any(r => r.Id == 1)) // Admin
+            {
+                int adminCount = await _context.Users
+                    .Where(u => u.Roles.Any(r => r.Id == 1))
+                    .CountAsync();
+                userCode = $"AD{(adminCount + 1).ToString("D5")}";
+            }
+            else if (roles.Any(r => r.Id == 2)) // Giảng viên
+            {
+                int gvCount = await _context.Users
+                    .Where(u => u.Roles.Any(r => r.Id == 2))
+                    .CountAsync();
+                userCode = $"GV{(gvCount + 1).ToString("D5")}";
+            }
+            else if(roles.Any(r => r.Id == 3)) // Sinh viên
+            {
+                int svCount = await _context.Users
+                    .Where(u => u.Roles.Any(r => r.Id == 3))
+                    .CountAsync();
+                userCode = $"SV{(svCount + 1).ToString("D5")}";
+            }
+            else // Mặc định (ví dụ sinh viên chưa có role), vẫn tạo userCode tạm
+            {
+                userCode = $"US{Guid.NewGuid().ToString().Substring(0, 5).ToUpper()}";
+            }
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -55,11 +82,12 @@ namespace API.Services.Repositories
                 Statuss = true,
                 CreateAt = DateTime.Now
             };
-
+            
             var userProfile = new UserProfile
             {
                 UserId = user.Id,
                 FullName = usd.FullName,
+                UserCode = userCode,
                 Gender = usd.Gender,
                 Dob = usd.Dob.HasValue ? DateOnly.FromDateTime(usd.Dob.Value) : null,
                 Avatar = usd.Avatar,
@@ -68,16 +96,13 @@ namespace API.Services.Repositories
             // Đếm số lượng sinh viên hiện tại
             int count = await _context.StudentsInfors.CountAsync();
 
-            if (roles.Any(r => r.Id == 3))
-            {
                 var student = new StudentsInfor
                 {
                     UserId = user.Id,
-                    StudentsCode = $"SV{(count + 1).ToString("D5")}",  // D4: padding với 0 thành 5 chữ số
+                    StudentsCode = userCode,  // D4: padding với 0 thành 5 chữ số
                     ClassCode = "Chưa rõ",
                 };
                 _context.StudentsInfors.Add(student);
-            }
             _context.Users.Add(user);
             _context.UserProfiles.Add(userProfile);
 
@@ -90,7 +115,8 @@ namespace API.Services.Repositories
                 throw new Exception("Tên đăng nhập hoặc mật khẩu không được để trống.");
 
             var user = await _context.Users
-                .Include(u => u.Roles).ThenInclude(r => r.Permissons)
+                .Include(u => u.Roles)
+                .ThenInclude(r => r.Permissions)
                 .FirstOrDefaultAsync(u => u.UserName == userName);
             if (user == null)
                 throw new Exception("Tên đăng nhập không tồn tại.");
@@ -101,10 +127,16 @@ namespace API.Services.Repositories
             bool isPasswordValid = PasswordHasher.Verify(password, user.PassWordHash);
             if (!isPasswordValid)
                 throw new Exception("Mật khẩu không chính xác.");
-            string token = GenerateJwtToken(user);
+            var permissions = user.Roles?
+                .SelectMany(r => r.Permissions)
+                .Where(p => p != null)
+                .Select(p => p.PermissionName)
+                .Distinct()
+                .ToList() ?? new List<string>();
+            string token = GenerateJwtToken(user,permissions);
             return token;
         }
-        private string GenerateJwtToken(User user)
+        private string GenerateJwtToken(User user, List<string> permissions)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]));
@@ -116,21 +148,17 @@ namespace API.Services.Repositories
                 new Claim(ClaimTypes.Name, user.UserName),
 
             };
-            if (user.Roles == null || !user.Roles.Any())
+            // Thêm roles
+            // Thêm Role claim (nếu cần)
+            foreach (var role in user.Roles)
             {
-                claims.Add(new Claim(ClaimTypes.Role, "User")); // default role
+                claims.Add(new Claim(ClaimTypes.Role, role.RoleName));
             }
-            else
-            {
-                foreach (var role in user.Roles)
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, role.RoleName));
 
-                    foreach (var perm in role.Permissons)
-                    {
-                        claims.Add(new Claim("Permisson", perm.PermissonName));
-                    }
-                }
+            // Thêm các Permission claim
+            foreach (var perm in permissions)
+            {
+                claims.Add(new Claim("Permission", perm));
             }
 
             var tokenDescriptor = new SecurityTokenDescriptor
@@ -143,6 +171,7 @@ namespace API.Services.Repositories
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
+            
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
@@ -157,7 +186,7 @@ namespace API.Services.Repositories
             var userDtos = lst.Select(u => new UserDTO
             {
                 UserName = u.UserName,
-                PassWordHash = u.PassWordHash,
+                //PassWordHash = u.PassWordHash,
                 Email = u.Email,
                 PhoneNumber = u.PhoneNumber,
                 Statuss = u.Statuss ?? true,
@@ -188,7 +217,7 @@ namespace API.Services.Repositories
             var userDto = new UserDTO
             {
                 UserName = user.UserName,
-                PassWordHash = user.PassWordHash,
+                //PassWordHash = user.PassWordHash,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
                 Statuss = user.Statuss ?? true,
@@ -219,7 +248,7 @@ namespace API.Services.Repositories
 
             if (await _context.Users.AnyAsync(u => u.Email == userd.Email && u.Id != upinsv.Id))
                 throw new Exception("Email đã được sử dụng.");
-            upinsv.PassWordHash = userd.PassWordHash;
+            upinsv.PassWordHash = PasswordHasher.HashPassword(userd.PassWordHash);
             upinsv.Email = userd.Email;
             upinsv.UserProfile.FullName = userd.FullName;
             upinsv.UserProfile.Gender = userd.Gender;

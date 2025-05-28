@@ -6,8 +6,10 @@ namespace API.Models;
 public partial class UserProfile
 {
     public Guid UserId { get; set; }
-    
+
     public string? FullName { get; set; }
+
+    public string? UserCode { get; set; }
 
     public bool? Gender { get; set; }
 

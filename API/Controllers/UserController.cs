@@ -154,6 +154,7 @@ namespace API.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+        [Authorize(Policy = "EditUS")]
         [HttpPut("{username}")]
         public async Task<IActionResult> UpdateUser(string username, [FromBody] UserDTO userDto)
         {
