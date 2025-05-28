@@ -21,6 +21,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IStudent, StudentsRepos>();
 builder.Services.AddScoped<IUserRepos, UserRepos>();
+builder.Services.AddScoped<IClassRepos, ClassRepos>();
 
 builder.Services.AddCors(options =>
 {
