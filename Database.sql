@@ -15,8 +15,8 @@ create table Permission
 	PermissionName Nvarchar(Max)
 );
 create table RolePermission(
-	RoleId int foreign key references Roles (Id),
-	PermissionId int foreign key references Permission (Id)
+	RoleId int foreign key references Roles (Id) ON DELETE CASCADE,
+	PermissionId int foreign key references Permission (Id) ON DELETE CASCADE
 	primary key (RoleId,PermissionId)
 );
 -- 2. Users
@@ -32,13 +32,13 @@ CREATE TABLE [User] (
 GO
 create table UserRole
 (
-	Userid UNIQUEIDENTIFIER foreign key references [User](Id),
+	Userid UNIQUEIDENTIFIER foreign key references [User](Id) ON DELETE CASCADE,
 	Roleid int foreign key references Roles (Id),
 	primary key(Userid, RoleId)
 );
 -- 3. UserProfiles
 CREATE TABLE UserProfiles (
-    UserId UNIQUEIDENTIFIER PRIMARY KEY FOREIGN KEY REFERENCES [User](Id),
+    UserId UNIQUEIDENTIFIER PRIMARY KEY FOREIGN KEY REFERENCES [User](Id) ON DELETE CASCADE,
     FullName NVARCHAR(90),
 	UserCode NVARCHAR(50),
     Gender BIT,
@@ -49,7 +49,7 @@ CREATE TABLE UserProfiles (
 GO
 create table auditlog(
 	Id int identity(1, 1) primary key,
-	Userid UNIQUEIDENTIFIER FOREIGN KEY REFERENCES [User](Id),
+	Userid UNIQUEIDENTIFIER FOREIGN KEY REFERENCES [User](Id) ON DELETE SET NULL,
 	Active nvarchar(Max),
 	Descriptions nvarchar(max),
 	Timestamp datetime default getdate()
@@ -75,7 +75,7 @@ GO
 
 -- 6. StudentsInfor
 CREATE TABLE StudentsInfor (
-    UserId UNIQUEIDENTIFIER PRIMARY KEY FOREIGN KEY REFERENCES [User](Id),
+    UserId UNIQUEIDENTIFIER PRIMARY KEY FOREIGN KEY REFERENCES [User](Id) ON DELETE CASCADE,
     StudentsCode NVARCHAR(50),
     ClassCode NVARCHAR(90)
 );
@@ -83,8 +83,8 @@ GO
 
 -- 7. StudentInClass
 CREATE TABLE StudentInClass (
-    ClassId INT FOREIGN KEY REFERENCES Classes(Id),
-    StudentId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES StudentsInfor(UserId),
+    ClassId INT FOREIGN KEY REFERENCES Classes(Id) ON DELETE CASCADE,
+    StudentId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES StudentsInfor(UserId) ON DELETE CASCADE,
     PRIMARY KEY (ClassId, StudentId)
 );
 GO
@@ -117,18 +117,18 @@ GO
 -- 11. Schedules
 CREATE TABLE Schedules (
     Id INT PRIMARY KEY identity(1,1),
-    ClassId INT FOREIGN KEY REFERENCES Classes(Id),
-    RoomId INT FOREIGN KEY REFERENCES Rooms(Id),
-    DayId INT FOREIGN KEY REFERENCES DayOfWeeks(Id),
-    StudyShiftId INT FOREIGN KEY REFERENCES StudyShifts(Id)
+    ClassId INT FOREIGN KEY REFERENCES Classes(Id) ON DELETE CASCADE,
+    RoomId INT FOREIGN KEY REFERENCES Rooms(Id) ON DELETE SET NULL,
+    DayId INT FOREIGN KEY REFERENCES DayOfWeeks(Id) ON DELETE SET NULL,
+    StudyShiftId INT FOREIGN KEY REFERENCES StudyShifts(Id)ON DELETE SET NULL
 );
 GO
 
 -- 12. Attendance
 CREATE TABLE Attendance (
     Id INT PRIMARY KEY identity(1,1),
-    SchedulesId INT FOREIGN KEY REFERENCES Schedules(Id),
-    UserId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES [User](Id),
+    SchedulesId INT FOREIGN KEY REFERENCES Schedules(Id) ON DELETE CASCADE,
+    UserId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES [User](Id) ON DELETE SET NULL,
     CreateAt DATETIME DEFAULT GETDATE()
 );
 GO
@@ -137,7 +137,7 @@ GO
 CREATE TABLE AttendanceDetails (
     Id INT PRIMARY KEY identity(1,1),
     StudentId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES StudentsInfor(UserId),
-    AttendanceId INT FOREIGN KEY REFERENCES Attendance(Id),
+    AttendanceId INT FOREIGN KEY REFERENCES Attendance(Id) ON DELETE CASCADE,
     Statuss NVARCHAR(20),
     Description NVARCHAR(MAX)
 );
@@ -160,14 +160,14 @@ GO
 
 -- 15. AttendanceDetailsComplaints
 CREATE TABLE AttendanceDetailsComplaints (
-    ComplaintId INT PRIMARY KEY FOREIGN KEY REFERENCES Complaints(Id),
-    SchedulesId INT FOREIGN KEY REFERENCES Schedules(Id)
+    ComplaintId INT PRIMARY KEY FOREIGN KEY REFERENCES Complaints(Id) ON DELETE CASCADE,
+    SchedulesId INT FOREIGN KEY REFERENCES Schedules(Id)ON DELETE SET NULL
 );
 GO
 
 -- 16. ClassChange
 CREATE TABLE ClassChange (
-    ComplaintId INT PRIMARY KEY FOREIGN KEY REFERENCES Complaints(Id),
+    ComplaintId INT PRIMARY KEY FOREIGN KEY REFERENCES Complaints(Id ) ON DELETE CASCADE,
     CurrentClassId INT FOREIGN KEY REFERENCES Classes(Id),
     RequestedClassId INT FOREIGN KEY REFERENCES Classes(Id)
 );
@@ -181,12 +181,16 @@ go
 SELECT * FROM [User];
 SELECT * FROM UserProfiles;
 SELECT * FROM UserRole;
+SELECT * FROM StudentsInfor;
+
 SELECT * FROM Roles;
 SELECT * FROM Permission;
+SELECT * FROM RolePermission
 -- Lấy Id của Roles và Permissions để gán
 DECLARE @AdminRoleId INT = (SELECT Id FROM Roles WHERE RoleName = 'Admin');
 DECLARE @TeacherRoleId INT = (SELECT Id FROM Roles WHERE RoleName = 'Teacher');
 DECLARE @StudentRoleId INT = (SELECT Id FROM Roles WHERE RoleName = 'Student');
+
 
 DECLARE @CreatePermId INT = (SELECT Id FROM Permission WHERE PermissionName = 'Create');
 SELECT @CreatePermId;
@@ -194,9 +198,18 @@ DECLARE @EditPermId INT = (SELECT Id FROM Permission WHERE PermissionName = 'Edi
 DECLARE @DetailPermId INT = (SELECT Id FROM Permission WHERE PermissionName = 'Detail');
 
 -- Gán Permission cho Role Admin (Create, Edit, Delete)
+
 INSERT INTO RolePermission(RoleId, PermissionId) VALUES
 (@AdminRoleId, @CreatePermId),
 (@AdminRoleId, @EditPermId),
 (@AdminRoleId, @DetailPermId);
+
+INSERT INTO RolePermission(RoleId, PermissionId) VALUES
+(@StudentRoleId, @EditPermId),
+(@StudentRoleId, @DetailPermId);
+
+INSERT INTO RolePermission(RoleId, PermissionId) VALUES
+(@TeacherRoleId, @EditPermId),
+(@TeacherRoleId, @DetailPermId);
 Select*from RolePermission;
--- Gán Permission cho Role Teacher (Edit)
+Select*from Permission;
