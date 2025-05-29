@@ -22,6 +22,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IStudent, StudentsRepos>();
 builder.Services.AddScoped<IUserRepos, UserRepos>();
 builder.Services.AddScoped<IClassRepos, ClassRepos>();
+builder.Services.AddTransient<IEmailRepos, EmailRepos>();
 
 builder.Services.AddCors(options =>
 {
@@ -108,6 +109,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseAuthentication();
+app.UseMiddleware<CheckUserStatus>(); // Kiểm tra trạng thái người dùng trước khi xử lý yêu cầu
 app.UseAuthorization();
 
 app.MapControllers();

@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
 using System.Globalization;
+using System.Security.Claims;
 
 namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     public class UserController : ControllerBase
     {
         private readonly IUserRepos _userRepos;
@@ -27,13 +29,19 @@ namespace API.Controllers
             try
             {
                 var user = await _userRepos.Register(userDto);
-                return Ok(new { message = "Đăng ký thành công", userId = user.Id });
+                return Ok(new { message = "Đăng ký thành công, vui lòng kiểm tra email để xác nhận.", userId = user.Id });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { error = ex.Message });
             }
         }
+        //[HttpGet("confirm")]
+        //public async Task<IActionResult> Confirm(string token)
+        //{
+        //    bool result = await _userRepos.ConfirmEmail(token);
+        //    return result ? Ok("Xác nhận thành công.") : BadRequest("Xác nhận thất bại.");
+        //}
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO loginDto)
@@ -73,49 +81,61 @@ namespace API.Controllers
 
                 int rowCount = worksheet.Dimension.Rows;
                 var usersCreated = new List<string>();
+                var usersFailed = new List<object>();
 
                 for (int row = 2; row <= rowCount; row++) // Bắt đầu từ row 2 vì row 1 là header
                 {
-                    // Đọc từng cột 
-                    var fullname = worksheet.Cells[row, 2].Text.Trim();
-                    var userName = worksheet.Cells[row, 3].Text.Trim();
-                    var password = worksheet.Cells[row, 4].Text.Trim();
-                    var phone = worksheet.Cells[row, 5].Text.Trim();
-                    var dobText = worksheet.Cells[row, 6].Text.Trim();
-                    var genderText = worksheet.Cells[row, 7].Text.Trim();
-                    var email = worksheet.Cells[row, 8].Text.Trim();
+                    try
+                    {
+                        // Đọc từng cột 
+                        var fullname = worksheet.Cells[row, 2].Text.Trim();
+                        var userName = worksheet.Cells[row, 3].Text.Trim();
+                        var password = worksheet.Cells[row, 4].Text.Trim();
+                        var phone = worksheet.Cells[row, 5].Text.Trim();
+                        var dobText = worksheet.Cells[row, 6].Text.Trim();
+                        var genderText = worksheet.Cells[row, 7].Text.Trim();
+                        var email = worksheet.Cells[row, 8].Text.Trim();
+                        if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
+                        {
+                            usersFailed.Add(new { Row = row, Reason = "Thiếu username hoặc password." });
+                            continue;
+                        }   
+                        if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
+                            continue;
 
-                    if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
-                        continue;
-
-                    DateTime? dob = null;
-                    if (DateTime.TryParseExact(dobText, new[] { "d/M/yyyy", "dd/MM/yyyy", "M/d/yyyy" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDob))
-                    {
-                        dob = parsedDob;
+                        DateTime? dob = null;
+                        if (DateTime.TryParseExact(dobText, new[] { "d/M/yyyy", "dd/MM/yyyy", "M/d/yyyy" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDob))
+                        {
+                            dob = parsedDob;
+                        }
+                        bool? gender = null;
+                        if (!string.IsNullOrEmpty(genderText))
+                        {
+                            genderText = genderText.ToLower();
+                            if (genderText == "nam")
+                                gender = true;
+                            else if (genderText == "nữ" || genderText == "nu")
+                                gender = false;
+                        }
+                        var userDto = new UserDTO
+                        {
+                            UserName = userName,
+                            PassWordHash = password,
+                            PhoneNumber = phone,
+                            Email = email,
+                            FullName = fullname,
+                            Dob = dob,
+                            Gender = gender,
+                            Statuss = true,
+                            CreateAt = DateTime.Now
+                        };
+                        await _userRepos.Register(userDto);
+                        usersCreated.Add(userName);
                     }
-                    bool? gender = null;
-                    if (!string.IsNullOrEmpty(genderText))
+                    catch (Exception exRow)
                     {
-                        genderText = genderText.ToLower();
-                        if (genderText == "nam")
-                            gender = true;
-                        else if (genderText == "nữ" || genderText == "nu")
-                            gender = false;
+                        usersFailed.Add(new { Row = row, Reason = exRow.Message });
                     }
-                    var userDto = new UserDTO
-                    {
-                        UserName = userName,
-                        PassWordHash = password,
-                        PhoneNumber = phone,
-                        Email = email,
-                        FullName = fullname,
-                        Dob = dob,
-                        Gender = gender,
-                        Statuss = true,
-                        CreateAt = DateTime.Now
-                    };
-                    await _userRepos.Register(userDto);
-                    usersCreated.Add(userName);
                 }
 
                 return Ok(new { message = "Upload và tạo user thành công", users = usersCreated });
@@ -132,8 +152,18 @@ namespace API.Controllers
         {
             try
             {
-                var users = await _userRepos.GetAllUsers();
-                
+                var currentUserRoleIds = User.Claims
+                 .Where(c => c.Type == ClaimTypes.Role)
+                 .Select(c => int.Parse(c.Value))
+                 .ToList();
+                var currentUserName = User.Identity?.Name;
+                if(string.IsNullOrEmpty(currentUserName))
+                    return Unauthorized("Không tìm thấy thông tin người dùng");
+                var users = await _userRepos.GetAllUsers(currentUserRoleIds,currentUserName);
+
+                if (!users.Any())
+                    return Forbid();
+
                 return Ok(users);
             }
             catch (Exception ex)
@@ -142,12 +172,36 @@ namespace API.Controllers
             }
         }
         [Authorize(Policy = "DetailUS")]
-        [HttpGet("{username}")]
-        public async Task<IActionResult> GetUserByName(string username)
+        [HttpGet("searchuser")]
+        public async Task<IActionResult> SearchUser([FromQuery] string? username, [FromQuery] string? usercode, [FromQuery] string? fullname, [FromQuery] string? email)
         {
+            var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
+            var currentUserName = User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUserName))
+                return Unauthorized("Không tìm thấy thông tin người dùng");
             try
             {
-                return Ok(await _userRepos.GetUserByName(username));
+                var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+
+                // 🔍 Lọc theo điều kiện tìm kiếm  
+                if (!string.IsNullOrWhiteSpace(username))
+                    users = users.Where(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
+
+                if (!string.IsNullOrWhiteSpace(usercode))
+                    users = users.Where(u => u.UserCode?.Contains(usercode, StringComparison.OrdinalIgnoreCase) == true);
+
+                if (!string.IsNullOrWhiteSpace(fullname))
+                    users = users.Where(u => u.FullName?.Contains(fullname, StringComparison.OrdinalIgnoreCase) == true);
+
+                if (!string.IsNullOrWhiteSpace(email))
+                    users = users.Where(u => u.Email?.Contains(email, StringComparison.OrdinalIgnoreCase) == true);
+
+                var result = users.ToList();
+
+                if (!result.Any())
+                    return NotFound("Không tìm thấy người dùng nào phù hợp.");
+
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -158,16 +212,56 @@ namespace API.Controllers
         [HttpPut("{username}")]
         public async Task<IActionResult> UpdateUser(string username, [FromBody] UserDTO userDto)
         {
+            var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
+            var currentUserName = User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUserName))
+                return Unauthorized("Không tìm thấy thông tin người dùng");
+
             if (username != userDto.UserName || !ModelState.IsValid)
                 return BadRequest("Dữ liệu không hợp lệ hoặc ID không khớp.");
             try
             {
+                // Lấy danh sách user được phép truy cập
+                var allowedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+
+                // Kiểm tra người cần sửa có nằm trong danh sách được phép không
+                var targetUser = allowedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
+                if (targetUser == null)
+                    return Forbid("Bạn không có quyền sửa người dùng này.");
                 await _userRepos.UpdateUser(userDto);
-                return Ok(new { message = "Cập nhật thành công" });
+                return Ok(new { message = "Cập nhật thành công" }); 
             }
             catch (Exception ex)
             {
                 return BadRequest(new { error = ex.Message });
+            }
+        }
+        [Authorize(Policy = "CreateUS")]
+        [HttpGet("lock/{username}")]
+        public async Task<IActionResult> LockUser(string username)
+        {
+            try
+            {
+                var result = await _userRepos.LockUser(username);
+                return Ok(new {username,result});
+            }
+            catch ( Exception ex)
+            {
+                return Content(ex.Message);
+            }
+        }
+        [Authorize(Policy = "CreateUS")]
+        [HttpGet("changerole/{username}/{newRoleId}")]
+        public async Task<IActionResult> ChangeRole(string username, int newRoleId)
+        {
+            try
+            {
+                var result = await _userRepos.ChangeRole(username, newRoleId);
+                return Ok(new { username, result });
+            }
+            catch (Exception ex)
+            {
+                return Content(ex.Message);
             }
         }
     }

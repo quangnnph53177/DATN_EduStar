@@ -213,3 +213,6 @@ INSERT INTO RolePermission(RoleId, PermissionId) VALUES
 (@TeacherRoleId, @DetailPermId);
 Select*from RolePermission;
 Select*from Permission;
+delete from [User] where Id like '11FC2482-A153-4781-BF7E-2969D5B562F3';
+select * from [UserRole] where Roleid like 2;
+select * from [User]
