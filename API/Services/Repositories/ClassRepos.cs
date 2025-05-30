@@ -60,7 +60,7 @@ namespace API.Services.Repositories
 
         public async Task<Class> GetClassByIdAsync(int id)
         {
-           try
+            try
             {
                 if (id <= 0) throw new ArgumentException("Class ID must be a positive integer.", nameof(id));
 

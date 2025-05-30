@@ -60,7 +60,7 @@ namespace API.Services.Repositories
                     .CountAsync();
                 userCode = $"GV{(gvCount + 1).ToString("D5")}";
             }
-            else if(roles.Any(r => r.Id == 3)) // Sinh viên
+            else if (roles.Any(r => r.Id == 3)) // Sinh viên
             {
                 int svCount = await _context.Users
                     .Where(u => u.Roles.Any(r => r.Id == 3))
@@ -82,7 +82,7 @@ namespace API.Services.Repositories
                 Statuss = true,
                 CreateAt = DateTime.Now
             };
-            
+
             var userProfile = new UserProfile
             {
                 UserId = user.Id,
@@ -96,13 +96,13 @@ namespace API.Services.Repositories
             // Đếm số lượng sinh viên hiện tại
             int count = await _context.StudentsInfors.CountAsync();
 
-                var student = new StudentsInfor
-                {
-                    UserId = user.Id,
-                    StudentsCode = userCode,  // D4: padding với 0 thành 5 chữ số
-                    ClassCode = "Chưa rõ",
-                };
-                _context.StudentsInfors.Add(student);
+            var student = new StudentsInfor
+            {
+                UserId = user.Id,
+                StudentsCode = userCode,  // D4: padding với 0 thành 5 chữ số
+                ClassCode = "Chưa rõ",
+            };
+            _context.StudentsInfors.Add(student);
             _context.Users.Add(user);
             _context.UserProfiles.Add(userProfile);
 
@@ -133,7 +133,7 @@ namespace API.Services.Repositories
                 .Select(p => p.PermissionName)
                 .Distinct()
                 .ToList() ?? new List<string>();
-            string token = GenerateJwtToken(user,permissions);
+            string token = GenerateJwtToken(user, permissions);
             return token;
         }
         private string GenerateJwtToken(User user, List<string> permissions)
@@ -171,7 +171,7 @@ namespace API.Services.Repositories
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            
+
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
@@ -257,7 +257,7 @@ namespace API.Services.Repositories
             upinsv.UserProfile.Address = userd.Address;
             upinsv.Statuss = userd.Statuss;
             upinsv.UserProfile.Dob = userd.Dob.HasValue ? DateOnly.FromDateTime(userd.Dob.Value) : null;
-            
+
             _context.Users.Update(upinsv);
             await _context.SaveChangesAsync();
         }

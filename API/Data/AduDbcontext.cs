@@ -30,7 +30,7 @@ public partial class AduDbcontext : DbContext
 
     public virtual DbSet<Complaint> Complaints { get; set; }
 
-    public virtual DbSet<Models.DayOfWeek> DayOfWeeks { get; set; }
+    public virtual DbSet<DayOfWeekk> DayOfWeeks { get; set; }
 
     public virtual DbSet<Permission> Permissions { get; set; }
 
@@ -51,8 +51,7 @@ public partial class AduDbcontext : DbContext
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=TRANGPTH\\TRANG;Database=Eghitvebinh3;Trusted_Connection=True; TrustServerCertificate =True");
+    { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,6 +60,10 @@ public partial class AduDbcontext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Attendan__3214EC076DAB41EB");
 
             entity.ToTable("Attendance");
+
+            entity.HasIndex(e => e.SchedulesId, "IX_Attendance_SchedulesId");
+
+            entity.HasIndex(e => e.UserId, "IX_Attendance_UserId");
 
             entity.Property(e => e.CreateAt)
                 .HasDefaultValueSql("(getdate())")
@@ -81,6 +84,10 @@ public partial class AduDbcontext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Attendan__3214EC07676DEB47");
 
+            entity.HasIndex(e => e.AttendanceId, "IX_AttendanceDetails_AttendanceId");
+
+            entity.HasIndex(e => e.StudentId, "IX_AttendanceDetails_StudentId");
+
             entity.Property(e => e.Statuss).HasMaxLength(20);
 
             entity.HasOne(d => d.Attendance).WithMany(p => p.AttendanceDetails)
@@ -96,6 +103,8 @@ public partial class AduDbcontext : DbContext
         modelBuilder.Entity<AttendanceDetailsComplaint>(entity =>
         {
             entity.HasKey(e => e.ComplaintId).HasName("PK__Attendan__740D898FC96B649B");
+
+            entity.HasIndex(e => e.SchedulesId, "IX_AttendanceDetailsComplaints_SchedulesId");
 
             entity.Property(e => e.ComplaintId).ValueGeneratedNever();
 
@@ -115,19 +124,27 @@ public partial class AduDbcontext : DbContext
 
             entity.ToTable("auditlog");
 
+            entity.HasIndex(e => e.PerformeBy, "IX_auditlog_PerformeBy");
+
+            entity.HasIndex(e => e.Userid, "IX_auditlog_Userid");
+
             entity.Property(e => e.Timestamp)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
 
-            entity.HasOne(d => d.User).WithMany(p => p.Auditlogs)
-                .HasForeignKey(d => d.Userid)
+            entity.HasOne(d => d.PerformeByNavigation).WithMany(p => p.AuditlogPerformeByNavigations)
+                .HasForeignKey(d => d.PerformeBy)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__auditlog__Userid__49C3F6B7");
+                .HasConstraintName("FK__auditlog__Userid__50C3F9A6");
+
+            entity.HasOne(d => d.User).WithMany(p => p.AuditlogUsers).HasForeignKey(d => d.Userid);
         });
 
         modelBuilder.Entity<Class>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Classes__3214EC07EDA37A0C");
+
+            entity.HasIndex(e => e.SubjectId, "IX_Classes_SubjectId");
 
             entity.Property(e => e.NameClass).HasMaxLength(90);
             entity.Property(e => e.Semester).HasMaxLength(10);
@@ -149,6 +166,7 @@ public partial class AduDbcontext : DbContext
                     {
                         j.HasKey("ClassId", "StudentId").HasName("PK__StudentI__483575791F083B9F");
                         j.ToTable("StudentInClass");
+                        j.HasIndex(new[] { "StudentId" }, "IX_StudentInClass_StudentId");
                     });
         });
 
@@ -157,6 +175,10 @@ public partial class AduDbcontext : DbContext
             entity.HasKey(e => e.ComplaintId).HasName("PK__ClassCha__740D898F5A03A251");
 
             entity.ToTable("ClassChange");
+
+            entity.HasIndex(e => e.CurrentClassId, "IX_ClassChange_CurrentClassId");
+
+            entity.HasIndex(e => e.RequestedClassId, "IX_ClassChange_RequestedClassId");
 
             entity.Property(e => e.ComplaintId).ValueGeneratedNever();
 
@@ -177,6 +199,10 @@ public partial class AduDbcontext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Complain__3214EC076F183F2B");
 
+            entity.HasIndex(e => e.ProcessedBy, "IX_Complaints_ProcessedBy");
+
+            entity.HasIndex(e => e.StudentId, "IX_Complaints_StudentId");
+
             entity.Property(e => e.ComplaintType).HasMaxLength(50);
             entity.Property(e => e.CreateAt)
                 .HasDefaultValueSql("(getdate())")
@@ -194,7 +220,7 @@ public partial class AduDbcontext : DbContext
                 .HasConstraintName("FK__Complaint__Stude__6D0D32F4");
         });
 
-        modelBuilder.Entity<Models.DayOfWeek>(entity =>
+        modelBuilder.Entity<DayOfWeekk>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__DayOfWee__3214EC079A470A2D");
 
@@ -227,6 +253,7 @@ public partial class AduDbcontext : DbContext
                     {
                         j.HasKey("RoleId", "PermissionId").HasName("PK__RolePerm__6400A1A882414258");
                         j.ToTable("RolePermission");
+                        j.HasIndex(new[] { "PermissionId" }, "IX_RolePermission_PermissionId");
                     });
         });
 
@@ -241,6 +268,14 @@ public partial class AduDbcontext : DbContext
         modelBuilder.Entity<Schedule>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Schedule__3214EC0741018C97");
+
+            entity.HasIndex(e => e.ClassId, "IX_Schedules_ClassId");
+
+            entity.HasIndex(e => e.DayId, "IX_Schedules_DayId");
+
+            entity.HasIndex(e => e.RoomId, "IX_Schedules_RoomId");
+
+            entity.HasIndex(e => e.StudyShiftId, "IX_Schedules_StudyShiftId");
 
             entity.HasOne(d => d.Class).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.ClassId)
@@ -322,6 +357,7 @@ public partial class AduDbcontext : DbContext
                     {
                         j.HasKey("Userid", "Roleid").HasName("PK__UserRole__2F388C87DEAF1C0D");
                         j.ToTable("UserRole");
+                        j.HasIndex(new[] { "Roleid" }, "IX_UserRole_Roleid");
                     });
         });
 

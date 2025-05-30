@@ -11,9 +11,10 @@ namespace API.Services
         Task UpdateByBeast(StudentViewModels model);//cập nhập sủa sinh viên
         Task<bool> KhoaMoSinhVienAsync(Guid Id);
         Task<bool> DeleteStudent(Guid Id);
-        
+
         Task<List<StudentViewModels>> Search(string Studencode, string fullName, string username, string email);
         Task<List<StudentViewModels>> GetStudentsByClass(int Id);
         Task<byte[]> ExportStudentsToExcel(List<StudentViewModels> model);
+        Task<List<Auditlog>> GetAuditLogs();
     }
 }

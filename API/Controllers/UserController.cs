@@ -133,7 +133,7 @@ namespace API.Controllers
             try
             {
                 var users = await _userRepos.GetAllUsers();
-                
+
                 return Ok(users);
             }
             catch (Exception ex)

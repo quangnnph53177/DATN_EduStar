@@ -25,14 +25,14 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Class>>> GetClasses()
         {
-           return Ok(await _classRepos.GetAllClassesAsync());
+            return Ok(await _classRepos.GetAllClassesAsync());
         }
 
         // GET: api/Classes/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Class>> GetClass(int id)
         {
-           await _classRepos.GetClassByIdAsync(id);
+            await _classRepos.GetClassByIdAsync(id);
             var @class = await _classRepos.GetClassByIdAsync(id);
             if (@class == null)
             {
@@ -46,7 +46,7 @@ namespace API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutClass(int id, Class @class)
         {
-           await _classRepos.UpdateClassAsync(id, @class);
+            await _classRepos.UpdateClassAsync(id, @class);
             if (id != @class.Id)
             {
                 return BadRequest("Class ID mismatch.");
@@ -74,7 +74,7 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<Class>> PostClass(Class @class)
         {
-           await _classRepos.CreateClassAsync(@class);
+            await _classRepos.CreateClassAsync(@class);
             if (@class == null)
             {
                 return BadRequest("Class data cannot be null.");
