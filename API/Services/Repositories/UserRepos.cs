@@ -57,7 +57,7 @@ namespace API.Services.Repositories
                 int gvCount = await _context.Users.Where(u => u.Roles.Any(r => r.Id == 2)).CountAsync();
                 userCode = $"GV{(gvCount + 1).ToString("D5")}";
             }
-            else if(roles.Any(r => r.Id == 3)) // Sinh viên
+            else if (roles.Any(r => r.Id == 3)) // Sinh viên
             {
                 int svCount = await _context.Users.Where(u => u.Roles.Any(r => r.Id == 3)).CountAsync();
                 userCode = $"SV{(svCount + 1).ToString("D5")}";
@@ -147,7 +147,7 @@ namespace API.Services.Repositories
                 .Select(p => p.PermissionName)
                 .Distinct()
                 .ToList() ?? new List<string>();
-            string token = GenerateJwtToken(user,permissions);
+            string token = GenerateJwtToken(user, permissions);
             return token;
         }
         private string GenerateJwtToken(User user, List<string> permissions)
@@ -192,7 +192,7 @@ namespace API.Services.Repositories
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            
+
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
@@ -206,7 +206,7 @@ namespace API.Services.Repositories
 
             if (currentUserRoleIds.Contains(1)) // Admin
             {
-                query = query.Where(u => u.Roles.Any(r => r.Id == 2 || r.Id == 3|| u.UserName == currentUserName));
+                query = query.Where(u => u.Roles.Any(r => r.Id == 2 || r.Id == 3 || u.UserName == currentUserName));
             }
             else if (currentUserRoleIds.Contains(2)) // Giảng viên
             {
@@ -352,7 +352,7 @@ namespace API.Services.Repositories
             await _context.SaveChangesAsync();
             return $"Đã đổi vai trò thành công sang: {newRole.RoleName}";
         }
-       // public async Task ForgetPassword(string email)
+        // public async Task ForgetPassword(string email)
         //{
 
         //}

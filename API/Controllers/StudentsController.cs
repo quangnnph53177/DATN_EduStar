@@ -35,12 +35,29 @@ namespace API.Controllers
             });
             return Ok(addst);
         }
+        [HttpGet("auditlog")]
+        public async Task<IActionResult> Log()
+        {
+            var item = await _service.GetAuditLogs();
+            if (item == null) return null;
+            var result = item.Select(a => new AuditLogViewModel
+            {
+                Id = a.Id,
+                UserName = a.User.UserName,
+                NewData = a.NewData,
+                OldData = a.OldData,
+                Active = a.Active,
+                Timestamp = a.Timestamp,
+              
+            });
+            return Ok(result);
+        }
         [HttpGet("{Id}")]
         public async Task<IActionResult> Details(Guid Id)
         {
             return Ok(await _service.GetById(Id));
         }
-        [HttpPut("{Id}/boss")]
+        [HttpPut("boss")]
         public async Task<IActionResult> UpdateWithBoss(Guid id, [FromBody] StudentViewModels model)
         {
             if (id != model.id)
@@ -58,7 +75,7 @@ namespace API.Controllers
                 return BadRequest(new { message = $"Lỗi khi cập nhật: {ex.Message}" });
             }
         }
-        [HttpPut("{Id}/beast")]
+        [HttpPut("beast")]
         public async Task<IActionResult> UpdateWithbeast(Guid Id, [FromBody] StudentViewModels model)
         {
             if (Id != model.id)
@@ -95,6 +112,16 @@ namespace API.Controllers
         {
             var result = await _service.Search(Studencode, fullName, username, email);
             return Ok(result);
+        }
+        [HttpGet("excel/{Id}")]
+        public async Task<IActionResult> excelfile(int Id)
+        {
+            var cls = await _service.GetStudentsByClass(Id);
+            var exc = await _service.ExportStudentsToExcel(cls);
+            var fileName = $"DanhSach_SinhVien_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+            return File(exc,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
         }
 
     }

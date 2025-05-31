@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace API.Models;
 
-public partial class DayOfWeek
+public partial class DayOfWeekk
 {
     public int Id { get; set; }
 

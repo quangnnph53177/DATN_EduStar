@@ -101,7 +101,7 @@ namespace API.Controllers
                         {
                             usersFailed.Add(new { Row = row, Reason = "Thiếu username hoặc password." });
                             continue;
-                        }   
+                        }
                         if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
                             continue;
 
@@ -159,9 +159,9 @@ namespace API.Controllers
                  .Select(c => int.Parse(c.Value))
                  .ToList();
                 var currentUserName = User.Identity?.Name;
-                if(string.IsNullOrEmpty(currentUserName))
+                if (string.IsNullOrEmpty(currentUserName))
                     return Unauthorized("Không tìm thấy thông tin người dùng");
-                var users = await _userRepos.GetAllUsers(currentUserRoleIds,currentUserName);
+                var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
 
                 if (!users.Any())
                     return Forbid();
@@ -231,7 +231,7 @@ namespace API.Controllers
                 if (targetUser == null)
                     return Forbid("Bạn không có quyền sửa người dùng này.");
                 await _userRepos.UpdateUser(userDto);
-                return Ok(new { message = "Cập nhật thành công" }); 
+                return Ok(new { message = "Cập nhật thành công" });
             }
             catch (Exception ex)
             {
@@ -245,9 +245,9 @@ namespace API.Controllers
             try
             {
                 var result = await _userRepos.LockUser(username);
-                return Ok(new {username,result});
+                return Ok(new { username, result });
             }
-            catch ( Exception ex)
+            catch (Exception ex)
             {
                 return Content(ex.Message);
             }

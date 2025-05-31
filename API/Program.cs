@@ -1,4 +1,7 @@
-﻿using API.Data;
+﻿//using API.Data;
+//using API.Services;
+//using API.Services.Repositories;
+using API.Data;
 using API.Services;
 using API.Services.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -19,6 +22,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IStudent, StudentsRepos>();
 builder.Services.AddScoped<IUserRepos, UserRepos>();
 builder.Services.AddScoped<IClassRepos, ClassRepos>();

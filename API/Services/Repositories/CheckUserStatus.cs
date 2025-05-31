@@ -19,13 +19,12 @@ namespace API.Services.Repositories
                 var user = await dbContext.Users.FirstOrDefaultAsync(u => u.UserName == userName);
                 if (user == null || user.Statuss != true)
                 {
-                   context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     await context.Response.WriteAsync("Tài khoản đã bị khóa. Vui lòng đăng nhập lại bằng tài khoản khác.mại iu hẹ hẹ hẹ");
                     return;
                 }
             }
             await _next(context);
-        }      
+        }
     }
 }
- 

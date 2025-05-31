@@ -21,7 +21,9 @@ public partial class User
 
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
 
-    public virtual ICollection<Auditlog> Auditlogs { get; set; } = new List<Auditlog>();
+    public virtual ICollection<Auditlog> AuditlogPerformeByNavigations { get; set; } = new List<Auditlog>();
+
+    public virtual ICollection<Auditlog> AuditlogUsers { get; set; } = new List<Auditlog>();
 
     public virtual ICollection<Complaint> ComplaintProcessedByNavigations { get; set; } = new List<Complaint>();
 
