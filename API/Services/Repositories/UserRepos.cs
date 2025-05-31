@@ -306,16 +306,27 @@ namespace API.Services.Repositories
 
             if (await _context.Users.AnyAsync(u => u.Email == userd.Email && u.Id != upinsv.Id))
                 throw new Exception("Email đã được sử dụng.");
+
+            // Check for unique UserCode
+            if (!string.IsNullOrWhiteSpace(userd.UserCode))
+            {
+                bool userCodeExists = await _context.UserProfiles
+                    .AnyAsync(up => up.UserCode == userd.UserCode && up.UserId != upinsv.Id);
+                if (userCodeExists)
+                    throw new Exception("UserCode đã tồn tại.");
+            }
+
             upinsv.PassWordHash = PasswordHasher.HashPassword(userd.PassWordHash);
             upinsv.Email = userd.Email;
             upinsv.UserProfile.FullName = userd.FullName;
+            upinsv.UserProfile.UserCode = userd.UserCode;
             upinsv.UserProfile.Gender = userd.Gender;
             upinsv.PhoneNumber = userd.PhoneNumber;
             upinsv.UserProfile.Avatar = userd.Avatar;
             upinsv.UserProfile.Address = userd.Address;
             upinsv.Statuss = userd.Statuss;
             upinsv.UserProfile.Dob = userd.Dob.HasValue ? DateOnly.FromDateTime(userd.Dob.Value) : null;
-            
+
             _context.Users.Update(upinsv);
             await _context.SaveChangesAsync();
         }

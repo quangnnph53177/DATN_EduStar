@@ -13,6 +13,7 @@ namespace API.Controllers
     [ApiController]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public class UserController : ControllerBase
+
     {
         private readonly IUserRepos _userRepos;
         public UserController(IUserRepos userRepos)
@@ -28,8 +29,9 @@ namespace API.Controllers
 
             try
             {
-                var user = await _userRepos.Register(userDto);
-                return Ok(new { message = "Đăng ký thành công, vui lòng kiểm tra email để xác nhận.", userId = user.Id });
+
+                var createdUser = await _userRepos.Register(userDto);
+                return Ok(new { message = "Đăng ký thành công, vui lòng kiểm tra email để xác nhận.", userId = createdUser.Id });
             }
             catch (Exception ex)
             {
