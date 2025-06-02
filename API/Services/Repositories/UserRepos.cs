@@ -96,7 +96,7 @@ namespace API.Services.Repositories
                 {
                     UserId = user.Id,
                     StudentsCode = userCode,
-                    ClassCode = "Chưa rõ"
+              
                 });
             }
             // Gửi email xác nhận

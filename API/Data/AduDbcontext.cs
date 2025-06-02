@@ -305,7 +305,7 @@ public partial class AduDbcontext : DbContext
             entity.ToTable("StudentsInfor");
 
             entity.Property(e => e.UserId).ValueGeneratedNever();
-            entity.Property(e => e.ClassCode).HasMaxLength(90);
+       
             entity.Property(e => e.StudentsCode).HasMaxLength(50);
 
             entity.HasOne(d => d.User).WithOne(p => p.StudentsInfor)
