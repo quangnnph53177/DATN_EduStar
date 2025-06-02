@@ -27,6 +27,7 @@ builder.Services.AddScoped<IStudent, StudentsRepos>();
 builder.Services.AddScoped<IUserRepos, UserRepos>();
 builder.Services.AddScoped<IClassRepos, ClassRepos>();
 builder.Services.AddTransient<IEmailRepos, EmailRepos>();
+builder.Services.AddScoped<IAuditLogRepos, AuditLogRepos>();
 
 builder.Services.AddCors(options =>
 {

@@ -1,11 +1,15 @@
-﻿using API.Services;
+﻿using API.Data;
+using API.Models;
+using API.Services;
 using API.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using System.Globalization;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace API.Controllers
 {
@@ -16,9 +20,13 @@ namespace API.Controllers
 
     {
         private readonly IUserRepos _userRepos;
-        public UserController(IUserRepos userRepos)
+        private readonly IAuditLogRepos _logRepos;
+        private readonly AduDbcontext _context;
+        public UserController(IUserRepos userRepos, IAuditLogRepos auditLogRepos,AduDbcontext aduDbcontext)
         {
             _userRepos = userRepos;
+            _logRepos = auditLogRepos;
+            _context = aduDbcontext;
         }
         [Authorize(Policy = "CreateUS")]//Nếu chưa có tài khoản thì commit cái này lại để tạo tài khoản để đăng nhập
         [HttpPost("register")]
@@ -29,21 +37,44 @@ namespace API.Controllers
 
             try
             {
-
                 var createdUser = await _userRepos.Register(userDto);
+                var newData = JsonSerializer.Serialize(new
+                {
+                    createdUser.Id,
+                    createdUser.UserName,
+                    createdUser.Statuss 
+                });
+                Guid? performedByGuid = null;
+                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (Guid.TryParse(performedBy, out var userGuid))
+                {
+                    performedByGuid = userGuid;
+                }
+
+                // ✅ Kiểm tra performedBy có tồn tại trong DB  
+                var existed = await _context.Users.FindAsync(performedByGuid);
+                if (existed == null)
+                    return BadRequest("Người thực hiện không tồn tại.");
+
+                await _logRepos.LogAsync(performedByGuid, "Tạo tài khoản", null, newData, performedByGuid);
                 return Ok(new { message = "Đăng ký thành công, vui lòng kiểm tra email để xác nhận.", userId = createdUser.Id });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new
+                {
+                    error = ex.Message,
+                    inner = ex.InnerException?.Message
+                });
             }
         }
-        //[HttpGet("confirm")]
-        //public async Task<IActionResult> Confirm(string token)
-        //{
-        //    bool result = await _userRepos.ConfirmEmail(token);
-        //    return result ? Ok("Xác nhận thành công.") : BadRequest("Xác nhận thất bại.");
-        //}
+        [AllowAnonymous]
+        [HttpGet("confirm")]
+        public async Task<IActionResult> Confirm(string token)
+        {
+            bool result = await _userRepos.ConfirmEmail(token);
+            return result ? Ok("Xác nhận thành công.") : BadRequest("Xác nhận thất bại.");
+        }
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO loginDto)
@@ -131,8 +162,27 @@ namespace API.Controllers
                             Statuss = true,
                             CreateAt = DateTime.Now
                         };
-                        await _userRepos.Register(userDto);
+                        var createdUser = await _userRepos.Register(userDto);
                         usersCreated.Add(userName);
+                        var newData = JsonSerializer.Serialize(new
+                        {
+                            createdUser.Id,
+                            createdUser.UserName,
+                            createdUser.Statuss
+                        });
+                        Guid? performedByGuid = null;
+                        var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                        if (Guid.TryParse(performedBy, out var userGuid))
+                        {
+                            performedByGuid = userGuid;
+                        }
+
+                        // Kiểm tra performedBy có tồn tại trong DB  
+                        var existed = await _context.Users.FindAsync(performedByGuid);
+                        if (existed == null)
+                            return BadRequest("Người thực hiện không tồn tại.");
+
+                        await _logRepos.LogAsync(performedByGuid, "Tạo tài khoản", null, newData, performedByGuid);
                     }
                     catch (Exception exRow)
                     {
@@ -147,7 +197,36 @@ namespace API.Controllers
                 return BadRequest(new { error = "Lỗi khi xử lý file Excel: " + ex.Message });
             }
         }
+        [Authorize(Policy = "CreateUS")]
+        [HttpDelete("cleanup-unconfirmed")]
+        public async Task<IActionResult> CleanupUnconfirmed()
+        {
+            try
+            {
+                await _userRepos.CleanupUnconfirmedUsers();
 
+                // Ghi log
+                Guid? performedByGuid = null;
+                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (Guid.TryParse(performedBy, out var userGuid))
+                {
+                    performedByGuid = userGuid;
+                }
+
+                // Kiểm tra performedBy có tồn tại trong DB  
+                var existed = await _context.Users.FindAsync(performedByGuid);
+                if (existed == null)
+                    return BadRequest("Người thực hiện không tồn tại.");
+
+                await _logRepos.LogAsync(performedByGuid, "Xóa tài khoản chưa xác nhận", null, null, performedByGuid);
+
+                return Ok("Đã xóa tài khoản chưa xác nhận trong 7 ngày.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
         [Authorize(Policy = "DetailUS")]
         [HttpGet("user")]
         public async Task<IActionResult> GetAllUsers()
@@ -185,7 +264,7 @@ namespace API.Controllers
             {
                 var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
 
-                // 🔍 Lọc theo điều kiện tìm kiếm  
+                //  Lọc theo điều kiện tìm kiếm  
                 if (!string.IsNullOrWhiteSpace(username))
                     users = users.Where(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
 
@@ -230,7 +309,30 @@ namespace API.Controllers
                 var targetUser = allowedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
                 if (targetUser == null)
                     return Forbid("Bạn không có quyền sửa người dùng này.");
+
+                // Serialize old data
+                var oldData = System.Text.Json.JsonSerializer.Serialize(targetUser);
+
                 await _userRepos.UpdateUser(userDto);
+
+                // Lấy lại thông tin user sau khi update để log new data
+                var updatedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+                var updatedUser = updatedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
+                var newData = System.Text.Json.JsonSerializer.Serialize(updatedUser);
+
+                Guid? performedByGuid = null;
+                var performedBy = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (Guid.TryParse(performedBy, out var userGuid))
+                {
+                    performedByGuid = userGuid;
+                }
+
+                // Kiểm tra performedBy có tồn tại trong DB  
+                var existed = await _context.Users.FindAsync(performedByGuid);
+                if (existed == null)
+                    return BadRequest("Người thực hiện không tồn tại.");
+
+                await _logRepos.LogAsync(performedByGuid, "Sửa tài khoản", oldData, newData, performedByGuid);
                 return Ok(new { message = "Cập nhật thành công" });
             }
             catch (Exception ex)
@@ -239,12 +341,47 @@ namespace API.Controllers
             }
         }
         [Authorize(Policy = "CreateUS")]
-        [HttpGet("lock/{username}")]
+        [HttpPut("lock/{username}")]
         public async Task<IActionResult> LockUser(string username)
         {
             try
             {
                 var result = await _userRepos.LockUser(username);
+
+                // Ghi log
+                Guid? performedByGuid = null;
+                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (Guid.TryParse(performedBy, out var userGuid))
+                {
+                    performedByGuid = userGuid;
+                }
+
+                // Kiểm tra performedBy có tồn tại trong DB  
+                var existed = await _context.Users.FindAsync(performedByGuid);
+                if (existed == null)
+                    return BadRequest("Người thực hiện không tồn tại.");
+
+                // Lấy thông tin user bị khóa để log
+                var lockedUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
+                string? oldData = null;
+                string? newData = null;
+                if (lockedUser != null)
+                {
+                    oldData = JsonSerializer.Serialize(new
+                    {
+                        lockedUser.Id,
+                        lockedUser.UserName,
+                        Statuss = !lockedUser.Statuss // Trạng thái trước khi khóa (giả định là ngược lại)
+                    });
+                    newData = JsonSerializer.Serialize(new
+                    {
+                        lockedUser.Id,
+                        lockedUser.UserName,
+                        lockedUser.Statuss // Trạng thái sau khi khóa
+                    });
+                }
+
+                await _logRepos.LogAsync(performedByGuid, "Khóa tài khoản", oldData, newData, performedByGuid);
                 return Ok(new { username, result });
             }
             catch (Exception ex)
@@ -253,18 +390,121 @@ namespace API.Controllers
             }
         }
         [Authorize(Policy = "CreateUS")]
-        [HttpGet("changerole/{username}/{newRoleId}")]
+        [HttpPut("changerole/{username}/{newRoleId}")]
         public async Task<IActionResult> ChangeRole(string username, int newRoleId)
         {
             try
             {
+                // Lấy thông tin user trước khi đổi role để log oldData
+                var userBefore = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
+                string? oldData = null;
+                if (userBefore != null)
+                {
+                    oldData = JsonSerializer.Serialize(new
+                    {
+                        userBefore.Id,
+                        userBefore.UserName,
+                        userBefore.Statuss
+                    });
+                }
+
                 var result = await _userRepos.ChangeRole(username, newRoleId);
+
+                // Lấy thông tin user sau khi đổi role để log newData
+                var userAfter = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
+                string? newData = null;
+                if (userAfter != null)
+                {
+                    newData = JsonSerializer.Serialize(new
+                    {
+                        userAfter.Id,
+                        userAfter.UserName,
+                        userAfter.Statuss
+                    });
+                }
+
+                // Ghi log
+                Guid? performedByGuid = null;
+                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (Guid.TryParse(performedBy, out var userGuid))
+                {
+                    performedByGuid = userGuid;
+                }
+
+                // Kiểm tra performedBy có tồn tại trong DB  
+                var existed = await _context.Users.FindAsync(performedByGuid);
+                if (existed == null)
+                    return BadRequest("Người thực hiện không tồn tại.");
+
+                await _logRepos.LogAsync(performedByGuid, $"Đổi vai trò tài khoản sang roleId {newRoleId}", oldData, newData, performedByGuid);
+
                 return Ok(new { username, result });
             }
             catch (Exception ex)
             {
                 return Content(ex.Message);
             }
+        }
+        [AllowAnonymous]
+        [HttpPost("forgotpassword")]
+        public async Task<IActionResult> ForgotPassword([FromBody] string email)
+        {
+            if (string.IsNullOrEmpty(email))
+                return BadRequest("Email không được để trống.");
+            try
+            {
+                await _userRepos.ForgotPassword(email);
+                return Ok("Đã gửi email đặt lại mật khẩu nếu email tồn tại trong hệ thống.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+        [AllowAnonymous]
+        [HttpPut("resetpassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO resetDto)
+        {
+            if (resetDto == null || string.IsNullOrEmpty(resetDto.Token) || string.IsNullOrEmpty(resetDto.NewPassword))
+                return BadRequest("Dữ liệu không hợp lệ.");
+            try
+            {
+                var result = await _userRepos.ResetPassword(resetDto.Token, resetDto.NewPassword);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+        [HttpGet("log")]
+        public async Task<IActionResult> GetAuditLogs()
+        {
+             var roleIds = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => int.Parse(c.Value))
+                .ToList();
+
+            var currentUserName = User.Identity?.Name;
+
+            var logs = await _logRepos.GetAuditLogsAsync(roleIds, currentUserName);
+
+            var result = logs.Select(a => new AuditLogViewModel
+            {
+                Id = a.Id,
+                UserName = a.User?.UserName,
+                NewData = a.NewData,
+                OldData = a.OldData,
+                Active = a.Active,
+                Timestamp = a.Timestamp
+            });
+
+            return Ok(result);
+        }
+        public class ResetPasswordDTO
+        {
+            public string Token { get; set; } = null!;
+            public string NewPassword { get; set; } = null!;
         }
     }
 }
