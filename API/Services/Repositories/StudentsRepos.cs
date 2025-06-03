@@ -13,10 +13,13 @@ namespace API.Services.Repositories
     {
         private readonly AduDbcontext _context;
         private readonly IHttpContextAccessor _accessor;
-        public StudentsRepos(AduDbcontext context, IHttpContextAccessor accessor)
+        private readonly IEmailRepos _email;
+        
+        public StudentsRepos(AduDbcontext context, IHttpContextAccessor accessor, IEmailRepos emailRepos )
         {
             _context = context;
             _accessor = accessor;
+            _email = emailRepos;
         }
         private Guid GetCurrentUserId()
         {
@@ -26,20 +29,28 @@ namespace API.Services.Repositories
         public async Task<bool> DeleteStudent(Guid id)
         {
             var sv = await _context.Users
-            .Include(u => u.UserProfile)
-            .Include(u => u.StudentsInfor)
-            .ThenInclude(si => si.Classes)
-            .FirstOrDefaultAsync(u => u.Id == id);
+                .Include(u => u.UserProfile)
+                .Include(u => u.StudentsInfor)
+                .ThenInclude(si => si.Classes)
+                .FirstOrDefaultAsync(u => u.Id == id);
 
             if (sv == null)
+            {
+                Console.WriteLine("Không tìm thấy người dùng.");
                 return false;
+            }
 
-          
             if (sv.Statuss == true)
+            {
+                Console.WriteLine("Người dùng đang hoạt động, không thể xóa.");
                 return false;
+            }
 
             if (sv.StudentsInfor?.Classes != null && sv.StudentsInfor.Classes.Any())
+            {
+                Console.WriteLine("Người dùng đã được phân lớp, không thể xóa.");
                 return false;
+            }
 
             if (sv.UserProfile != null)
                 _context.UserProfiles.Remove(sv.UserProfile);
@@ -47,11 +58,12 @@ namespace API.Services.Repositories
             if (sv.StudentsInfor != null)
                 _context.StudentsInfors.Remove(sv.StudentsInfor);
 
-         
             _context.Users.Remove(sv);
-
             await _context.SaveChangesAsync();
+
+            Console.WriteLine("Xóa người dùng thành công.");
             return true;
+
         }
 
         public async Task<byte[]> ExportStudentsToExcel(List<StudentViewModels> model)
@@ -223,8 +235,8 @@ namespace API.Services.Repositories
         public async Task UpdateByBeast(StudentViewModels model)
         {
             var upinsv = await _context.Users
-    .Include(p => p.UserProfile)
-    .FirstOrDefaultAsync(d => d.Id == model.id);
+                .Include(p => p.UserProfile)
+                .FirstOrDefaultAsync(d => d.Id == model.id);
 
            
 
@@ -364,6 +376,31 @@ namespace API.Services.Repositories
         {
             var audit = _context.Auditlogs.Include(a=>a.PerformeByNavigation).Include(x => x.User).ToList();
             return audit;
+        }
+
+        public async Task SendNotificationtoClass(int classId, string subject)
+        {
+            var in4class = await _context.Classes
+                 .Include(s => s.Subject)
+                 .FirstOrDefaultAsync(c => c.Id == classId);
+            var lststudeninclass =await _context.Classes
+                .Where(c => c.Id == classId)
+                 .Include(s => s.Students)
+                 .ThenInclude(u => u.User)
+                 .Select(d => d.Students.FirstOrDefault().User.Email).ToListAsync();
+            string message = $"Xin chào các bạn sinh viên,\n\n" +
+                     $"Đây là thông báo về lớp học:\n" +
+                     $"- Tên lớp: {in4class.NameClass}\n" +
+                     $"- Môn học: {in4class.Subject.SubjectName}\n" +
+                     $"- Học kỳ: {in4class.Semester}\n" +
+                     $"- Năm học: {in4class.YearSchool}\n\n" +
+                     $"Vui lòng theo dõi thông tin và chuẩn bị học tập.\n\n" +
+                     $"Trân trọng,\nBan Quản Trị";
+            
+            foreach (var email in lststudeninclass)
+            {
+                await _email.SendEmail(email, subject, message);
+            }
         }
     }
 }

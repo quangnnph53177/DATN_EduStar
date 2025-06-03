@@ -2,6 +2,7 @@
 using API.ViewModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
 {
@@ -10,9 +11,11 @@ namespace API.Controllers
     public class StudentsController : ControllerBase
     {
         private readonly IStudent _service;
+      
         public StudentsController(IStudent service)
         {
             _service = service;
+            
         }
         [HttpGet]
         public async Task<IActionResult> Index()
@@ -100,19 +103,52 @@ namespace API.Controllers
             return Ok("Cập nhật trạng thái thành công.");
         }
         [HttpDelete]
-        public async Task<IActionResult> Delete(Guid Id)
+        public async Task<IActionResult> Delete(Guid id)
         {
+            // Kiểm tra lại thông tin sinh viên để xác định lý do
+            var sv = await _service.GetById(id);
+               
+            var result = await _service.DeleteStudent(id);
 
+            if (!result)
+            {
+                if (sv == null)
+                    return NotFound(new { message = "Không tìm thấy sinh viên." });
 
-            return Ok(await _service.DeleteStudent(Id));
+                if (sv.Status == true)
+                    return BadRequest(new { message = "Không thể xóa vì sinh viên đang hoạt động." });
 
+                if (sv.id != null )
+                    return BadRequest(new { message = "Không thể xóa vì sinh viên đã được phân lớp." });
+
+                return BadRequest(new { message = "Không thể xóa sinh viên vì lý do không xác định." });
+            }
+
+            return Ok(new { message = "Xóa sinh viên thành công." });
         }
+
         [HttpGet("search")]
-        public async Task<IActionResult> search(string Studencode, string fullName, string username, string email)
+        public async Task<IActionResult> Search(string studentCode, string fullName, string username, string email)
         {
-            var result = await _service.Search(Studencode, fullName, username, email);
+            // Kiểm tra nếu không có tiêu chí nào
+            if (string.IsNullOrWhiteSpace(studentCode) &&
+                string.IsNullOrWhiteSpace(fullName) &&
+                string.IsNullOrWhiteSpace(username) &&
+                string.IsNullOrWhiteSpace(email))
+            {
+                return BadRequest(new { message = "Vui lòng nhập ít nhất một tiêu chí tìm kiếm." });
+            }
+
+            var result = await _service.Search(studentCode, fullName, username, email);
+
+            if (result == null || !result.Any())
+            {
+                return NotFound(new { message = "Không tìm thấy sinh viên phù hợp." });
+            }
+
             return Ok(result);
         }
+
         [HttpGet("excel/{Id}")]
         public async Task<IActionResult> excelfile(int Id)
         {
@@ -122,6 +158,12 @@ namespace API.Controllers
             return File(exc,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 fileName);
+        }
+        [HttpPost("SendEmail")]
+        public async Task<IActionResult> SendtoClass(int classId, string subject)
+        {
+            await _service.SendNotificationtoClass(classId, subject );
+            return Ok();
         }
 
     }
