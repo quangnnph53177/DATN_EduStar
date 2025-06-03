@@ -38,7 +38,7 @@ namespace API.Services.Repositories
 
             if (await _context.Users.AnyAsync(u => u.Email == usd.Email))
                 throw new Exception("Email đã được sử dụng.");
-
+            //if(await _context.Users.)
             var hashedPassword = PasswordHasher.HashPassword(usd.PassWordHash);
 
             var roleIds = (usd.RoleIds == null || !usd.RoleIds.Any()) ? new List<int> { 3 } : usd.RoleIds;
@@ -107,22 +107,51 @@ namespace API.Services.Repositories
             await _emailService.SendEmail(user.Email, "Xác nhận email", message);
 
             _context.Users.Add(user);
-
+            
             await _context.SaveChangesAsync();
             return user;
         }
-        //public async Task<bool> ConfirmEmail(string token)
-        //{
-        //    var email = Encoding.UTF8.GetString(Convert.FromBase64String(token));
-        //    var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        public async Task<bool> ConfirmEmail(string token)
+        {
+            var decodedToken = HttpUtility.UrlDecode(token);
+            var email = Encoding.UTF8.GetString(Convert.FromBase64String(decodedToken));
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-        //    // Fix for CS0019: Explicitly check the nullable bool value using `.HasValue` and `.Value`.  
-        //    if (user == null || (user.Statuss.HasValue && user.Statuss.Value)) return false;
+            if (user == null)
+                return false;
 
-        //    user.Statuss = true;
-        //    await _context.SaveChangesAsync();
-        //    return true;
-        //}
+            if (!user.Statuss.HasValue || user.Statuss == false)
+            {
+                user.Statuss = true;
+                await _context.SaveChangesAsync();
+            }
+            return true;
+        }
+        public async Task CleanupUnconfirmedUsers()
+        {
+            var now = DateTime.UtcNow;
+
+            var expiredUsers = await _context.Users
+                .Where(u => u.Statuss == false && EF.Functions.DateDiffDay(u.CreateAt, now) >= 7)
+                .ToListAsync();
+
+            if (expiredUsers.Any())
+            {
+                // Xoá thêm các bản ghi liên quan nếu cần (UserProfile, StudentsInfor, ...)
+                var userIds = expiredUsers.Select(u => u.Id).ToList();
+
+                var profiles = await _context.UserProfiles.Where(p => userIds.Contains(p.UserId)).ToListAsync();
+                _context.UserProfiles.RemoveRange(profiles);
+
+                var students = await _context.StudentsInfors.Where(s => userIds.Contains(s.UserId)).ToListAsync();
+                _context.StudentsInfors.RemoveRange(students);
+
+                _context.Users.RemoveRange(expiredUsers);
+
+                await _context.SaveChangesAsync();
+            }
+        }
+
         public async Task<string> Login(string userName, string password)
         {
             if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
@@ -169,19 +198,6 @@ namespace API.Services.Repositories
 
             // Thêm Permission
             claims.AddRange(permissions.Select(p => new Claim("Permission", p)));
-
-            //// Thêm roles
-            //foreach (var role in user.Roles)
-            //{
-            //    claims.Add(new Claim(ClaimTypes.Role, role.RoleName));
-            //}
-
-            //// Thêm các Permission claim
-            //foreach (var perm in permissions)
-            //{
-            //    claims.Add(new Claim("Permission", perm));
-            //}
-
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
@@ -197,6 +213,7 @@ namespace API.Services.Repositories
             return tokenHandler.WriteToken(token);
         }
 
+
         public async Task<IEnumerable<UserDTO>> GetAllUsers(List<int> currentUserRoleIds, string? currentUserName)
         {
             IQueryable<User> query = _context.Users
@@ -206,7 +223,7 @@ namespace API.Services.Repositories
 
             if (currentUserRoleIds.Contains(1)) // Admin
             {
-                query = query.Where(u => u.Roles.Any(r => r.Id == 2 || r.Id == 3 || u.UserName == currentUserName));
+                query = query.Where(u => u.Roles.Any(r => r.Id==1 || r.Id == 2 || r.Id == 3 || u.UserName == currentUserName));
             }
             else if (currentUserRoleIds.Contains(2)) // Giảng viên
             {
@@ -236,53 +253,7 @@ namespace API.Services.Repositories
             });
         }
 
-        //public async Task<UserDTO> SearchUser(string? username, string? usercode, string? fullname, string? email)
-        //{
-        //    var query = _context.Users.Include(u => u.UserProfile).Include(s => s.StudentsInfor).AsSplitQuery();
-        //    if (!string.IsNullOrWhiteSpace(username))
-        //    {
-        //        query = query.Where(u => u.UserName == username);
-        //    }
-
-        //    if (!string.IsNullOrWhiteSpace(usercode))
-        //    {
-        //        query = query.Where(u => u.UserProfile.UserCode.Contains(usercode)); 
-        //    }
-
-        //    if (!string.IsNullOrWhiteSpace(fullname))
-        //    {
-        //        query = query.Where(u => u.UserProfile.FullName.Contains(fullname));
-        //    }
-
-        //    if (!string.IsNullOrWhiteSpace(email))
-        //    {
-        //        query = query.Where(u => u.Email.Contains(email));
-        //    }
-
-        //    var user = await query.FirstOrDefaultAsync();
-        //    if (user == null)
-        //        throw new Exception("Không tìm thấy người dùng.");
-        //    var userDto = new UserDTO
-        //    {
-        //        UserName = user.UserName,
-        //        //PassWordHash = user.PassWordHash,
-        //        Email = user.Email,
-        //        PhoneNumber = user.PhoneNumber,
-        //        Statuss = user.Statuss ?? true,
-        //        CreateAt = user.CreateAt,
-
-        //        FullName = user.UserProfile?.FullName,
-        //        Gender = user.UserProfile?.Gender,
-        //        Avatar = user.UserProfile?.Avatar,
-        //        Address = user.UserProfile?.Address,
-        //        Dob = user.UserProfile?.Dob.HasValue == true ? user.UserProfile.Dob.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null,
-
-        //        RoleIds = user.Roles.Select(r => r.Id).ToList()
-        //    };
-
-        //    return userDto;
-        //}
-
+       
         public async Task<string> LockUser(string userName)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
@@ -352,10 +323,35 @@ namespace API.Services.Repositories
             await _context.SaveChangesAsync();
             return $"Đã đổi vai trò thành công sang: {newRole.RoleName}";
         }
-        // public async Task ForgetPassword(string email)
-        //{
+        public async Task ForgotPassword(string email)
+        {
+            var user =await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+                throw new Exception("Email không tồn tại. Hãy sử dụng email khác.");
+            // Tạo token xác nhận email
+            var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(user.Email));
+            var forgotpasswordLink = $"https://localhost:7298/api/User/forgot-password?token={HttpUtility.UrlEncode(token)}";
 
-        //}
+            string message = $"Vui lòng xác nhận email bằng cách <a href='{forgotpasswordLink}'>nhấn vào đây.</a>";
+            await _emailService.SendEmail(user.Email, "Đặt lại mật khẩu", message);
+
+        }
+        public async Task<string> ResetPassword(string token, string newPassword)
+        {
+            var decodedToken = HttpUtility.UrlDecode(token);
+            var email = Encoding.UTF8.GetString(Convert.FromBase64String(decodedToken));
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+                throw new Exception("Email không tồn tại.");
+            // Kiểm tra mật khẩu mới
+            if (string.IsNullOrWhiteSpace(newPassword))
+                throw new Exception("Mật khẩu mới không được để trống.");
+            // Hash mật khẩu mới
+            user.PassWordHash = PasswordHasher.HashPassword(newPassword);
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return "Đặt lại mật khẩu thành công.";
+        }
         public static class PasswordHasher
         {
             private const int SaltSize = 16; // 128-bit salt
