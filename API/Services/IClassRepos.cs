@@ -10,5 +10,10 @@ namespace API.Services
         Task AddClassAsync(ClassViewModel classViewModel);
         Task UpdateClassAsync(int id, ClassViewModel classViewModel);
         Task DeleteClassAsync(int id);
+        Task<IEnumerable<ClassViewModel>> SearchClassesAsync(string keyword);
+        Task<bool> AssignStudentToClassAsync(int classId, Guid studentId);
+        Task<bool> StudentRegisterClassAsync(int classId, Guid studentId);
+        Task<bool> RemoveStudentFromClassAsync(int classId, Guid studentId);
+        Task<IEnumerable<string>> GetClassHistoryAsync(int classId);
     }
 }

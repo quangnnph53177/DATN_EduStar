@@ -299,5 +299,83 @@ namespace API.Services.Repositories
                 throw new ArgumentException($"Subject with name '{classViewModel.SubjectName}' does not exist. Please create the subject first.", nameof(classViewModel.SubjectName));
             }
         }
+
+        public async Task<IEnumerable<ClassViewModel>> SearchClassesAsync(string keyword)
+        {
+            if (string.IsNullOrWhiteSpace(keyword))
+                return await GetAllClassesAsync();
+
+            keyword = keyword.Trim().ToLower();
+            return await _context.Classes
+                .Include(c => c.Subject)
+                .Where(c =>
+                    c.NameClass.ToLower().Contains(keyword) ||
+                    c.Semester.ToLower().Contains(keyword) ||
+                    (c.Subject != null && c.Subject.SubjectName.ToLower().Contains(keyword))
+                )
+                .Select(c => new ClassViewModel
+                {
+                    ClassName = c.NameClass,
+                    SubjectName = c.Subject != null ? c.Subject.SubjectName : "",
+                    Semester = c.Semester,
+                    YearSchool = c.YearSchool ?? 0,
+                    NumberOfCredits = c.Subject != null ? c.Subject.NumberOfCredits ?? 0 : 0
+                })
+                .ToListAsync();
+        }
+
+        public async Task<bool> AssignStudentToClassAsync(int classId, Guid studentId)
+        {
+            var classEntity = await _context.Classes
+                .Include(c => c.Students)
+                .FirstOrDefaultAsync(c => c.Id == classId);
+            var student = await _context.StudentsInfors.FindAsync(studentId);
+
+            if (classEntity == null || student == null)
+                return false;
+
+            if (!classEntity.Students.Any(s => s.UserId == studentId))
+            {
+                classEntity.Students.Add(student);
+                await _context.SaveChangesAsync();
+            }
+            return true;
+        }
+
+        public async Task<bool> StudentRegisterClassAsync(int classId, Guid studentId)
+        {
+            // Có thể thêm kiểm tra điều kiện đăng ký ở đây nếu cần
+            return await AssignStudentToClassAsync(classId, studentId);
+        }
+
+        public async Task<bool> RemoveStudentFromClassAsync(int classId, Guid studentId)
+        {
+            var classEntity = await _context.Classes
+                .Include(c => c.Students)
+                .FirstOrDefaultAsync(c => c.Id == classId);
+
+            if (classEntity == null)
+                return false;
+
+            var student = classEntity.Students.FirstOrDefault(s => s.UserId == studentId);
+            if (student != null)
+            {
+                classEntity.Students.Remove(student);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<IEnumerable<string>> GetClassHistoryAsync(int classId)
+        {
+            var history = await _context.ClassChanges
+                .Where(cc => cc.CurrentClassId == classId || cc.RequestedClassId == classId)
+                .Select(cc => $"ComplaintId: {cc.ComplaintId}, From: {cc.CurrentClassId}, To: {cc.RequestedClassId}")
+                .ToListAsync();
+
+            return history;
+        }
+
     }
 }
