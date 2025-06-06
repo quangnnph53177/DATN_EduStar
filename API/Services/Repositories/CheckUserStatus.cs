@@ -20,7 +20,7 @@ namespace API.Services.Repositories
                 if (user == null || user.Statuss != true)
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    await context.Response.WriteAsync("Tài khoản đã bị khóa. Vui lòng đăng nhập lại bằng tài khoản khác.mại iu hẹ hẹ hẹ");
+                    await context.Response.WriteAsync("Tài khoản đã bị khóa. Vui lòng đăng nhập lại bằng tài khoản khác.mại iu hẹ hẹ hẹ cái db");
                     return;
                 }
             }

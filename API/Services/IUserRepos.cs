@@ -9,11 +9,13 @@ namespace API.Services
         //Task<UserDTO> SearchUser(string? username, string? usercode, string? fullname, string? email);
         Task<IEnumerable<UserDTO>> GetAllUsers(List<int> currentUserRoleIds, string? currentUserName);
         Task<User> Register(UserDTO user);
+        Task CleanupUnconfirmedUsers();
         Task<string> Login(string userName, string password);
         Task UpdateUser(UserDTO userd);
-        //Task<bool> ConfirmEmail(string token);
+        Task<bool> ConfirmEmail(string token);
         Task<string> LockUser(string userName);
         Task<string> ChangeRole(string userName, int newRoleId);
-        // Task ForgetPassword(string email);
+        Task ForgotPassword(string email);
+        Task<string> ResetPassword(string token, string newPassword);
     }
 }

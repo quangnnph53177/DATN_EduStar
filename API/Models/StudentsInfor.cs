@@ -9,8 +9,6 @@ public partial class StudentsInfor
 
     public string? StudentsCode { get; set; }
 
-    public string? ClassCode { get; set; }
-
     public virtual ICollection<AttendanceDetail> AttendanceDetails { get; set; } = new List<AttendanceDetail>();
 
     public virtual User User { get; set; } = null!;
