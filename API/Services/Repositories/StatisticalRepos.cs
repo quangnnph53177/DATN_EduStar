@@ -11,17 +11,17 @@ namespace API.Services.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<RoomStudy>> GetRoomStudies()
-        {
-            var room = _context.Rooms
+        //public async Task<IEnumerable<RoomStudy>> GetRoomStudies()
+        //{
+        //    var room = _context.Rooms
                 
-                .Select(r => new RoomStudy
-                {
-                    RoomCode = r.RoomCode,
-                    Total = r.Device.Count()
-                }).ToList();
-            return room;
-        }
+        //        .Select(r => new RoomStudy
+        //        {
+        //            RoomCode = r.RoomCode,
+        //            Total = r.Device.Count()
+        //        }).ToList();
+        //    return room;
+        //}
 
         public async Task<IEnumerable<StudentByAddressDTO>> GetStudentByAddress()
         {

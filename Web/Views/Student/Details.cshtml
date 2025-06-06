@@ -1,0 +1,96 @@
+﻿@model API.ViewModel.StudentViewModels
+
+@{
+    ViewData["Title"] = "Chi tiết sinh viên";
+}
+<h1>Chi tiết sinh viên</h1>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Tên đăng nhập</dt>
+        <dd class="col-sm-10">@Model.UserName</dd>
+
+        <dt class="col-sm-2">Mã sinh viên</dt>
+        <dd class="col-sm-10">@Model.StudentCode</dd>
+
+        <dt class="col-sm-2">Email</dt>
+        <dd class="col-sm-10">@Model.Email</dd>
+
+        <dt class="col-sm-2">Số điện thoại</dt>
+        <dd class="col-sm-10">@Model.PhoneNumber</dd>
+
+        <dt class="col-sm-2">Họ tên</dt>
+        <dd class="col-sm-10">@Model.FullName</dd>
+
+        <dt class="col-sm-2">Giới tính</dt>
+        <dd class="col-sm-10">
+            @(Model.Gender.HasValue ? (Model.Gender.Value ? "Nam" : "Nữ") : "Không rõ")
+        </dd>
+
+        <dt class="col-sm-2">Ngày sinh</dt>
+        <dd class="col-sm-10">
+            @(Model.Dob.HasValue ? Model.Dob.Value.ToString("dd/MM/yyyy") : "Chưa cập nhật")
+        </dd>
+
+        <dt class="col-sm-2">Địa chỉ</dt>
+        <dd class="col-sm-10">@Model.Address</dd>
+
+        <dt class="col-sm-2">Avatar</dt>
+        <dd class="col-sm-10">
+            @if (!string.IsNullOrEmpty(Model.Avatar))
+            {
+                <img src="@Model.Avatar" alt="Avatar" width="100" height="100" />
+            }
+            else
+            {
+                <span>Không có</span>
+            }
+        </dd>
+
+        <dt class="col-sm-2">Trạng thái</dt>
+        <dd class="col-sm-10">
+            @(Model.Status ? "Đang hoạt động" : "Đã khóa")
+        </dd>
+
+        <dt class="col-sm-2">Danh sách lớp</dt>
+        <dd class="col-sm-10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Tên lớp</th>
+                        <th>Môn học</th>
+                        <th>Học kỳ</th>
+                        <th>Năm học</th>
+                        <th>Số tín chỉ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.CVMs)
+                    {
+                        <tr>
+                            <td>@item.ClassName</td>
+                            <td>@item.SubjectName</td>
+                            <td>@item.Semester</td>
+                            <td>@item.YearSchool</td>
+                            <td>@item.NumberOfCredits</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </dd>
+    </dl>
+</div>
+
+<div class="mb-3">
+    <form asp-action="Lock" asp-controller="Student" asp-route-id="@Model.id" method="post" style="display:inline;">
+        <button type="submit" class="btn btn-sm @(Model.Status ? "btn-danger" : "btn-success")">
+            @(Model.Status ? "Khóa tài khoản" : "Mở khóa")
+        </button>
+    </form>
+</div>
+
+<div>
+    @Html.ActionLink("Chỉnh sửa", "EditBoss", new { id = Model.id }, new { @class = "btn btn-warning" }) |
+    <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+</div>

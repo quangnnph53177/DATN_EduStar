@@ -1,0 +1,91 @@
+﻿@using Web.ViewModels
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Thống kê tổng quan";
+}
+
+<h2 class="text-center mb-4">Thống kê sinh viên</h2>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <h5 class="text-center">Theo Giới tính</h5>
+        <canvas id="genderChart"></canvas>
+    </div>
+    <div class="col-md-6 mb-4">
+        <h5 class="text-center">Theo Trạng thái</h5>
+        <canvas id="statusChart"></canvas>
+    </div>
+    <div class="col-md-6 mb-4">
+        <h5 class="text-center">Theo Lớp</h5>
+        <canvas id="classChart"></canvas>
+    </div>
+    <div class="col-md-6 mb-4">
+        <h5 class="text-center">Theo Địa chỉ</h5>
+        <canvas id="addressChart"></canvas>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const genderCtx = document.getElementById('genderChart');
+        new Chart(genderCtx, {
+            type: 'pie',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.studentByGender.Select(x => x.Gender))),
+                datasets: [{
+                    data: @Html.Raw(Json.Serialize(Model.studentByGender.Select(x => x.Total))),
+                    backgroundColor: ['#36A2EB', '#FF6384']
+                }]
+            }
+        });
+
+        const statusCtx = document.getElementById('statusChart');
+        new Chart(statusCtx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.studentByStatus.Select(x => x.status))),
+                datasets: [{
+                    label: 'Số lượng',
+                    data: @Html.Raw(Json.Serialize(Model.studentByStatus.Select(x => x.Total))),
+                    backgroundColor: ['#4BC0C0', '#FFCE56']
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+        });
+
+        const classCtx = document.getElementById('classChart');
+        new Chart(classCtx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.studentByClass.Select(x => x.ClassName))),
+                datasets: [{
+                    label: 'Số lượng',
+                    data: @Html.Raw(Json.Serialize(Model.studentByClass.Select(x => x.Total))),
+                    backgroundColor: '#9966FF'
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+        });
+
+        const addressCtx = document.getElementById('addressChart');
+        new Chart(addressCtx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.studentByAddress.Select(x => x.Address))),
+                datasets: [{
+                    label: 'Số lượng',
+                    data: @Html.Raw(Json.Serialize(Model.studentByAddress.Select(x => x.Total))),
+                    backgroundColor: '#FF9F40'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                    x: { ticks: { autoSkip: false, maxRotation: 90, minRotation: 45 } }
+                }
+            }
+        });
+    </script>
+}

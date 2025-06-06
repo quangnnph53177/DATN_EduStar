@@ -27,13 +27,11 @@ builder.Services.AddScoped<IStudent, StudentsRepos>();
 builder.Services.AddScoped<IUserRepos, UserRepos>();
 builder.Services.AddScoped<IClassRepos, ClassRepos>();
 builder.Services.AddTransient<IEmailRepos, EmailRepos>();
-<<<<<<< HEAD
 builder.Services.AddScoped<IStatistical , StatisticalRepos>();
 builder.Services.AddScoped<IShedulesRepos, ScheduleRepos>();
-=======
 builder.Services.AddScoped<IAuditLogRepos, AuditLogRepos>();
 
->>>>>>> 3710f3e745946b95eb649d179b92fac8b54d3188
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>

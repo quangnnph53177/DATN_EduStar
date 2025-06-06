@@ -8,6 +8,6 @@ namespace API.Services
         Task<IEnumerable<StudentByGenderDTO>> GetStudentByGender();
         Task<IEnumerable<StudentByAddressDTO>> GetStudentByAddress();
         Task<IEnumerable<StudentByStatusDTO>> GetStudentByStatus();
-        Task<IEnumerable<RoomStudy>> GetRoomStudies();
+       // Task<IEnumerable<RoomStudy>> GetRoomStudies();
     }
 }

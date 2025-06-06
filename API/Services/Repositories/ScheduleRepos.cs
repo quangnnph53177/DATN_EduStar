@@ -16,8 +16,8 @@ namespace API.Services.Repositories
         public async Task AutogenerateSchedule()
         {
             var classes = _context.Classes
-    .Include(c => c.Schedules)
-    .ToList();
+                .Include(c => c.Schedules)
+                .ToList();
 
             var classnoschedules = classes
                 .Where(c => c.Schedules == null || !c.Schedules.Any())
@@ -85,11 +85,13 @@ namespace API.Services.Repositories
                 _context.Schedules.AddRange(newSchedules);
                 await _context.SaveChangesAsync();
             }
-
+        }
+        public async Task CreateSchedules(SchedulesViewModel model)
+        {
+              
 
         }
-
-
+        
         public async Task<List<Schedule>> GetAll()
         {
             var schedule =await _context.Schedules

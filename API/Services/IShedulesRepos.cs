@@ -8,5 +8,6 @@ namespace API.Services
         Task<List<Schedule>> GetAll();
         Task<List<SchedulesViewModel>> GetByStudent(Guid Id);
         Task AutogenerateSchedule();
+        Task CreateSchedules(SchedulesViewModel model);
     }
 }

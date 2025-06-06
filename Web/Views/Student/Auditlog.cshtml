@@ -1,0 +1,75 @@
+﻿@model IEnumerable<API.ViewModel.AuditLogViewModel>
+
+@{
+    ViewData["Title"] = "Audit Log";
+}
+
+<h1 class="mt-4 mb-4 text-primary">Audit Log</h1>
+
+<table class="table table-bordered table-striped table-hover">
+    <thead class="table-dark text-center">
+        <tr>
+            <th style="width: 5%">ID</th>
+            <th style="width: 12%">User Name</th>
+            <th style="width: 8%">Active</th>
+            <th style="width: 20%">Old Data</th>
+            <th style="width: 20%">New Data</th>
+            <th style="width: 15%">Performed By</th>
+            <th style="width: 15%">Timestamp</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td class="text-center">@item.Id</td>
+                <td>@item.UserName</td>
+                <td class="text-center">@item.Active</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#oldDataModal_@item.Id">
+                        Xem
+                    </button>
+
+                    <!-- Modal OldData -->
+                    <div class="modal fade" id="oldDataModal_@item.Id" tabindex="-1" aria-labelledby="oldDataLabel_@item.Id" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="oldDataLabel_@item.Id">Old Data</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <pre>@item.OldData</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#newDataModal_@item.Id">
+                        Xem
+                    </button>
+
+                    <!-- Modal NewData -->
+                    <div class="modal fade" id="newDataModal_@item.Id" tabindex="-1" aria-labelledby="newDataLabel_@item.Id" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="newDataLabel_@item.Id">New Data</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <pre>@item.NewData</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+
+                <td>@item.PerformeByName</td>
+                <td>@item.Timestamp</td>
+            </tr>
+        }
+    </tbody>
+</table>

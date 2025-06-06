@@ -1,0 +1,85 @@
+﻿@model IEnumerable<API.ViewModel.StudentViewModels>
+
+@{
+    ViewData["Title"] = "Student List";
+}
+
+<h2>Student List</h2>
+<div class="mb-3 text-end">
+    <form asp-action="Export" method="post">
+        <button type="submit" class="btn btn-success">
+            📥 Xuất danh sách sinh viên
+        </button>
+    </form>
+
+</div>
+<form asp-action="Index" method="get" class="row g-3 mb-4">
+    <div class="col-md-2">
+        <input class="form-control" name="studentCode" placeholder="Mã SV" value="@Context.Request.Query["studentCode"]" />
+    </div>
+    <div class="col-md-2">
+        <input class="form-control" name="fullName" placeholder="Họ tên" value="@Context.Request.Query["fullName"]" />
+    </div>
+    <div class="col-md-2">
+        <input class="form-control" name="username" placeholder="Username" value="@Context.Request.Query["username"]" />
+    </div>
+    <div class="col-md-2">
+        <input class="form-control" name="email" placeholder="Email" value="@Context.Request.Query["email"]" />
+    </div>
+  @*   <div class="col-md-2">
+      @{
+    var selectedGender = Context.Request.Query["gender"].ToString();
+}
+
+<select name="gender" class="form-select">
+    <option value="" @(string.IsNullOrEmpty(selectedGender) ? "selected" : "")>-- Giới tính --</option>
+    <option value="true" @(selectedGender == "true" ? "selected" : "")>Nam</option>
+    <option value="false" @(selectedGender == "false" ? "selected" : "")>Nữ</option>
+</select>
+
+    </div> *@
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
+    </div>
+    <div class="col-md-2">
+        <button asp-action="Index" class="btn btn-primary w-100">Đặt l</button>
+    </div>
+</form>
+
+<div class="row">
+    @foreach (var student in Model)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                @if (!string.IsNullOrEmpty(student.Avatar))
+                {
+                    <img src="@student.Avatar" class="card-img-top" alt="Avatar" style="height: 200px; object-fit: cover;" />
+                }
+                else
+                {
+                    <img src="https://via.placeholder.com/200x200?text=No+Avatar" class="card-img-top" alt="No Avatar" />
+                }
+
+                <div class="card-body">
+                    <h5 class="card-title">@student.FullName</h5>
+                    <p class="card-text">
+                        <strong>Student Code:</strong> @student.StudentCode <br />
+                        <strong>User Name:</strong> @student.UserName <br />
+                        <strong>Email:</strong> @student.Email <br />
+                        <strong>Phone:</strong> @student.PhoneNumber <br />
+                        <strong>Gender:</strong> @(student.Gender.HasValue ? (student.Gender.Value ? "Male" : "Female") : "Unknown") <br />
+                        <strong>DOB:</strong> @student.Dob?.ToString("dd/MM/yyyy") <br />
+                        <strong>Address:</strong> @student.Address <br />
+                        <strong>Status:</strong> @(student.Status ? "Active" : "Inactive")
+                    </p>
+                </div>
+                <div class="card-footer text-center">
+                    @Html.ActionLink("Edit", "EditBoss", new { id = student.id }, new { @class = "btn btn-primary btn-sm mx-1" })
+                    @Html.ActionLink("Details", "Details", new { id = student.id }, new { @class = "btn btn-info btn-sm mx-1" })
+                    @Html.ActionLink("Delete", "Delete", new { id = student.id }, new { @class = "btn btn-danger btn-sm mx-1" })
+                   
+                </div>
+            </div>
+        </div>
+    }
+</div>

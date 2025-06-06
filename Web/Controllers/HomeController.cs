@@ -7,10 +7,12 @@ namespace Web.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
+        private readonly HttpClient _client;
+        public HomeController(ILogger<HomeController> logger, HttpClient client)
         {
             _logger = logger;
+            _client = client;
+            _client.BaseAddress = new Uri("https://localhost:7298/");
         }
 
         public IActionResult Index()
@@ -22,6 +24,8 @@ namespace Web.Controllers
         {
             return View();
         }
+      
+
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

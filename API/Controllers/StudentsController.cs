@@ -11,32 +11,33 @@ namespace API.Controllers
     public class StudentsController : ControllerBase
     {
         private readonly IStudent _service;
-      
+
         public StudentsController(IStudent service)
         {
             _service = service;
-            
+
         }
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender)
         {
-            var itemindex = await _service.GetAllStudents();
-            if (itemindex == null) return null;
-            var addst = itemindex.Select(u => new StudentViewModels
+            if (string.IsNullOrEmpty(StudentCode) &&
+                    string.IsNullOrEmpty(fullName) &&
+                    string.IsNullOrEmpty(username) &&
+                    string.IsNullOrEmpty(email) &&
+                        gender == null)
             {
-                id = u.UserId,
-                FullName = u.User.UserProfile.FullName,
-                UserName = u.User.UserName,
-                Email = u.User.Email,
-                PhoneNumber = u.User.PhoneNumber,
-                StudentCode = u.StudentsCode,
-                Gender = u.User.UserProfile.Gender,
-                Avatar = u.User.UserProfile.Avatar,
-                Address = u.User.UserProfile.Address,
-                Dob = u.User.UserProfile.Dob,
-                Status = u.User.Statuss.GetValueOrDefault(),
-            });
-            return Ok(addst);
+                var itemindex = await _service.GetAllStudents();
+
+                return Ok(itemindex);
+            }
+            var result = await _service.Search(StudentCode, fullName, username, email, gender);
+
+            if (result == null || !result.Any())
+            {
+                return NotFound(new { message = "Không tìm thấy sinh viên phù hợp." });
+            }
+
+            return Ok(result);
         }
         [HttpGet("auditlog")]
         public async Task<IActionResult> Log()
@@ -51,7 +52,7 @@ namespace API.Controllers
                 OldData = a.OldData,
                 Active = a.Active,
                 Timestamp = a.Timestamp,
-              
+
             });
             return Ok(result);
         }
@@ -60,7 +61,7 @@ namespace API.Controllers
         {
             return Ok(await _service.GetById(Id));
         }
-        [HttpPut("boss")]
+        [HttpPut("boss/{id}")]
         public async Task<IActionResult> UpdateWithBoss(Guid id, [FromBody] StudentViewModels model)
         {
             if (id != model.id)
@@ -78,7 +79,7 @@ namespace API.Controllers
                 return BadRequest(new { message = $"Lỗi khi cập nhật: {ex.Message}" });
             }
         }
-        [HttpPut("beast")]
+        [HttpPut("beast/{id}")]
         public async Task<IActionResult> UpdateWithbeast(Guid Id, [FromBody] StudentViewModels model)
         {
             if (Id != model.id)
@@ -102,7 +103,7 @@ namespace API.Controllers
             if (!result) return NotFound("Không tìm thấy sinh viên.");
             return Ok("Cập nhật trạng thái thành công.");
         }
-        [HttpDelete]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
             // Kiểm tra lại thông tin sinh viên để xác định lý do
@@ -127,32 +128,33 @@ namespace API.Controllers
             return Ok(new { message = "Xóa sinh viên thành công." });
         }
 
-        [HttpGet("search")]
-        public async Task<IActionResult> Search(string studentCode, string fullName, string username, string email)
+        //[HttpGet("search")]
+        //public async Task<IActionResult> Search(string StudentCode, string fullName, string username, string email,bool gender)
+        //{
+        //    // Kiểm tra nếu không có tiêu chí nào
+        //    if (string.IsNullOrEmpty(StudentCode) &&
+        //        string.IsNullOrEmpty(fullName) &&
+        //        string.IsNullOrEmpty(username) &&
+        //        string.IsNullOrEmpty(email) &&
+        //            gender == null)
+        //    {
+        //        return BadRequest(new { message = "Vui lòng nhập ít nhất một tiêu chí tìm kiếm." });
+        //    }
+
+        //    var result = await _service.Search(StudentCode, fullName, username, email,gender);
+
+        //    if (result == null || !result.Any())
+        //    {
+        //        return NotFound(new { message = "Không tìm thấy sinh viên phù hợp." });
+        //    }
+
+        //    return Ok(result);
+        //}
+
+        [HttpGet("excel")]
+        public async Task<IActionResult> excelfile()
         {
-            // Kiểm tra nếu không có tiêu chí nào
-            if (string.IsNullOrWhiteSpace(studentCode) &&
-                string.IsNullOrWhiteSpace(fullName) &&
-                string.IsNullOrWhiteSpace(username) &&
-                string.IsNullOrWhiteSpace(email))
-            {
-                return BadRequest(new { message = "Vui lòng nhập ít nhất một tiêu chí tìm kiếm." });
-            }
-
-            var result = await _service.Search(studentCode, fullName, username, email);
-
-            if (result == null || !result.Any())
-            {
-                return NotFound(new { message = "Không tìm thấy sinh viên phù hợp." });
-            }
-
-            return Ok(result);
-        }
-
-        [HttpGet("excel/{Id}")]
-        public async Task<IActionResult> excelfile(int Id)
-        {
-            var cls = await _service.GetStudentsByClass(Id);
+            var cls = await _service.GetAllStudents();
             var exc = await _service.ExportStudentsToExcel(cls);
             var fileName = $"DanhSach_SinhVien_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
             return File(exc,

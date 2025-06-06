@@ -32,11 +32,19 @@ namespace API.Services.Repositories
                 .Include(u => u.UserProfile)
                 .Include(u => u.StudentsInfor)
                 .ThenInclude(si => si.Classes)
+                .Include(r=>r.Roles)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
             if (sv == null)
             {
                 Console.WriteLine("Không tìm thấy người dùng.");
+                return false;
+            }
+
+            // Kiểm tra có phải sinh viên (RoleId = 3)
+            if (sv.Roles.FirstOrDefault().Id != 3)
+            {
+                Console.WriteLine("Chỉ được xóa người dùng là sinh viên.");
                 return false;
             }
 
@@ -63,7 +71,6 @@ namespace API.Services.Repositories
 
             Console.WriteLine("Xóa người dùng thành công.");
             return true;
-
         }
 
         public async Task<byte[]> ExportStudentsToExcel(List<StudentViewModels> model)
@@ -99,17 +106,31 @@ namespace API.Services.Repositories
             return package.GetAsByteArray();
         }
 
-        public async Task<List<StudentsInfor>> GetAllStudents()
+        public async Task<List<StudentViewModels>> GetAllStudents()
         {
             var lstSv = await _context.StudentsInfors
                 .Include(s => s.User)
                     .ThenInclude(u => u.UserProfile)
                 .Include(s => s.User)
                     .ThenInclude(u => u.Roles)
-                .Where(s => s.User.Roles.Any(r => r.Id == 1))
+                .Where(s => s.User.Roles.Any(r => r.Id == 3))
                 .AsSplitQuery()
                 .ToListAsync();
-            return lstSv;
+          var student = lstSv.Select(u=> new StudentViewModels
+          {
+              id = u.UserId,
+              FullName = u.User?.UserProfile?.FullName ?? "N/A",
+              UserName = u.User?.UserName ?? "N/A",
+              Email = u.User?.Email ?? "N/A",
+              PhoneNumber = u.User?.PhoneNumber ?? "N/A",
+              StudentCode = u.StudentsCode ?? "N/A",
+              Gender = u.User?.UserProfile?.Gender ?? false,
+              Avatar = u.User?.UserProfile?.Avatar ?? "N/A",
+              Address = u.User?.UserProfile?.Address ?? "N/A",
+              Dob = u.User?.UserProfile?.Dob,
+              Status = u.User?.Statuss ?? false
+          }).ToList();
+          return student;
         }
 
         public async Task<StudentViewModels> GetById(Guid Id)
@@ -192,45 +213,47 @@ namespace API.Services.Repositories
             return true;
         }
 
-        public async Task<List<StudentViewModels>> Search(string Studencode, string fullName, string username, string email)
+        public async Task<List<StudentViewModels>> Search(string? Studencode, string? fullName, string? username, string? email, bool? gender)
         {
             var query = _context.Users.Include(u => u.UserProfile).Include(s => s.StudentsInfor).AsSplitQuery();
             if (!string.IsNullOrWhiteSpace(fullName))
             {
-                query = query.Where(f => f.UserProfile.FullName.Contains(fullName));
+                query = query.Where(f => f.UserProfile.FullName.ToLower().Contains(fullName));
             }
             if (!string.IsNullOrWhiteSpace(Studencode))
             {
-                query = query.Where(f => f.StudentsInfor.StudentsCode.Contains(Studencode));
+                query = query.Where(f => f.StudentsInfor.StudentsCode.ToLower().Contains(Studencode));
             }
             if (!string.IsNullOrWhiteSpace(username))
             {
-                query = query.Where(f => f.UserName.Contains(username));
+                query = query.Where(f => f.UserName.ToLower().Contains(username));
             }
             if (!string.IsNullOrWhiteSpace(email))
             {
-                query = query.Where(f => f.Email.Contains(email));
+                query = query.Where(f => f.Email.ToLower().Contains(email));
+            }
+            if (gender.HasValue)
+            { 
+                query =query.Where(g=>g.UserProfile.Gender==gender.Value);
             }
 
-            var result = await query.OrderBy(s => s.StudentsInfor.StudentsCode).Select(u => new StudentViewModels
-            {
-                id = u.Id,
-                UserName = u.UserName,
-                Email = u.Email,
-                PhoneNumber = u.PhoneNumber,
-                StudentCode = u.StudentsInfor.StudentsCode,
-                FullName = u.UserProfile.FullName,
-                Gender = u.UserProfile.Gender,
-                Avatar = u.UserProfile.Avatar,
-                Address = u.UserProfile.Address,
-                Dob = u.UserProfile.Dob,
-                Status = u.Statuss ?? true
+                var result = await query.OrderBy(s => s.StudentsInfor.StudentsCode).Select(u => new StudentViewModels
+                {
+                    id = u.Id,
+                    UserName = u.UserName,
+                    Email = u.Email,
+                    PhoneNumber = u.PhoneNumber,
+                    StudentCode = u.StudentsInfor.StudentsCode,
+                    FullName = u.UserProfile.FullName,
+                    Gender = u.UserProfile.Gender,
+                    Avatar = u.UserProfile.Avatar,
+                    Address = u.UserProfile.Address,
+                    Dob = u.UserProfile.Dob,
+                    Status = u.Statuss ?? true
 
-            }).ToListAsync();
-            return result;
-
-
-        }
+                }).ToListAsync();
+                return result;
+            } 
 
         public async Task UpdateByBeast(StudentViewModels model)
         {
@@ -319,7 +342,7 @@ namespace API.Services.Repositories
                 Classes = olddataClass
             });
             inforvs.User.UserName = model.UserName;
-            inforvs.User.PassWordHash = model.PassWordHash;
+            //inforvs.User.PassWordHash = model.PassWordHash;
             inforvs.User.Email = model.Email;
             inforvs.User.PhoneNumber = model.PhoneNumber;
             inforvs.User.UserProfile.FullName = model.FullName;

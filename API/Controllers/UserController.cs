@@ -15,7 +15,7 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(AuthenticationSchemes = "Bearer")]
+    [Authorize(AuthenticationSchemes = "Bearer")]//comit cái này thì mần chi cũng đc
     public class UserController : ControllerBase
 
     {
@@ -289,7 +289,7 @@ namespace API.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-        [Authorize(Policy = "EditUS")]
+        //[Authorize(Policy = "EditUS")]
         [HttpPut("{username}")]
         public async Task<IActionResult> UpdateUser(string username, [FromBody] UserDTO userDto)
         {
@@ -340,7 +340,7 @@ namespace API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        [Authorize(Policy = "CreateUS")]
+        //[Authorize(Policy = "CreateUS")]
         [HttpPut("lock/{username}")]
         public async Task<IActionResult> LockUser(string username)
         {
@@ -389,7 +389,7 @@ namespace API.Controllers
                 return Content(ex.Message);
             }
         }
-        [Authorize(Policy = "CreateUS")]
+       // [Authorize(Policy = "CreateUS")]
         [HttpPut("changerole/{username}/{newRoleId}")]
         public async Task<IActionResult> ChangeRole(string username, int newRoleId)
         {
