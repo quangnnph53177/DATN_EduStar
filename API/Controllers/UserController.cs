@@ -290,7 +290,7 @@ namespace API.Controllers
             }
         }
         [Authorize(Policy = "EditUS")]
-        [HttpPut("{username}")]
+        [HttpPut("updateuser")]
         public async Task<IActionResult> UpdateUser(string username, [FromBody] UserDTO userDto)
         {
             var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
@@ -341,8 +341,8 @@ namespace API.Controllers
             }
         }
         [Authorize(Policy = "CreateUS")]
-        [HttpPut("lock/{username}")]
-        public async Task<IActionResult> LockUser(string username)
+        [HttpPut("lock")]
+        public async Task<IActionResult> LockUser([FromQuery]string username)
         {
             try
             {
@@ -390,8 +390,8 @@ namespace API.Controllers
             }
         }
         [Authorize(Policy = "CreateUS")]
-        [HttpPut("changerole/{username}/{newRoleId}")]
-        public async Task<IActionResult> ChangeRole(string username, int newRoleId)
+        [HttpPut("changerole")]
+        public async Task<IActionResult> ChangeRole([FromQuery]string username,[FromQuery] int newRoleId)
         {
             try
             {
