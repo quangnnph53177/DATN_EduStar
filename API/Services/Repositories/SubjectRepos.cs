@@ -1,5 +1,8 @@
 ﻿using API.Data;
 using API.Models;
+using API.ViewModel;
+using Microsoft.EntityFrameworkCore;
+using System.Net.WebSockets;
 
 namespace API.Services.Repositories
 {
@@ -10,10 +13,119 @@ namespace API.Services.Repositories
         {
             _context = context;
         }
-        public async Task<List<Subject>> Getall()
+
+        public async Task<Subject> CreateSubject(SubjectViewModel sub)
         {
-            var sub =await _context.Subjects.ToListAsync();
-            return sub;
+            var su = new Subject()
+            {
+                Id = sub.Id,
+                SubjectName = sub.SubjectName,
+                subjectCode = sub.subjectCode,
+                Description= sub.Description,
+                NumberOfCredits = sub.NumberOfCredits,
+                Status = sub.Status,
+            };
+            _context.Subjects.Add(su);
+            _context.SaveChanges();
+            return su;
+        }
+
+        public async Task<bool> DeleteSubject(int Id)
+        {
+            var del =await _context.Subjects.FindAsync(Id);
+            if (del.Status == false)
+            {
+                _context.Subjects.Remove(del);
+                await _context.SaveChangesAsync();
+            }
+            return true;
+           
+        }
+
+        public async Task<List<SubjectViewModel>> Getall()
+        {
+            var sub = await _context.Subjects
+                .ToListAsync();
+            var item = sub.Select(c => new SubjectViewModel
+            {
+                Id = c.Id,
+                SubjectName = c.SubjectName,
+                subjectCode= c.subjectCode,
+                NumberOfCredits = c.NumberOfCredits,
+                Description = c.Description,
+               Status = c.Status,
+            }).ToList();
+            return item;
+        }
+
+        public async Task<SubjectViewModel> GetById(int id)
+        {
+            var details =await _context.Subjects.FirstOrDefaultAsync(c => c.Id == id);
+            var item = new SubjectViewModel
+            {
+                Id= id,
+                SubjectName=details.SubjectName,
+                subjectCode= details.subjectCode,
+                NumberOfCredits=details.NumberOfCredits,
+                Description=details.Description,
+                Status = details.Status,
+            };
+            return item;
+        }
+
+        public async Task<bool> OpenAndClose(int Id)
+        {
+            var su =await _context.Subjects.FindAsync(Id);
+            if (su == null) return false;
+            su.Status = !(su.Status ?? true);
+            await _context.SaveChangesAsync();
+            return true;
+
+        }
+
+        public async Task<List<SubjectViewModel>> Search(string? subjectName, int? numberofCredit, string? subcode, bool? status)
+        {
+            var query = _context.Subjects.Include(c => c.Classes).AsSplitQuery();
+            if (!string.IsNullOrWhiteSpace(subjectName))
+            {
+                query = query.Where(c => c.SubjectName.ToLower().Contains(subjectName));
+            }
+            if (!string.IsNullOrWhiteSpace(subcode))
+            {
+                query = query.Where(c => c.subjectCode.ToLower().Contains(subcode));
+            }
+            if (!numberofCredit.HasValue)
+            {
+                query = query.Where(c => c.NumberOfCredits == numberofCredit);
+            }
+            if (!status.HasValue) 
+            {
+                query = query.Where(c => c.Status == status);
+            }
+            var model = await query.Select(c => new SubjectViewModel
+            {
+                Id = c.Id,
+                SubjectName=c.SubjectName,
+                subjectCode = c.subjectCode,
+                NumberOfCredits=c.NumberOfCredits,
+                Description=c.Description,
+                Status=c.Status,
+            }).ToListAsync();
+            return model;
+        
+        }
+
+        public async Task UpdateSubject(SubjectViewModel subject)
+        {
+            var con = await _context.Subjects.FirstOrDefaultAsync(s => s.Id == subject.Id);
+           // con.Id = subject.Id;
+            con.SubjectName = subject.SubjectName;
+            con.subjectCode =subject.subjectCode;
+            con.NumberOfCredits = subject.NumberOfCredits;
+            con.Description = subject.Description;
+            con.Status = subject.Status;
+            _context.Subjects.Update(con);
+            _context.SaveChanges();
         }
     }
 }
