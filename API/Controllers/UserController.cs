@@ -15,14 +15,14 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(AuthenticationSchemes = "Bearer")]//comit cái này thì mần chi cũng đc
+    [Authorize(AuthenticationSchemes = "Bearer")]
     public class UserController : ControllerBase
 
     {
         private readonly IUserRepos _userRepos;
         private readonly IAuditLogRepos _logRepos;
         private readonly AduDbcontext _context;
-        public UserController(IUserRepos userRepos, IAuditLogRepos auditLogRepos,AduDbcontext aduDbcontext)
+        public UserController(IUserRepos userRepos, IAuditLogRepos auditLogRepos, AduDbcontext aduDbcontext)
         {
             _userRepos = userRepos;
             _logRepos = auditLogRepos;
@@ -42,7 +42,7 @@ namespace API.Controllers
                 {
                     createdUser.Id,
                     createdUser.UserName,
-                    createdUser.Statuss 
+                    createdUser.Statuss
                 });
                 Guid? performedByGuid = null;
                 var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -289,8 +289,8 @@ namespace API.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-        //[Authorize(Policy = "EditUS")]
-        [HttpPut("{username}")]
+        [Authorize(Policy = "EditUS")]
+        [HttpPut("updateuser")]
         public async Task<IActionResult> UpdateUser(string username, [FromBody] UserDTO userDto)
         {
             var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
@@ -340,9 +340,9 @@ namespace API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        //[Authorize(Policy = "CreateUS")]
-        [HttpPut("lock/{username}")]
-        public async Task<IActionResult> LockUser(string username)
+        [Authorize(Policy = "CreateUS")]
+        [HttpPut("lock")]
+        public async Task<IActionResult> LockUser([FromQuery] string username)
         {
             try
             {
@@ -389,9 +389,9 @@ namespace API.Controllers
                 return Content(ex.Message);
             }
         }
-       // [Authorize(Policy = "CreateUS")]
-        [HttpPut("changerole/{username}/{newRoleId}")]
-        public async Task<IActionResult> ChangeRole(string username, int newRoleId)
+        [Authorize(Policy = "CreateUS")]
+        [HttpPut("changerole")]
+        public async Task<IActionResult> ChangeRole([FromQuery] string username, [FromQuery] int newRoleId)
         {
             try
             {
@@ -480,10 +480,10 @@ namespace API.Controllers
         [HttpGet("log")]
         public async Task<IActionResult> GetAuditLogs()
         {
-             var roleIds = User.Claims
-                .Where(c => c.Type == ClaimTypes.Role)
-                .Select(c => int.Parse(c.Value))
-                .ToList();
+            var roleIds = User.Claims
+               .Where(c => c.Type == ClaimTypes.Role)
+               .Select(c => int.Parse(c.Value))
+               .ToList();
 
             var currentUserName = User.Identity?.Name;
 

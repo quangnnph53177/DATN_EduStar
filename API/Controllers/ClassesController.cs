@@ -151,5 +151,77 @@ namespace API.Controllers
                 return StatusCode(500, $"An unexpected error occurred while deleting the class: {ex.Message}");
             }
         }
+        // Tìm kiếm lớp học theo từ khóa
+        // GET: api/Classes/search?keyword=abc
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<ClassViewModel>>> SearchClasses([FromQuery] string keyword)
+        {
+            try
+            {
+                var result = await _classRepos.SearchClassesAsync(keyword);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        // Gán sinh viên vào lớp (dành cho admin/giáo vụ)
+        // POST: api/Classes/assign-student
+        [HttpPost("assign-student")]
+        public async Task<IActionResult> AssignStudentToClass([FromBody] AssignStudentRequest request)
+        {
+            if (request == null) return BadRequest("Invalid request.");
+            var success = await _classRepos.AssignStudentToClassAsync(request.ClassId, request.StudentId);
+            if (success) return Ok("Student assigned to class successfully.");
+            return BadRequest("Failed to assign student to class.");
+        }
+
+        // Sinh viên đăng ký lớp học
+        // POST: api/Classes/register
+        [HttpPost("register")]
+        public async Task<IActionResult> StudentRegisterClass([FromBody] AssignStudentRequest request)
+        {
+            if (request == null) return BadRequest("Invalid request.");
+            var success = await _classRepos.StudentRegisterClassAsync(request.ClassId, request.StudentId);
+            if (success) return Ok("Student registered to class successfully.");
+            return BadRequest("Failed to register student to class.");
+        }
+
+        // Xóa sinh viên khỏi lớp học
+        // DELETE: api/Classes/remove-student
+        [HttpDelete("remove-student")]
+        public async Task<IActionResult> RemoveStudentFromClass([FromBody] AssignStudentRequest request)
+        {
+            if (request == null) return BadRequest("Invalid request.");
+            var success = await _classRepos.RemoveStudentFromClassAsync(request.ClassId, request.StudentId);
+            if (success) return Ok("Student removed from class successfully.");
+            return BadRequest("Failed to remove student from class.");
+        }
+
+        // Xem lịch sử lớp học
+        // GET: api/Classes/{classId}/history
+        [HttpGet("{classId}/history")]
+        public async Task<ActionResult<IEnumerable<string>>> GetClassHistory(int classId)
+        {
+            try
+            {
+                var history = await _classRepos.GetClassHistoryAsync(classId);
+                return Ok(history);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        // Request model cho các API liên quan đến sinh viên và lớp
+        public class AssignStudentRequest
+        {
+            public int ClassId { get; set; }
+            public Guid StudentId { get; set; }
+        }
+
     }
 }

@@ -1,7 +1,5 @@
-﻿//using API.Data;
-//using API.Services;
-//using API.Services.Repositories;
-using API.Data;
+﻿using API.Data;
+using API.Models;
 using API.Services;
 using API.Services.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -31,7 +29,6 @@ builder.Services.AddScoped<IStatistical , StatisticalRepos>();
 builder.Services.AddScoped<IShedulesRepos, ScheduleRepos>();
 builder.Services.AddScoped<IAuditLogRepos, AuditLogRepos>();
 builder.Services.AddScoped<ISubject, SubjectRepos>();
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -42,35 +39,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "EduStar", Version = "v1" });
-
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Nhập JWT token như: Bearer {token}",
-    });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["Key"];
@@ -105,21 +73,78 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("DetailUS", policy => policy.RequireClaim("Permission", "Detail"));
     options.AddPolicy("EditUS", policy => policy.RequireClaim("Permission", "Edit"));
 });
-    
+
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new OpenApiInfo { Title = "EduStar", Version = "v1" });
+
+        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "Bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Nhập JWT token như: Bearer {token}",
+        });
+
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+    });
+
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var context = scope.ServiceProvider.GetRequiredService<AduDbcontext>();
+    // Chỉ tạo user nếu chưa có user nào trong hệ thống
+    if (!context.Users.Any())
+    {
+        var defaultRole = context.Roles.FirstOrDefault(r => r.Id == 1);
+        if (defaultRole == null)
+        {
+            throw new Exception("Không tìm thấy Role với Id = 1. Hãy kiểm tra lại dữ liệu trong bảng Roles.");
+        }
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            UserName = "string",
+            Email = "string@gmail.com",
+            Statuss = true,
+            CreateAt = DateTime.Now,
+            Roles = new List<Role> { defaultRole }
+        };
+
+        user.PassWordHash = UserRepos.PasswordHasher.HashPassword("string");
+
+        context.Users.Add(user);
+        context.SaveChanges();
+    }
+    // Configure the HTTP request pipeline.
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+    app.UseCors("AllowAll");
+    app.UseHttpsRedirection();
+    app.UseAuthentication();
+    app.UseMiddleware<CheckUserStatus>(); // Kiểm tra trạng thái người dùng trước khi xử lý yêu cầu
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    app.Run();
 }
-app.UseCors("AllowAll");
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseMiddleware<CheckUserStatus>(); // Kiểm tra trạng thái người dùng trước khi xử lý yêu cầu
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();

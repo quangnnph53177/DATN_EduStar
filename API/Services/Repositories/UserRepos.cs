@@ -1,6 +1,7 @@
 ﻿using API.Data;
 using API.Models;
 using API.ViewModel;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -137,7 +138,6 @@ namespace API.Services.Repositories
 
             if (expiredUsers.Any())
             {
-                // Xoá thêm các bản ghi liên quan nếu cần (UserProfile, StudentsInfor, ...)
                 var userIds = expiredUsers.Select(u => u.Id).ToList();
 
                 var profiles = await _context.UserProfiles.Where(p => userIds.Contains(p.UserId)).ToListAsync();
@@ -290,7 +290,7 @@ namespace API.Services.Repositories
             upinsv.PassWordHash = PasswordHasher.HashPassword(userd.PassWordHash);
             upinsv.Email = userd.Email;
             upinsv.UserProfile.FullName = userd.FullName;
-            upinsv.UserProfile.UserCode = userd.UserCode;
+            //upinsv.UserProfile.UserCode = userd.UserCode;
             upinsv.UserProfile.Gender = userd.Gender;
             upinsv.PhoneNumber = userd.PhoneNumber;
             upinsv.UserProfile.Avatar = userd.Avatar;
