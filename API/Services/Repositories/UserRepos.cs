@@ -1,6 +1,7 @@
 ﻿using API.Data;
 using API.Models;
 using API.ViewModel;
+using Humanizer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -24,22 +25,21 @@ namespace API.Services.Repositories
             _configuration = configuration;
             _emailService = emailService;
         }
-        public async Task<User> Register(UserDTO usd)
+        public async Task<User> Register(UserDTO usd, IFormFile imgFile)
         {
-
-            // Kiểm tra thông tin đầu vào
+            // Kiểm tra thông tin đầu vào  
             if (string.IsNullOrWhiteSpace(usd.UserName) || string.IsNullOrWhiteSpace(usd.PassWordHash) || string.IsNullOrWhiteSpace(usd.Email))
             {
                 throw new Exception("Thiếu thông tin bắt buộc.");
             }
 
-            // Kiểm tra tài khoản đã tồn tại chưa
+            // Kiểm tra tài khoản đã tồn tại chưa  
             if (await _context.Users.AnyAsync(u => u.UserName == usd.UserName))
                 throw new Exception("Tên đăng nhập đã tồn tại.");
 
             if (await _context.Users.AnyAsync(u => u.Email == usd.Email))
                 throw new Exception("Email đã được sử dụng.");
-            //if(await _context.Users.)
+
             var hashedPassword = PasswordHasher.HashPassword(usd.PassWordHash);
 
             var roleIds = (usd.RoleIds == null || !usd.RoleIds.Any()) ? new List<int> { 3 } : usd.RoleIds;
@@ -48,24 +48,46 @@ namespace API.Services.Repositories
                 throw new Exception("Không tìm thấy role hợp lệ để gán.");
 
             string userCode = "";
-            if (roles.Any(r => r.Id == 1)) // Admin
+            if (roles.Any(r => r.Id == 1)) // Admin  
             {
                 int adminCount = await _context.Users.Where(u => u.Roles.Any(r => r.Id == 1)).CountAsync();
                 userCode = $"AD{(adminCount + 1).ToString("D5")}";
             }
-            else if (roles.Any(r => r.Id == 2)) // Giảng viên
+            else if (roles.Any(r => r.Id == 2)) // Giảng viên  
             {
                 int gvCount = await _context.Users.Where(u => u.Roles.Any(r => r.Id == 2)).CountAsync();
                 userCode = $"GV{(gvCount + 1).ToString("D5")}";
             }
-            else if (roles.Any(r => r.Id == 3)) // Sinh viên
+            else if (roles.Any(r => r.Id == 3)) // Sinh viên  
             {
                 int svCount = await _context.Users.Where(u => u.Roles.Any(r => r.Id == 3)).CountAsync();
                 userCode = $"SV{(svCount + 1).ToString("D5")}";
             }
-            else // Mặc định (ví dụ sinh viên chưa có role), vẫn tạo userCode tạm
+            else // Mặc định (ví dụ sinh viên chưa có role), vẫn tạo userCode tạm  
             {
                 userCode = $"US{Guid.NewGuid().ToString().Substring(0, 5).ToUpper()}";
+            }
+
+            if (imgFile != null && imgFile.Length > 0)
+            {
+                // Kiểm tra định dạng file ảnh  
+                var validImageFormats = new[] { ".jpg", ".jpeg", ".png" };
+                var fileExtension = Path.GetExtension(imgFile.FileName).ToLowerInvariant();
+                if (!validImageFormats.Contains(fileExtension))
+                    throw new ArgumentException("Định dạng ảnh không hợp lệ (chỉ chấp nhận .jpg, .jpeg, .png)");
+                // Tạo đường dẫn lưu ảnh
+                var imageFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","avatars");
+                if (!Directory.Exists(imageFolder))
+                    Directory.CreateDirectory(imageFolder);
+                var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+                var savePath = Path.Combine(imageFolder, uniqueFileName);
+
+                using (var stream = new FileStream(savePath, FileMode.Create))
+                {
+                    await imgFile.CopyToAsync(stream);
+                }
+                // Gán đường dẫn ảo vào DTO
+                usd.Avatar = $"/images/avatars/{uniqueFileName}";
             }
 
             var user = new User
@@ -97,10 +119,10 @@ namespace API.Services.Repositories
                 {
                     UserId = user.Id,
                     StudentsCode = userCode,
-
                 });
             }
-            // Gửi email xác nhận
+
+            // Gửi email xác nhận  
             var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(user.Email));
             var confirmationLink = $"https://localhost:7298/api/User/confirm?token={HttpUtility.UrlEncode(token)}";
 
@@ -309,7 +331,7 @@ namespace API.Services.Repositories
 
             return user.Statuss == true ? "Mở khóa thành công" : "Khóa thành công";
         }
-        public async Task UpdateUser(UserDTO userd)
+        public async Task UpdateUser(UserDTO userd, IFormFile imgFile)
         {
             var upuser = await _context.Users
                   .Include(p => p.UserProfile)
@@ -344,8 +366,8 @@ namespace API.Services.Repositories
             if (!string.IsNullOrWhiteSpace(userd.FullName))
                 upuser.UserProfile.FullName = userd.FullName;
 
-            if (!string.IsNullOrWhiteSpace(userd.UserCode))
-                upuser.UserProfile.UserCode = userd.UserCode;
+            //if (!string.IsNullOrWhiteSpace(userd.UserCode))
+            //    upuser.UserProfile.UserCode = userd.UserCode;
 
             // Gender
             if (userd.Gender.HasValue)
@@ -355,9 +377,38 @@ namespace API.Services.Repositories
             if (!string.IsNullOrWhiteSpace(userd.PhoneNumber))
                 upuser.PhoneNumber = userd.PhoneNumber;
 
-            // Avatar
-            if (!string.IsNullOrWhiteSpace(userd.Avatar))
-                upuser.UserProfile.Avatar = userd.Avatar;
+            if (imgFile != null && imgFile.Length > 0)
+            {
+                // 1. Kiểm tra định dạng hợp lệ
+                var validImageFormats = new[] { ".jpg", ".jpeg", ".png" };
+                var fileExtension = Path.GetExtension(imgFile.FileName).ToLowerInvariant();
+                if (!validImageFormats.Contains(fileExtension))
+                    throw new ArgumentException("Định dạng ảnh không hợp lệ (chỉ chấp nhận .jpg, .jpeg, .png)");
+
+                // 2. Xác định thư mục lưu ảnh
+                var imageFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "avatars");
+                if (!Directory.Exists(imageFolder))
+                    Directory.CreateDirectory(imageFolder);
+
+                // 3. Xóa ảnh cũ nếu có
+                if (!string.IsNullOrWhiteSpace(upuser.UserProfile.Avatar))
+                {
+                    var oldAvatarPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", upuser.UserProfile.Avatar.TrimStart('/'));
+                    if (System.IO.File.Exists(oldAvatarPath))
+                        System.IO.File.Delete(oldAvatarPath);
+                }
+
+                // 4. Lưu ảnh mới
+                var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+                var savePath = Path.Combine(imageFolder, uniqueFileName);
+                using (var stream = new FileStream(savePath, FileMode.Create))
+                {
+                    await imgFile.CopyToAsync(stream);
+                }
+
+                // 5. Cập nhật đường dẫn tương đối vào DB (dùng khi hiển thị ảnh)
+                upuser.UserProfile.Avatar = $"/images/avatars/{uniqueFileName}";
+            }
 
             // Address
             if (!string.IsNullOrWhiteSpace(userd.Address))

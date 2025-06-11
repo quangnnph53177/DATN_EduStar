@@ -16,7 +16,7 @@
     <div class="alert alert-success">@TempData["SuccessMessage"]</div>
 }
 
-<form asp-action="UpdateUser" method="post">
+<form asp-action="UpdateUser" method="post" enctype="multipart/form-data">
     <!-- Username: hidden vì không cho sửa -->
     <input type="hidden" name="UserName" value="@Model.UserName" />
 
@@ -55,17 +55,22 @@
             <option value="false" selected="@(Model.Gender == false ? "selected" : null)">Nữ</option>
         </select>
     </div>
-
+@* 
     <div class="form-group">
         <label>Avatar</label>
-        <input type="text" name="Avatar" value="@Model.Avatar" class="form-control" />
+        <input type="text" name="Avatar" value="https://localhost:7298/@Model.Avatar" class="form-control" />
     </div>
-
+ *@
     <div class="form-group">
         <label>Địa chỉ</label>
         <input type="text" name="Address" value="@Model.Address" class="form-control" />
     </div>
-
+    <div class="form-group">
+        <label for="imgFile">Ảnh đại diện</label>
+        <input type="file" name="imgFile" id="imgFile" value="https://localhost:7298/@Model.Avatar" class="form-control" accept=".jpg,.jpeg,.png" />
+        <small class="text-muted">Chỉ chấp nhận định dạng: .jpg, .jpeg, .png</small>
+        <span asp-validation-for="Address" class="text-danger"></span>
+    </div>
     <div class="form-group">
         <label>Ngày sinh</label>
         <input type="date" name="Dob" value="@(Model.Dob?.ToString("yyyy-MM-dd"))" class="form-control" />

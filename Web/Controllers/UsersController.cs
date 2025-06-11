@@ -182,14 +182,41 @@ namespace Web.Controllers
             return View(new UserDTO());
         }
         [HttpPost]
-        public async Task<IActionResult> Register(UserDTO model)
+        public async Task<IActionResult> Register(UserDTO model, IFormFile imgFile)
         {
             if (!ModelState.IsValid)
                 return View(model);
 
             var client = GetClientWithToken();
+            using var content = new MultipartFormDataContent();
 
-            var response = await client.PostAsJsonAsync("https://localhost:7298/api/User/register", model);
+            content.Add(new StringContent(model.UserName ?? ""), "UserName");
+            content.Add(new StringContent(model.PassWordHash ?? ""), "PassWordHash");
+            content.Add(new StringContent(model.Email ?? ""), "Email");
+            content.Add(new StringContent(model.PhoneNumber ?? ""), "PhoneNumber");
+            content.Add(new StringContent(model.FullName ?? ""), "FullName");
+            content.Add(new StringContent(model.Address ?? ""), "Address");
+            content.Add(new StringContent(model.Statuss.ToString()), "Statuss");
+
+            if (model.Dob.HasValue)
+                content.Add(new StringContent(model.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
+            content.Add(new StringContent(model.Gender.HasValue ? model.Gender.Value.ToString() : ""), "Gender");
+
+            if (model.RoleIds != null && model.RoleIds.Any())
+            {
+                foreach (var roleId in model.RoleIds)
+                {
+                    content.Add(new StringContent(roleId.ToString()), "RoleIds");
+                }
+            }
+
+            if (imgFile != null && imgFile.Length > 0)
+            {
+                var streamContent = new StreamContent(imgFile.OpenReadStream());
+                streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
+                content.Add(streamContent, "imgFile", imgFile.FileName);
+            }
+            var response = await client.PostAsync("https://localhost:7298/api/User/register", content);
             if (response.IsSuccessStatusCode)
                 return RedirectToAction("Index", "Users");
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
@@ -377,16 +404,38 @@ namespace Web.Controllers
             }
         }
         [HttpPost]
-        public async Task<IActionResult> UpdateUser(string username, UserDTO userDto)
+        public async Task<IActionResult> UpdateUser(string username, UserDTO userDto, IFormFile imgFile)
         {
             try
             {
                 var client = GetClientWithToken();
 
                 // Serialize object
-                var content = new StringContent(JsonSerializer.Serialize(userDto), System.Text.Encoding.UTF8, "application/json");
+                var formData = new MultipartFormDataContent
+               {
+                   { new StringContent(userDto.UserName ?? ""), "UserName" },
+                   { new StringContent(userDto.FullName ?? ""), "FullName" },
+                   { new StringContent(userDto.Email ?? ""), "Email" },
+                   { new StringContent(userDto.PhoneNumber ?? ""), "PhoneNumber" },
+                   { new StringContent(string.Join(",", userDto.RoleIds ?? new List<int>())), "RoleId" },
+                   { new StringContent(userDto.Address ?? ""), "Address" },
+                   { new StringContent(userDto.Gender.HasValue ? userDto.Gender.Value.ToString() : ""), "Gender" }
+               };
 
-                var response = await client.PutAsync($"https://localhost:7298/api/User/updateuser/{userDto.UserName}", content);
+                // Fix for CS1503: Convert DateTime? to string using ToString with a format
+                if (userDto.Dob.HasValue)
+                {
+                    formData.Add(new StringContent(userDto.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
+                }
+
+                if (imgFile != null && imgFile.Length > 0)
+                {
+                    var streamContent = new StreamContent(imgFile.OpenReadStream());
+                    streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
+                    formData.Add(streamContent, "imgFile", imgFile.FileName);
+                }
+
+                var response = await client.PutAsync($"https://localhost:7298/api/User/updateuser/{userDto.UserName}", formData);
 
                 if (response.IsSuccessStatusCode)
                 {

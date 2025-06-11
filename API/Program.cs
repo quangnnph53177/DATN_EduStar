@@ -139,6 +139,7 @@ using (var scope = app.Services.CreateScope())
         app.UseSwaggerUI();
     }
     app.UseCors("AllowAll");
+    app.UseStaticFiles();
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseMiddleware<CheckUserStatus>(); // Kiểm tra trạng thái người dùng trước khi xử lý yêu cầu

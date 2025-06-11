@@ -30,8 +30,9 @@
 
         @if (!string.IsNullOrEmpty(Model.Avatar))
         {
-            <div class="mt-3">
-                <img src="@Model.Avatar" alt="Avatar" style="max-width: 150px; border-radius: 10px;" />
+            <strong>Ảnh đại diện:</strong>
+            <div class="mt-3"> 
+                <img src="https://localhost:7298/@Model.Avatar" alt="Avatar" style="max-width: 150px; border-radius: 10px;" />
             </div>
         }
 

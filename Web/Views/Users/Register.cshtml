@@ -1,11 +1,12 @@
 ﻿@model API.ViewModel.UserDTO
 @{
     ViewData["Title"] = "Đăng ký tài khoản";
+    var roleList = ViewBag.RoleList as List<SelectListItem>;
 }
 
 <h2>Đăng ký tài khoản</h2>
 <a asp-action="Upload" asp-controller="Users" class="btn btn-secondary mt-2">Upload List User</a>
-<form asp-controller="Users" asp-action="Register" method="post">
+<form asp-controller="Users" asp-action="Register" method="post" enctype="multipart/form-data">
     <div class="form-group">
         <label asp-for="UserName"></label>
         <input asp-for="UserName" class="form-control" />
@@ -38,9 +39,7 @@
 
     <div class="form-group">
         <label asp-for="RoleIds" class="control-label"></label>
-        <select asp-for="RoleIds" asp-items="ViewBag.RoleList" class="form-control">
-            <option value="">-- Chọn vai trò --</option>
-        </select>
+        <select asp-for="RoleIds" asp-items="roleList" class="form-control" multiple>-- Chọn vai trò --</select>
         <span asp-validation-for="RoleIds" class="text-danger"></span>
     </div>
 
@@ -67,9 +66,10 @@
     </div>
 
     <div class="form-group">
-        <label asp-for="Avatar">Ảnh đại diện (URL)</label>
-        <input asp-for="Avatar" class="form-control" />
-        <span asp-validation-for="Avatar" class="text-danger"></span>
+        <label for="imgFile">Ảnh đại diện</label>
+        <input type="file" name="imgFile" id="imgFile" class="form-control" accept=".jpg,.jpeg,.png" />
+        <small class="text-muted">Chỉ chấp nhận định dạng: .jpg, .jpeg, .png</small>
+        <span asp-validation-for="Address" class="text-danger"></span>
     </div>
 
     <button type="submit" class="btn btn-primary">Đăng ký</button>
