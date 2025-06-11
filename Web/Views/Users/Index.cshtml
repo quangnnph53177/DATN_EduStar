@@ -1,0 +1,94 @@
+﻿@model IEnumerable<API.ViewModel.UserDTO>
+
+@{
+    ViewData["Title"] = "Danh sách người dùng";
+}
+
+<h2>Danh sách người dùng</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+@if (User.IsInRole("1"))
+{
+    <a asp-controller="Users" asp-action="Register" class="btn btn-primary mb-3">Thêm người dùng</a>
+}
+@if (User.IsInRole("1") || User.IsInRole("2"))
+{
+    <form method="get" asp-action="SearchUS" class="mb-3 d-flex">
+        <input type="text" name="keyword" class="form-control me-2" placeholder="Nhập từ khóa tìm kiếm" />
+        <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Làm mới</a>
+    </form>
+}
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Tên người dùng</th>
+            <th>Email</th>
+            <th>UserCode</th>
+            <th>Vai trò (ID)</th>
+            <th>Trạng thái</th>
+            @if (User.IsInRole("1"))
+            {
+                <th>LOCK</th>
+            }
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@user.Email</td>
+                <td>@user.UserCode</td>
+                <td>@string.Join(", ", user.RoleIds ?? new List<int>())</td>
+                <td>
+                    @(user.Statuss ? "Hoạt động" : "Đã khóa")
+                </td>
+                @if (User.IsInRole("1"))
+                {
+                    <td>
+                        <a href="javascript:void(0);" onclick="lockUser('@user.UserName')" class="btn @(user.Statuss == true ? "btn-danger" : "btn-success") btn-sm">
+                            @(user.Statuss == true ? "Khóa" : "Mở khóa")
+                        </a>
+                    </td>
+                }
+                <td>
+                    <a asp-controller="Users" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-warning btn-sm">Chi tiết</a>
+                    @if (User.IsInRole("1"))
+                    {
+                        <a asp-controller="Users" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-warning btn-sm">Cập nhật</a>
+                        <a asp-controller="Users" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-warning btn-sm"> Change Role</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<script>
+    function lockUser(username) {
+         if (confirm('Bạn có chắc chắn muốn khóa/mở khóa tài khoản này không?')) {
+             fetch(`/Users/LockUser?username=${username}`, { method: 'POST' })
+                 .then(response => response.json())
+                 .then(data => {
+                     if (data.success) {
+                         alert(data.message);
+                         location.reload(); // Reload để cập nhật trạng thái mới
+                     } else {
+                         alert('Lỗi: ' + data.message);
+                     }
+                 })
+                 .catch(error => {
+                     alert('Lỗi hệ thống: ' + error);
+                 });
+         }
+     }
+</script>

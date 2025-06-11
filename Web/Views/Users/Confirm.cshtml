@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "Xác nhận email";
+}
+
+<h2>Xác nhận email</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<form asp-action="Confirm" method="post">
+    <div class="form-group">
+        <label for="token">Nhập token:</label>
+        <input type="text" class="form-control" id="token" name="token" required />
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Xác nhận</button>
+</form>
+
+<a asp-controller="Users" asp-action="Login" class="btn btn-secondary mt-3">Quay lại đăng nhập</a>

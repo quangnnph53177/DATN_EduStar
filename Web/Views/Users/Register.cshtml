@@ -1,0 +1,83 @@
+﻿@model API.ViewModel.UserDTO
+@{
+    ViewData["Title"] = "Đăng ký tài khoản";
+}
+
+<h2>Đăng ký tài khoản</h2>
+<a asp-action="Upload" asp-controller="Users" class="btn btn-secondary mt-2">Upload List User</a>
+<form asp-controller="Users" asp-action="Register" method="post">
+    <div class="form-group">
+        <label asp-for="UserName"></label>
+        <input asp-for="UserName" class="form-control" />
+        <span asp-validation-for="UserName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="PassWordHash">Mật khẩu</label>
+        <input asp-for="PassWordHash" type="password" class="form-control" />
+        <span asp-validation-for="PassWordHash" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Email"></label>
+        <input asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="PhoneNumber"></label>
+        <input asp-for="PhoneNumber" class="form-control" />
+        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="FullName"></label>
+        <input asp-for="FullName" class="form-control" />
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="RoleIds" class="control-label"></label>
+        <select asp-for="RoleIds" asp-items="ViewBag.RoleList" class="form-control">
+            <option value="">-- Chọn vai trò --</option>
+        </select>
+        <span asp-validation-for="RoleIds" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Dob">Ngày sinh</label>
+        <input asp-for="Dob" type="date" class="form-control" />
+        <span asp-validation-for="Dob" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Gender">Giới tính</label>
+        <select asp-for="Gender" class="form-control">
+            <option value="">-- Chọn giới tính --</option>
+            <option value="true">Nam</option>
+            <option value="false">Nữ</option>
+        </select>
+        <span asp-validation-for="Gender" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Address"></label>
+        <input asp-for="Address" class="form-control" />
+        <span asp-validation-for="Address" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Avatar">Ảnh đại diện (URL)</label>
+        <input asp-for="Avatar" class="form-control" />
+        <span asp-validation-for="Avatar" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Đăng ký</button>
+    <a asp-action="Index" asp-controller="Users" class="btn btn-secondary mt-2">Danh sách người dùng</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
