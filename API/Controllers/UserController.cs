@@ -15,7 +15,7 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(AuthenticationSchemes = "Bearer")]
+    [Authorize]
     public class UserController : ControllerBase
 
     {
@@ -84,12 +84,13 @@ namespace API.Controllers
 
             try
             {
-                var token = await _userRepos.Login(loginDto.UserName, loginDto.Password);
-                return Ok(new { message = "Đăng nhập thành công", token });
+                var loginResult = await _userRepos.Login(loginDto.UserName, loginDto.Password);
+                //return Ok(new { message = "Đăng nhập thành công", loginResult });
+                return Ok(loginResult);
             }
             catch (Exception ex)
             {
-                return Unauthorized(new { error = ex.Message });
+                return Unauthorized(new { success = false, error = ex.Message });
             }
         }
         [Authorize(Policy = "CreateUS")]
@@ -254,7 +255,7 @@ namespace API.Controllers
         }
         [Authorize(Policy = "DetailUS")]
         [HttpGet("searchuser")]
-        public async Task<IActionResult> SearchUser([FromQuery] string? username, [FromQuery] string? usercode, [FromQuery] string? fullname, [FromQuery] string? email)
+        public async Task<IActionResult> SearchUser([FromQuery] string? keyword)
         {
             var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
             var currentUserName = User.Identity?.Name;
@@ -264,18 +265,17 @@ namespace API.Controllers
             {
                 var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
 
-                //  Lọc theo điều kiện tìm kiếm  
-                if (!string.IsNullOrWhiteSpace(username))
-                    users = users.Where(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(keyword))
+                {
+                    keyword = keyword.ToLower();
 
-                if (!string.IsNullOrWhiteSpace(usercode))
-                    users = users.Where(u => u.UserCode?.Contains(usercode, StringComparison.OrdinalIgnoreCase) == true);
-
-                if (!string.IsNullOrWhiteSpace(fullname))
-                    users = users.Where(u => u.FullName?.Contains(fullname, StringComparison.OrdinalIgnoreCase) == true);
-
-                if (!string.IsNullOrWhiteSpace(email))
-                    users = users.Where(u => u.Email?.Contains(email, StringComparison.OrdinalIgnoreCase) == true);
+                    users = users.Where(u =>
+                        (u.UserName != null && u.UserName.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.UserCode != null && u.UserCode.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
+                        ((u.Statuss ? "hoạt động" : "đã khóa").Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.Email != null && u.Email.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                    );
+                }
 
                 var result = users.ToList();
 
@@ -290,7 +290,7 @@ namespace API.Controllers
             }
         }
         [Authorize(Policy = "EditUS")]
-        [HttpPut("updateuser")]
+        [HttpPut("updateuser/{username}")]
         public async Task<IActionResult> UpdateUser(string username, [FromBody] UserDTO userDto)
         {
             var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
@@ -303,25 +303,25 @@ namespace API.Controllers
             try
             {
                 // Lấy danh sách user được phép truy cập
-                var allowedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+                var allowedUsers = await _userRepos.GetAllUsersNoTeacher(currentUserRoleIds, currentUserName);
 
                 // Kiểm tra người cần sửa có nằm trong danh sách được phép không
                 var targetUser = allowedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
                 if (targetUser == null)
-                    return Forbid("Bạn không có quyền sửa người dùng này.");
+                    return BadRequest("Bạn không có quyền sửa người dùng này.");
 
                 // Serialize old data
-                var oldData = System.Text.Json.JsonSerializer.Serialize(targetUser);
+                var oldData = JsonSerializer.Serialize(targetUser);
 
                 await _userRepos.UpdateUser(userDto);
 
                 // Lấy lại thông tin user sau khi update để log new data
                 var updatedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
                 var updatedUser = updatedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
-                var newData = System.Text.Json.JsonSerializer.Serialize(updatedUser);
+                var newData = JsonSerializer.Serialize(updatedUser);
 
                 Guid? performedByGuid = null;
-                var performedBy = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (Guid.TryParse(performedBy, out var userGuid))
                 {
                     performedByGuid = userGuid;
@@ -341,8 +341,8 @@ namespace API.Controllers
             }
         }
         [Authorize(Policy = "CreateUS")]
-        [HttpPut("lock")]
-        public async Task<IActionResult> LockUser([FromQuery] string username)
+        [HttpPost("lock/{username}")]
+        public async Task<IActionResult> LockUser(string username)
         {
             try
             {
@@ -382,16 +382,16 @@ namespace API.Controllers
                 }
 
                 await _logRepos.LogAsync(performedByGuid, "Khóa tài khoản", oldData, newData, performedByGuid);
-                return Ok(new { username, result });
+                return Ok(new { success = true, message = result });
             }
             catch (Exception ex)
             {
-                return Content(ex.Message);
+                return BadRequest(new { success = false, message = ex.Message });
             }
         }
         [Authorize(Policy = "CreateUS")]
-        [HttpPut("changerole")]
-        public async Task<IActionResult> ChangeRole([FromQuery] string username, [FromQuery] int newRoleId)
+        [HttpPut("changerole/{username}")]
+        public async Task<IActionResult> ChangeRole(string username, [FromQuery] int newRoleId)
         {
             try
             {
@@ -446,14 +446,14 @@ namespace API.Controllers
             }
         }
         [AllowAnonymous]
-        [HttpPost("forgotpassword")]
-        public async Task<IActionResult> ForgotPassword([FromBody] string email)
+        [HttpPost("forgetpassword")]
+        public async Task<IActionResult> ForgetPassword([FromBody] string email)
         {
             if (string.IsNullOrEmpty(email))
                 return BadRequest("Email không được để trống.");
             try
             {
-                await _userRepos.ForgotPassword(email);
+                await _userRepos.ForgetPassword(email);
                 return Ok("Đã gửi email đặt lại mật khẩu nếu email tồn tại trong hệ thống.");
             }
             catch (Exception ex)

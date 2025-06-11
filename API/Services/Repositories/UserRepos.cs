@@ -97,7 +97,7 @@ namespace API.Services.Repositories
                 {
                     UserId = user.Id,
                     StudentsCode = userCode,
-              
+
                 });
             }
             // Gửi email xác nhận
@@ -108,7 +108,7 @@ namespace API.Services.Repositories
             await _emailService.SendEmail(user.Email, "Xác nhận email", message);
 
             _context.Users.Add(user);
-            
+
             await _context.SaveChangesAsync();
             return user;
         }
@@ -152,7 +152,7 @@ namespace API.Services.Repositories
             }
         }
 
-        public async Task<string> Login(string userName, string password)
+        public async Task<LoginResult> Login(string userName, string password)
         {
             if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
                 throw new Exception("Tên đăng nhập hoặc mật khẩu không được để trống.");
@@ -177,7 +177,14 @@ namespace API.Services.Repositories
                 .Distinct()
                 .ToList() ?? new List<string>();
             string token = GenerateJwtToken(user, permissions);
-            return token;
+            // Trả về roleId đầu tiên (trường hợp nhiều role thì chọn role đầu tiên)
+            int roleId = user.Roles.Select(r => r.Id).FirstOrDefault();
+            return new LoginResult
+            {
+                Token = token,
+                RoleId = roleId,
+                UserName = user.UserName
+            };
         }
         private string GenerateJwtToken(User user, List<string> permissions)
         {
@@ -223,7 +230,7 @@ namespace API.Services.Repositories
 
             if (currentUserRoleIds.Contains(1)) // Admin
             {
-                query = query.Where(u => u.Roles.Any(r => r.Id==1 || r.Id == 2 || r.Id == 3 || u.UserName == currentUserName));
+                query = query.Where(u => u.Roles.Any(r => r.Id == 1 || r.Id == 2 || r.Id == 3 || u.UserName == currentUserName));
             }
             else if (currentUserRoleIds.Contains(2)) // Giảng viên
             {
@@ -253,7 +260,44 @@ namespace API.Services.Repositories
             });
         }
 
-       
+        public async Task<IEnumerable<UserDTO>> GetAllUsersNoTeacher(List<int> currentUserRoleIds, string? currentUserName)
+        {
+            IQueryable<User> query = _context.Users
+            .Include(u => u.UserProfile)
+            .Include(u => u.Roles)
+            .AsSplitQuery();
+
+            if (currentUserRoleIds.Contains(1)) // Admin
+            {
+                query = query.Where(u => u.Roles.Any(r => r.Id == 1 || r.Id == 2 || r.Id == 3 || u.UserName == currentUserName));
+            }
+            else if (currentUserRoleIds.Contains(2)) // Giảng viên
+            {
+                query = query.Where(u => u.UserName == currentUserName);
+            }
+            else
+            {
+                query = query.Where(u => u.UserName == currentUserName);
+            }
+
+            var users = await query.ToListAsync();
+
+            return users.Select(u => new UserDTO
+            {
+                UserName = u.UserName,
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                Statuss = u.Statuss ?? false,
+                CreateAt = u.CreateAt,
+                UserCode = u.UserProfile?.UserCode,
+                FullName = u.UserProfile?.FullName,
+                Gender = u.UserProfile?.Gender,
+                Avatar = u.UserProfile?.Avatar,
+                Address = u.UserProfile?.Address,
+                Dob = u.UserProfile?.Dob?.ToDateTime(TimeOnly.MinValue),
+                RoleIds = u.Roles.Select(r => r.Id).ToList()
+            });
+        }
         public async Task<string> LockUser(string userName)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
@@ -267,38 +311,63 @@ namespace API.Services.Repositories
         }
         public async Task UpdateUser(UserDTO userd)
         {
-            var upinsv = await _context.Users
+            var upuser = await _context.Users
                   .Include(p => p.UserProfile)
                   .FirstOrDefaultAsync(d => d.UserName.ToLower() == userd.UserName.ToLower());
-            if (upinsv == null)
+
+            if (upuser == null)
                 throw new Exception("Không tìm thấy người dùng.");
-            if (await _context.Users.AnyAsync(u => u.UserName == userd.UserName && u.Id != upinsv.Id))
+            if (await _context.Users.AnyAsync(u => u.UserName == userd.UserName && u.Id != upuser.Id))
                 throw new Exception("Tên đăng nhập đã tồn tại.");
 
-            if (await _context.Users.AnyAsync(u => u.Email == userd.Email && u.Id != upinsv.Id))
+            if (await _context.Users.AnyAsync(u => u.Email == userd.Email && u.Id != upuser.Id))
                 throw new Exception("Email đã được sử dụng.");
 
             // Check for unique UserCode
             if (!string.IsNullOrWhiteSpace(userd.UserCode))
             {
                 bool userCodeExists = await _context.UserProfiles
-                    .AnyAsync(up => up.UserCode == userd.UserCode && up.UserId != upinsv.Id);
+                    .AnyAsync(up => up.UserCode == userd.UserCode && up.UserId != upuser.Id);
                 if (userCodeExists)
                     throw new Exception("UserCode đã tồn tại.");
             }
 
-            upinsv.PassWordHash = PasswordHasher.HashPassword(userd.PassWordHash);
-            upinsv.Email = userd.Email;
-            upinsv.UserProfile.FullName = userd.FullName;
-            //upinsv.UserProfile.UserCode = userd.UserCode;
-            upinsv.UserProfile.Gender = userd.Gender;
-            upinsv.PhoneNumber = userd.PhoneNumber;
-            upinsv.UserProfile.Avatar = userd.Avatar;
-            upinsv.UserProfile.Address = userd.Address;
-            upinsv.Statuss = userd.Statuss;
-            upinsv.UserProfile.Dob = userd.Dob.HasValue ? DateOnly.FromDateTime(userd.Dob.Value) : null;
+            // Email
+            if (!string.IsNullOrWhiteSpace(userd.Email))
+                upuser.Email = userd.Email;
 
-            _context.Users.Update(upinsv);
+            // Kiểm tra UserProfile có null không, nếu null thì khởi tạo
+            if (upuser.UserProfile == null)
+                upuser.UserProfile = new UserProfile();
+
+            // FullName
+            if (!string.IsNullOrWhiteSpace(userd.FullName))
+                upuser.UserProfile.FullName = userd.FullName;
+
+            if (!string.IsNullOrWhiteSpace(userd.UserCode))
+                upuser.UserProfile.UserCode = userd.UserCode;
+
+            // Gender
+            if (userd.Gender.HasValue)
+                upuser.UserProfile.Gender = userd.Gender;
+
+            // PhoneNumber
+            if (!string.IsNullOrWhiteSpace(userd.PhoneNumber))
+                upuser.PhoneNumber = userd.PhoneNumber;
+
+            // Avatar
+            if (!string.IsNullOrWhiteSpace(userd.Avatar))
+                upuser.UserProfile.Avatar = userd.Avatar;
+
+            // Address
+            if (!string.IsNullOrWhiteSpace(userd.Address))
+                upuser.UserProfile.Address = userd.Address;
+
+            // Dob
+            if (userd.Dob.HasValue)
+                upuser.UserProfile.Dob = DateOnly.FromDateTime(userd.Dob.Value);
+
+            _context.Users.Update(upuser);
             await _context.SaveChangesAsync();
         }
         public async Task<string> ChangeRole(string userName, int newRoleId)
@@ -323,16 +392,16 @@ namespace API.Services.Repositories
             await _context.SaveChangesAsync();
             return $"Đã đổi vai trò thành công sang: {newRole.RoleName}";
         }
-        public async Task ForgotPassword(string email)
+        public async Task ForgetPassword(string email)
         {
-            var user =await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
                 throw new Exception("Email không tồn tại. Hãy sử dụng email khác.");
             // Tạo token xác nhận email
             var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(user.Email));
-            var forgotpasswordLink = $"https://localhost:7298/api/User/forgot-password?token={HttpUtility.UrlEncode(token)}";
+            var forgetpasswordLink = $"https://localhost:7298/api/User/forget-password?token={HttpUtility.UrlEncode(token)}";
 
-            string message = $"Vui lòng xác nhận email bằng cách <a href='{forgotpasswordLink}'>nhấn vào đây.</a>";
+            string message = $"Vui lòng xác nhận email bằng cách <a href='{forgetpasswordLink}'>nhấn vào đây.</a>";
             await _emailService.SendEmail(user.Email, "Đặt lại mật khẩu", message);
 
         }
@@ -352,6 +421,7 @@ namespace API.Services.Repositories
             await _context.SaveChangesAsync();
             return "Đặt lại mật khẩu thành công.";
         }
+
         public static class PasswordHasher
         {
             private const int SaltSize = 16; // 128-bit salt
