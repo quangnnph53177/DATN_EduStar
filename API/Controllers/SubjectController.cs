@@ -16,9 +16,23 @@ namespace API.Controllers
             _service = service;
         }
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get(string? subjectName, int numberofCredit, string? subcode, bool? status)
         {
-            return Ok(await _service.Getall());
+            if(string.IsNullOrEmpty(subjectName)&&
+                string.IsNullOrEmpty(subcode)&&
+                numberofCredit==null&&
+                status==null) 
+            {
+                var re = await _service.Getall();
+                return Ok(re);
+            }
+            var result = await _service.Search(subjectName, numberofCredit, subcode, status);
+            if (result == null || !result.Any())
+            {
+                return NotFound(new { message = "Không tìm thấy môn phù hợp." });
+            }
+
+            return Ok(result);
         }
         [HttpGet("{Id}")]
         public async Task<IActionResult> GetId(int Id)
@@ -47,13 +61,13 @@ namespace API.Controllers
                 return BadRequest(new { message = $"Lỗi khi cập nhập :{ex.Message}" });
             }
         }
-        [HttpGet("search")]
-        public async Task<IActionResult> Search(string? subjectname, int? numberofcredot, string? subcode, bool? status)
-        {
-            var result = await _service.Search(subjectname, numberofcredot, subcode, status);
-            return Ok(result);
-        }
-        [HttpPut("Lock")]
+        //[HttpGet("search")]
+        //public async Task<IActionResult> Search(string? subjectname, int? numberofcredot, string? subcode, bool? status)
+        //{
+        //    var result = await _service.Search(subjectname, numberofcredot, subcode, status);
+        //    return Ok(result);
+        //}
+        [HttpPut("{id}/Lock")]
         public async Task<IActionResult> Lock(int id)
         {
             return Ok(await _service.OpenAndClose(id));

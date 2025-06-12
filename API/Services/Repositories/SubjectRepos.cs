@@ -1,4 +1,4 @@
-﻿using API.Data;
+﻿ using API.Data;
 using API.Models;
 using API.ViewModel;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +18,7 @@ namespace API.Services.Repositories
         {
             var su = new Subject()
             {
-                Id = sub.Id,
+                
                 SubjectName = sub.SubjectName,
                 subjectCode = sub.subjectCode,
                 Description= sub.Description,
@@ -26,7 +26,7 @@ namespace API.Services.Repositories
                 Status = sub.Status,
             };
             _context.Subjects.Add(su);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return su;
         }
 
@@ -40,7 +40,7 @@ namespace API.Services.Repositories
             }
             return true;
            
-        }
+        }     
 
         public async Task<List<SubjectViewModel>> Getall()
         {
@@ -98,11 +98,11 @@ namespace API.Services.Repositories
             {
                 query = query.Where(c => c.NumberOfCredits == numberofCredit);
             }
-            if (!status.HasValue) 
+            if (!status.HasValue)
             {
-                query = query.Where(c => c.Status == status);
+                query = query.Where(c => c.Status == status);  
             }
-            var model = await query.Select(c => new SubjectViewModel
+            var model = await query.OrderBy(c=>c.subjectCode).Select(c => new SubjectViewModel
             {
                 Id = c.Id,
                 SubjectName=c.SubjectName,
@@ -118,7 +118,7 @@ namespace API.Services.Repositories
         public async Task UpdateSubject(SubjectViewModel subject)
         {
             var con = await _context.Subjects.FirstOrDefaultAsync(s => s.Id == subject.Id);
-           // con.Id = subject.Id;
+            //con.Id = subject.Id;
             con.SubjectName = subject.SubjectName;
             con.subjectCode =subject.subjectCode;
             con.NumberOfCredits = subject.NumberOfCredits;
