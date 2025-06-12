@@ -1,4 +1,4 @@
-﻿@model IEnumerable<API.ViewModel.UserDTO>
+﻿@model API.ViewModel.PagedResult<API.ViewModel.UserDTO>
 
 @{
     ViewData["Title"] = "Danh sách người dùng";
@@ -28,9 +28,9 @@
     </form>
 }
 <div class="row">
-            @foreach (var user in Model)
+            @foreach (var user in Model.Items)
             {
-                <div class="col-md-3 mb-3">
+                <div class="col-md-3 mb-4">
                     <div class="card h-100 shadow-sm">
                         @if (!string.IsNullOrEmpty(user.Avatar))
                         {
@@ -47,21 +47,44 @@
                                 <strong>Email:</strong> @user.Email <br />
                                 <strong>Student Code:</strong> @user.UserCode <br />
                                 <strong>Vai trò:</strong> @string.Join(", ", user.RoleIds ?? new List<int>())<br />
-                                <strong>Trạng thái hoạt động:</strong> @(user.Statuss ? "Hoạt động" : "Đã khóa") <br />
+                                <strong>Trạng thái hoạt động:</strong>
+                                <span class="badge bg-@(user.Statuss ? "success" : "secondary")">
+                                    @(user.Statuss ? "Hoạt động" : "Đã khóa")
+                                </span><br />
+                             </p>
                         </div>
-                        <div class="card-footer text-center">
-                             <a asp-controller="Users" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-primary btn-sm mx-1">Chi tiết</a>
-                             @if (User.IsInRole("1"))
-                             {
-                                <a asp-controller="Users" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-primary btn-sm mx-1">Cập nhật</a>
-                                <a asp-controller="Users" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-primary btn-sm mx-1"> Change Role</a>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-center">
+                        <a asp-controller="Users" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm small mx-1 mb-1">🔍</a>
+                                @if (User.IsInRole("1"))
+                                {
+                            <a asp-controller="Users" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm small mx-1 mb-1">✏️ </a>
+                            <a asp-controller="Users" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm small mx-1 mb-1">🔄</a>
+                                    <form asp-controller="Users" asp-action="LockUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái?');" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm small mx-1 mb-1 @(user.Statuss ? "btn-danger" : "btn-success")">
+                                    @(user.Statuss ? "🔒" : "🔓 ")
+                                        </button>
+                                    </form>
 
-                                <a href="javascript:void(0);" onclick="lockUser('@user.UserName')" class="btn @(user.Statuss == true ? "btn-danger" : "btn-success") btn-sm">
-                                    @(user.Statuss == true ? "Khóa" : "Mở khóa")
-                                </a>
-                             }                            
+                                }
+                            </div>
                         </div>
                     </div>
                 </div>
             }
+</div>
+
+<div class="d-flex justify-content-between">
+    <span>Trang @Model.PageIndex / @Model.TotalPages</span>
+    <div>
+        @if (Model.HasPreviousPage)
+        {
+            <a class="btn btn-outline-primary btn-sm" href="?page=@(Model.PageIndex - 1)">« Trước</a>
+        }
+        @if (Model.HasNextPage)
+        {
+            <a class="btn btn-outline-primary btn-sm" href="?page=@(Model.PageIndex + 1)">Sau »</a>
+        }
+    </div>
 </div>

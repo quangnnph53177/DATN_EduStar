@@ -246,9 +246,9 @@ namespace API.Services.Repositories
         public async Task<IEnumerable<UserDTO>> GetAllUsers(List<int> currentUserRoleIds, string? currentUserName)
         {
             IQueryable<User> query = _context.Users
-            .Include(u => u.UserProfile)
-            .Include(u => u.Roles)
-            .AsSplitQuery();
+                .Include(u => u.UserProfile)
+                .Include(u => u.Roles)
+                .AsSplitQuery();
 
             if (currentUserRoleIds.Contains(1)) // Admin
             {
@@ -263,22 +263,29 @@ namespace API.Services.Repositories
                 query = query.Where(u => u.UserName == currentUserName);
             }
 
-            var users = await query.ToListAsync();
+            var users = await query.OrderByDescending(u => u.Statuss).ToListAsync();
 
-            return users.Select(u => new UserDTO
+            return users.Select(x => new
             {
-                UserName = u.UserName,
-                Email = u.Email,
-                PhoneNumber = u.PhoneNumber,
-                Statuss = u.Statuss ?? false,
-                CreateAt = u.CreateAt,
-                UserCode = u.UserProfile?.UserCode,
-                FullName = u.UserProfile?.FullName,
-                Gender = u.UserProfile?.Gender,
-                Avatar = u.UserProfile?.Avatar,
-                Address = u.UserProfile?.Address,
-                Dob = u.UserProfile?.Dob?.ToDateTime(TimeOnly.MinValue),
-                RoleIds = u.Roles.Select(r => r.Id).ToList()
+                User = x,
+                MainRole = x.Roles.Min(r => r.Id) // hoặc viết logic riêng nếu cần xác định ưu tiên
+            })
+            .OrderByDescending(u => u.User.Statuss ?? false) // Hoạt động trước
+            .ThenBy(u => u.MainRole) // Vai trò ưu tiên: Admin (1) → Giảng viên (2) → Sinh viên (3)
+            .Select(u => new UserDTO
+            {
+                UserName = u.User.UserName, // Fixed: Accessing User property of the anonymous type
+                Email = u.User.Email,
+                PhoneNumber = u.User.PhoneNumber,
+                Statuss = u.User.Statuss ?? false,
+                CreateAt = u.User.CreateAt,
+                UserCode = u.User.UserProfile?.UserCode,
+                FullName = u.User.UserProfile?.FullName,
+                Gender = u.User.UserProfile?.Gender,
+                Avatar = u.User.UserProfile?.Avatar,
+                Address = u.User.UserProfile?.Address,
+                Dob = u.User.UserProfile?.Dob?.ToDateTime(TimeOnly.MinValue),
+                RoleIds = u.User.Roles.Select(r => r.Id).ToList()
             });
         }
 
@@ -331,6 +338,7 @@ namespace API.Services.Repositories
 
             return user.Statuss == true ? "Mở khóa thành công" : "Khóa thành công";
         }
+
         public async Task UpdateUser(UserDTO userd, IFormFile imgFile)
         {
             var upuser = await _context.Users

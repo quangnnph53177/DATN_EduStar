@@ -35,8 +35,10 @@
                 <img src="https://localhost:7298/@Model.Avatar" alt="Avatar" style="max-width: 150px; border-radius: 10px;" />
             </div>
         }
-
-        <a asp-action="UpdateUser" asp-route-username="@Model.UserName" class="btn btn-primary mt-3">Chỉnh sửa</a>
+        @if (User.Identity.Name == Model.UserName)
+         {
+            <a asp-action="UpdateUser" asp-route-username="@Model.UserName" class="btn btn-primary mt-3">Chỉnh sửa</a>
+         }
         <a asp-action="Index" class="btn btn-secondary mt-3">Quay lại danh sách</a>
     </div>
 </div>

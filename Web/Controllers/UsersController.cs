@@ -110,7 +110,7 @@ namespace Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 12)
         {
             var client = GetClientWithToken();
             if (client == null)
@@ -129,7 +129,18 @@ namespace Web.Controllers
                     {
                         PropertyNameCaseInsensitive = true
                     }) ?? new List<UserDTO>();
-                    return View(users);
+                    var totalCount = users.Count;
+                    var pagedUsers = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+                    var result = new PagedResult<UserDTO>
+                    {
+                        Items = pagedUsers,
+                        TotalCount = totalCount,
+                        PageSize = pageSize,
+                        PageIndex = page
+                    };
+
+                    return View(result);
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 {
@@ -143,7 +154,7 @@ namespace Web.Controllers
                 }
 
                 TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy danh sách người dùng.";
-                return View(new List<UserDTO>());
+                return View(new PagedResult<UserDTO>());
             }
             catch (HttpRequestException ex)
             {
@@ -158,7 +169,7 @@ namespace Web.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return View(new List<UserDTO>());
+                return View(new PagedResult<UserDTO>());
             }
         }
         [HttpGet]
@@ -218,10 +229,13 @@ namespace Web.Controllers
             }
             var response = await client.PostAsync("https://localhost:7298/api/User/register", content);
             if (response.IsSuccessStatusCode)
+            {
+                TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
                 return RedirectToAction("Index", "Users");
+            }
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 return RedirectToAction("AccessDenied");
-            ModelState.AddModelError("", "Đăng ký không thành công.");
+           TempData["ErrorMessage"] = "Đăng ký không thành công.";
             return View(model);
         }
         [HttpGet]
@@ -241,7 +255,7 @@ namespace Web.Controllers
         {
             if (file == null || file.Length == 0)
             {
-                ModelState.AddModelError("", "Vui lòng chọn tệp để tải lên.");
+                TempData["ErrorMessage"] = "Vui lòng chọn tệp để tải lên.";
                 return View();
             }
 
@@ -258,7 +272,7 @@ namespace Web.Controllers
             }
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 return RedirectToAction("AccessDenied");
-            ModelState.AddModelError("", "Tải lên không thành công.");
+            TempData["ErrorMessage"] = "Tải lên không thành công.";
             return View();
         }
         public IActionResult Confirm()
@@ -296,7 +310,7 @@ namespace Web.Controllers
             return RedirectToAction("Confirm");
         }
         [HttpGet]
-        public async Task<IActionResult> SearchUS(string? keyword)
+        public async Task<IActionResult> SearchUS(string? keyword,int page = 1, int pageSize = 12)
         {
             try
             {
@@ -318,19 +332,30 @@ namespace Web.Controllers
                 if (response.IsSuccessStatusCode)
                 {
                     var users = JsonSerializer.Deserialize<List<UserDTO>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    return View("Index", users);
+                    var totalCount = users.Count;
+                    var pagedUsers = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+                    var result = new PagedResult<UserDTO>
+                    {
+                        Items = pagedUsers,
+                        TotalCount = totalCount,
+                        PageSize = pageSize,
+                        PageIndex = page
+                    };
+                    ViewBag.Keyword = keyword; // để giữ lại từ khoá khi hiển thị view
+                    return View("Index", result); // dùng lại view Index
                 }
                 else
                 {
                     // Hiển thị thông báo lỗi chi tiết từ API (nếu có)
                     TempData["ErrorMessage"] = !string.IsNullOrEmpty(content) ? content : "Không thể lấy danh sách người dùng.";
-                    return View("Index", new List<UserDTO>());
+                    return View("Index", new PagedResult<UserDTO>());
                 }
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return RedirectToAction("SearchUS");
+                return RedirectToAction("Index");
             }
         }
         [HttpGet]
@@ -461,26 +486,25 @@ namespace Web.Controllers
             try
             {
                 var client = GetClientWithToken();
-                if (client == null)
-                    return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." });
                 // Gọi API với phương thức POST (đã đổi trên API)
                 var response = await client.PostAsync($"https://localhost:7298/api/User/lock/{username}", null);
-
-                var responseContent = await response.Content.ReadAsStringAsync();
+                var content = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return Content(responseContent, "application/json"); // Trả nguyên JSON từ API
+                    TempData["SuccessMessage"] = "Cập nhật trạng thái người dùng thành công.";
                 }
                 else
                 {
-                    return Json(new { success = false, message = !string.IsNullOrEmpty(responseContent) ? responseContent : "Thao tác thất bại." });
+                    TempData["ErrorMessage"] = !string.IsNullOrEmpty(content) ? content : "Thao tác thất bại.";
                 }
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = $"Lỗi hệ thống: {ex.Message}" });
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
             }
+
+            return RedirectToAction("Index");
         }
         [HttpGet]
         public async Task<IActionResult> ChangeRole(string username)

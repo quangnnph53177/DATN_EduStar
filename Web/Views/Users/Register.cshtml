@@ -3,7 +3,14 @@
     ViewData["Title"] = "Đăng ký tài khoản";
     var roleList = ViewBag.RoleList as List<SelectListItem>;
 }
-
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["ErrorMessage"]</div>
+}
 <h2>Đăng ký tài khoản</h2>
 <a asp-action="Upload" asp-controller="Users" class="btn btn-secondary mt-2">Upload List User</a>
 <form asp-controller="Users" asp-action="Register" method="post" enctype="multipart/form-data">
