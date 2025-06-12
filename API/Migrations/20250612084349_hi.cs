@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace API.Migrations
 {
     /// <inheritdoc />
-    public partial class dat : Migration
+    public partial class hi : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -86,8 +86,10 @@ namespace API.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false),
                     SubjectName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    subjectCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    NumberOfCredits = table.Column<int>(type: "int", nullable: true)
+                    NumberOfCredits = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<bool>(type: "bit", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -144,7 +146,8 @@ namespace API.Migrations
                     NameClass = table.Column<string>(type: "nvarchar(90)", maxLength: 90, nullable: true),
                     SubjectId = table.Column<int>(type: "int", nullable: true),
                     Semester = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    YearSchool = table.Column<int>(type: "int", nullable: true)
+                    YearSchool = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<bool>(type: "bit", nullable: true)
                 },
                 constraints: table =>
                 {

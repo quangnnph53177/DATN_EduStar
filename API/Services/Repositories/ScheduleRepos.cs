@@ -2,6 +2,7 @@
 using API.Models;
 using API.ViewModel;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 namespace API.Services.Repositories
 {
@@ -86,12 +87,44 @@ namespace API.Services.Repositories
                 await _context.SaveChangesAsync();
             }
         }
-        public async Task CreateSchedules(SchedulesViewModel model)
+        public async Task<Schedule> CreateSchedules(SchedulesDTO model)
         {
-              
-
+            var sc = new Schedule()
+            {
+                Id = model.Id,
+                ClassId = model.ClassId,
+                RoomId = model.RoomId,
+                DayId = model.WeekDayId,
+                StudyShiftId = model.StudyShiftId,
+            };
+            _context.Schedules.Add(sc);
+            await _context.SaveChangesAsync();
+            return sc;
         }
-        
+
+        public async Task<byte[]> ExportSchedules(List<SchedulesViewModel> model)
+        {
+            using var package = new ExcelPackage();
+            var worksheets = package.Workbook.Worksheets.Add("Schedules");
+            worksheets.Cells[1, 1].Value = "STT";
+            worksheets.Cells[1, 2].Value = "Tên lớp";
+            worksheets.Cells[1, 3].Value = "Phòng";
+            worksheets.Cells[1, 4].Value = "Ngày";
+            worksheets.Cells[1, 5].Value = "Ca";
+            int row = 2;
+            int stt = 1;
+            foreach (var item in model)
+            {
+                worksheets.Cells[row, 1].Value = stt++;
+                worksheets.Cells[row, 2].Value = item.ClassName;
+                worksheets.Cells[row, 3].Value = item.RoomCode;
+                worksheets.Cells[row, 4].Value = item.WeekDay;
+                worksheets.Cells[row, 5].Value = item.StudyShift;
+                row++;
+            }
+            return package.GetAsByteArray();
+        }
+
         public async Task<List<Schedule>> GetAll()
         {
             var schedule =await _context.Schedules
@@ -103,32 +136,31 @@ namespace API.Services.Repositories
             return schedule;
         }
 
+        public async Task<SchedulesViewModel> GetById(int id)
+        {
+            var schedule = await _context.Schedules
+                .Include(c=>c.Class)
+                .Include (r=>r.Room)
+                .Include(d=>d.Day)
+                .Include(s=> s.StudyShift)
+                .AsSplitQuery().FirstOrDefaultAsync(e=> e.Id ==id);
+            var model = new SchedulesViewModel()
+            {
+                Id =schedule.Id,
+                ClassName=schedule.Class.NameClass,
+                RoomCode = schedule.Room.RoomCode,
+                WeekDay = schedule.Day.Weekdays,
+                StudyShift= schedule.StudyShift.StudyShiftName
+            };
+            return model;
+        }
+
         public async Task<List<SchedulesViewModel>> GetByStudent(Guid Id)
         {
-            //var students = await _context.StudentsInfors
-            //     .Include(s => s.Classes)
-            //         .ThenInclude(c => c.Schedules)
-            //             .ThenInclude(sc => sc.Room)
-            //     .Include(s => s.Classes)
-            //         .ThenInclude(c => c.Schedules)
-            //             .ThenInclude(sc => sc.Day)
-            //     .Include(s => s.Classes)
-            //         .ThenInclude(c => c.Schedules)
-            //             .ThenInclude(sc => sc.StudyShift)
-            //     .FirstOrDefaultAsync(st => st.UserId == Id);
-            //var model = new SchedulesViewModel()
-            //{
-            //    Id = students.Classes.FirstOrDefault().Schedules.FirstOrDefault().Id,
-            //    ClassName = students.Classes.FirstOrDefault().NameClass,
-            //    StudyShift =students.Classes.FirstOrDefault().Schedules.FirstOrDefault().StudyShift.StudyShiftName,
-            //    RoomCode = students.Classes.FirstOrDefault().Schedules.FirstOrDefault().Room.RoomCode,
-            //    WeekDay = students.Classes.FirstOrDefault().Schedules.FirstOrDefault().Day.Weekdays
-            //};
-
-            //return model;
+           
             var student = await _context.StudentsInfors
-        .Include(s => s.Classes)
-        .FirstOrDefaultAsync(s => s.UserId == Id);
+            .Include(s => s.Classes)
+            .FirstOrDefaultAsync(s => s.UserId == Id);
 
             if (student == null || student.Classes == null)
             {

@@ -1,0 +1,66 @@
+﻿@model IEnumerable<API.ViewModel.SubjectViewModel>
+
+@{
+    ViewData["Title"] = "Danh sách môn học";
+}
+
+<h1>Danh sách môn học</h1>
+
+<form method="get" asp-action="Index" class="row g-3 mb-4">
+    <div class="col-md-3">
+        <input type="text" name="subjectName" class="form-control" placeholder="Tên môn học" 
+               value="@ViewContext.HttpContext.Request.Query["subjectName"]" />
+    </div>
+    <div class="col-md-3">
+        <input type="text" name="subcode" class="form-control" placeholder="Mã môn học" 
+               value="@ViewContext.HttpContext.Request.Query["subcode"]" />
+    </div>
+    <div class="col-md-2">
+        <input type="number" name="numberofCredit" class="form-control" placeholder="Số tín chỉ" 
+               value="@ViewContext.HttpContext.Request.Query["numberofCredit"]" />
+    </div>
+   @*  <div class="col-md-2">
+        <select name="status" class="form-control">
+            <option value="">-- Trạng thái --</option>
+            <option value="true">hoạt động</option>
+            <option value="false">Không hoạt động</option>
+        </select>
+    </div> *@
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+    </div>
+</form>
+
+<p>
+    <a asp-action="Create" class="btn btn-success">Thêm môn học mới</a>
+</p>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.SubjectName)</th>
+            <th>@Html.DisplayNameFor(model => model.subjectCode)</th>
+            <th>@Html.DisplayNameFor(model => model.Description)</th>
+            <th>@Html.DisplayNameFor(model => model.NumberOfCredits)</th>
+           @*  <th>@Html.DisplayNameFor(model => model.Status)</th> *@
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.SubjectName)</td>
+                <td>@Html.DisplayFor(modelItem => item.subjectCode)</td>
+                <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                <td>@Html.DisplayFor(modelItem => item.NumberOfCredits)</td>
+                @* <td>@(item.Status.Value ? "Hoạt động" : "Không hoạt động")</td> *@
+                <td>
+                    @Html.ActionLink("Sửa", "Edit", new { id = item.Id }) |
+                    @Html.ActionLink("Chi tiết", "Details", new { id = item.Id }) |
+                    @Html.ActionLink("Xóa", "Delete", new { id = item.Id })
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
