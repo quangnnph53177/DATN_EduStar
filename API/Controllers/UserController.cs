@@ -28,16 +28,17 @@ namespace API.Controllers
             _logRepos = auditLogRepos;
             _context = aduDbcontext;
         }
-        [Authorize(Policy = "CreateUS")]//Nếu chưa có tài khoản thì commit cái này lại để tạo tài khoản để đăng nhập
+        [Authorize(Policy = "CreateUS")]
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] UserDTO userDto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Register([FromForm] UserDTO userDto, IFormFile imgFile)
         {
             if (userDto == null || !ModelState.IsValid)
                 return BadRequest("Dữ liệu không hợp lệ");
 
             try
             {
-                var createdUser = await _userRepos.Register(userDto);
+                var createdUser = await _userRepos.Register(userDto,imgFile);
                 var newData = JsonSerializer.Serialize(new
                 {
                     createdUser.Id,
@@ -163,7 +164,7 @@ namespace API.Controllers
                             Statuss = true,
                             CreateAt = DateTime.Now
                         };
-                        var createdUser = await _userRepos.Register(userDto);
+                        var createdUser = await _userRepos.Register(userDto,null);
                         usersCreated.Add(userName);
                         var newData = JsonSerializer.Serialize(new
                         {
@@ -291,7 +292,8 @@ namespace API.Controllers
         }
         [Authorize(Policy = "EditUS")]
         [HttpPut("updateuser/{username}")]
-        public async Task<IActionResult> UpdateUser(string username, [FromBody] UserDTO userDto)
+       // [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateUser(string username, [FromForm] UserDTO userDto,IFormFile imgFile)
         {
             var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
             var currentUserName = User.Identity?.Name;
@@ -313,7 +315,7 @@ namespace API.Controllers
                 // Serialize old data
                 var oldData = JsonSerializer.Serialize(targetUser);
 
-                await _userRepos.UpdateUser(userDto);
+                await _userRepos.UpdateUser(userDto,imgFile);
 
                 // Lấy lại thông tin user sau khi update để log new data
                 var updatedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);

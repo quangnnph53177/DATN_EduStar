@@ -28,6 +28,7 @@ builder.Services.AddTransient<IEmailRepos, EmailRepos>();
 builder.Services.AddScoped<IStatistical, StatisticalRepos>();
 builder.Services.AddScoped<IShedulesRepos, ScheduleRepos>();
 builder.Services.AddScoped<IAuditLogRepos, AuditLogRepos>();
+builder.Services.AddScoped<ISubject ,SubjectRepos > ();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>

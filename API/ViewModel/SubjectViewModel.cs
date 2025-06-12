@@ -4,9 +4,8 @@ using System.ComponentModel.DataAnnotations;
 namespace API.ViewModel
 {
     public class SubjectViewModel
-    {
-        [Key]
-        public int? Id { get; set; }
+    { 
+        public int Id { get; set; }
 
         public string SubjectName { get; set; } = null!;
         public string subjectCode { get; set; } = null!;

@@ -18,7 +18,7 @@ namespace API.Services.Repositories
         {
             var su = new Subject()
             {
-                
+                Id = sub.Id,
                 SubjectName = sub.SubjectName,
                 subjectCode = sub.subjectCode,
                 Description= sub.Description,
@@ -94,11 +94,11 @@ namespace API.Services.Repositories
             {
                 query = query.Where(c => c.subjectCode.ToLower().Contains(subcode));
             }
-            if (!numberofCredit.HasValue)
+            if (numberofCredit.HasValue)
             {
                 query = query.Where(c => c.NumberOfCredits == numberofCredit);
             }
-            if (!status.HasValue)
+            if (status.HasValue)
             {
                 query = query.Where(c => c.Status == status);  
             }
@@ -115,17 +115,24 @@ namespace API.Services.Repositories
         
         }
 
-        public async Task UpdateSubject(SubjectViewModel subject)
+        public async Task<bool> UpdateSubject(SubjectViewModel subject)
         {
             var con = await _context.Subjects.FirstOrDefaultAsync(s => s.Id == subject.Id);
-            //con.Id = subject.Id;
+
+            if (con == null)
+                return false; // Không tìm thấy subject cần cập nhật
+
+            // Cập nhật thông tin
             con.SubjectName = subject.SubjectName;
-            con.subjectCode =subject.subjectCode;
+            con.subjectCode = subject.subjectCode;
             con.NumberOfCredits = subject.NumberOfCredits;
             con.Description = subject.Description;
             con.Status = subject.Status;
-            _context.Subjects.Update(con);
-            _context.SaveChanges();
+
+            // Không cần gọi Update(con) nếu con đang được tracked bởi EF
+            await _context.SaveChangesAsync();
+            return true;
         }
+
     }
 }

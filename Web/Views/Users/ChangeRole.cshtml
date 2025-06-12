@@ -1,0 +1,34 @@
+﻿@model API.ViewModel.UserDTO
+
+@{
+    ViewData["Title"] = "Đổi vai trò người dùng";
+    var currentRoleId = Model.RoleIds.FirstOrDefault(); // Lấy vai trò hiện tại
+}
+
+<h2>Đổi vai trò cho @Model.UserName</h2>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<form asp-action="ChangeRole" method="post">
+    <input type="hidden" name="username" value="@Model.UserName" />
+
+    <div class="form-group">
+        <label>Vai trò mới</label>
+        <select name="newRoleId" class="form-control">
+            <option value="1" selected="@(currentRoleId == 1 ? "selected" : null)">Admin</option>
+            <option value="2" selected="@(currentRoleId == 2 ? "selected" : null)">Teacher</option>
+            <option value="3" selected="@(currentRoleId == 3 ? "selected" : null)">Student</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Đổi vai trò</button>
+    <a asp-action="Index" class="btn btn-secondary mt-3">Quay lại</a>
+</form>

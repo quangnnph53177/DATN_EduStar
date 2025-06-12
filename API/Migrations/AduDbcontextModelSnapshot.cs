@@ -152,12 +152,9 @@ namespace API.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-<<<<<<< HEAD
-=======
                     b.Property<bool?>("Status")
                         .HasColumnType("bit");
 
->>>>>>> cd547599607c4c8674bb20d77796bb266085b917
                     b.Property<int?>("SubjectId")
                         .HasColumnType("int");
 
@@ -361,13 +358,6 @@ namespace API.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-<<<<<<< HEAD
-                    b.Property<string>("ClassCode")
-                        .HasMaxLength(90)
-                        .HasColumnType("nvarchar(90)");
-
-=======
->>>>>>> cd547599607c4c8674bb20d77796bb266085b917
                     b.Property<string>("StudentsCode")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");

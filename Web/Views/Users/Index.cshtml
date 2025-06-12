@@ -1,0 +1,67 @@
+﻿@model IEnumerable<API.ViewModel.UserDTO>
+
+@{
+    ViewData["Title"] = "Danh sách người dùng";
+}
+
+<h2>Danh sách người dùng</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+@if (User.IsInRole("1"))
+{
+    <a asp-controller="Users" asp-action="Register" class="btn btn-primary mb-3">Thêm người dùng</a>
+}
+@if (User.IsInRole("1") || User.IsInRole("2"))
+{
+    <form method="get" asp-action="SearchUS" class="mb-3 d-flex">
+        <input type="text" name="keyword" class="form-control me-2" placeholder="Nhập từ khóa tìm kiếm" />
+        <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Làm mới</a>
+    </form>
+}
+<div class="row">
+            @foreach (var user in Model)
+            {
+                <div class="col-md-3 mb-3">
+                    <div class="card h-100 shadow-sm">
+                        @if (!string.IsNullOrEmpty(user.Avatar))
+                        {
+                            <img src="https://localhost:7298/@user.Avatar" class="card-img-top" alt="Avatar" style="height: 200px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <img src="https://via.placeholder.com/200x200?text=No+Avatar" class="card-img-top" alt="No Avatar" style="height: 200px; object-fit: cover;" />
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@user.FullName</h5>
+                            <p class="card-text">
+                                <strong>UserName:</strong> @user.UserName <br />
+                                <strong>Email:</strong> @user.Email <br />
+                                <strong>Student Code:</strong> @user.UserCode <br />
+                                <strong>Vai trò:</strong> @string.Join(", ", user.RoleIds ?? new List<int>())<br />
+                                <strong>Trạng thái hoạt động:</strong> @(user.Statuss ? "Hoạt động" : "Đã khóa") <br />
+                        </div>
+                        <div class="card-footer text-center">
+                             <a asp-controller="Users" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-primary btn-sm mx-1">Chi tiết</a>
+                             @if (User.IsInRole("1"))
+                             {
+                                <a asp-controller="Users" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-primary btn-sm mx-1">Cập nhật</a>
+                                <a asp-controller="Users" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-primary btn-sm mx-1"> Change Role</a>
+
+                                <a href="javascript:void(0);" onclick="lockUser('@user.UserName')" class="btn @(user.Statuss == true ? "btn-danger" : "btn-success") btn-sm">
+                                    @(user.Statuss == true ? "Khóa" : "Mở khóa")
+                                </a>
+                             }                            
+                        </div>
+                    </div>
+                </div>
+            }
+</div>
