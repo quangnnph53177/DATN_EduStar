@@ -25,15 +25,15 @@ builder.Services.AddScoped<IStudent, StudentsRepos>();
 builder.Services.AddScoped<IUserRepos, UserRepos>();
 builder.Services.AddScoped<IClassRepos, ClassRepos>();
 builder.Services.AddTransient<IEmailRepos, EmailRepos>();
-builder.Services.AddScoped<IStatistical , StatisticalRepos>();
+builder.Services.AddScoped<IStatistical, StatisticalRepos>();
 builder.Services.AddScoped<IShedulesRepos, ScheduleRepos>();
 builder.Services.AddScoped<IAuditLogRepos, AuditLogRepos>();
-builder.Services.AddScoped<ISubject, SubjectRepos>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("https://localhost:7298")
+              .AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -74,21 +74,21 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("EditUS", policy => policy.RequireClaim("Permission", "Edit"));
 });
 
-    builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "EduStar", Version = "v1" });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        c.SwaggerDoc("v1", new OpenApiInfo { Title = "EduStar", Version = "v1" });
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Nhập JWT token như: Bearer {token}",
+    });
 
-        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-        {
-            Name = "Authorization",
-            Type = SecuritySchemeType.Http,
-            Scheme = "Bearer",
-            BearerFormat = "JWT",
-            In = ParameterLocation.Header,
-            Description = "Nhập JWT token như: Bearer {token}",
-        });
-
-        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
         {
             {
                 new OpenApiSecurityScheme
@@ -102,7 +102,7 @@ builder.Services.AddAuthorization(options =>
                 Array.Empty<string>()
             }
         });
-    });
+});
 
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
@@ -139,6 +139,7 @@ using (var scope = app.Services.CreateScope())
         app.UseSwaggerUI();
     }
     app.UseCors("AllowAll");
+    app.UseStaticFiles();
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseMiddleware<CheckUserStatus>(); // Kiểm tra trạng thái người dùng trước khi xử lý yêu cầu
