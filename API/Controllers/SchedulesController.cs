@@ -39,8 +39,28 @@ namespace API.Controllers
         public async Task<IActionResult> getarrschedule()
         {
             var  result = _services.AutogenerateSchedule();
-            return Ok();
+            return Ok(result);
         }
-
+        [HttpPost]
+        public async Task<IActionResult> Create(SchedulesDTO model)
+        {
+            var result = await _services.CreateSchedules(model);
+            return Ok(result);
+        }
+        [HttpGet("excel")]
+        public async Task<IActionResult> exportbyexcel(Guid id)
+        {
+            var schedules = await _services.GetByStudent(id);
+            var excel  = await _services.ExportSchedules(schedules);
+            var filename = $"lichhoccua{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+            return File(excel,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                filename);
+        }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> Getid(int id)
+        {
+            return Ok(await _services.GetById(id));
+        }
     }
 }
