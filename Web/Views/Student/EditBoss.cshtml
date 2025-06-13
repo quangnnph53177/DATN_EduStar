@@ -1,5 +1,4 @@
-﻿
-@model API.ViewModel.StudentViewModels
+﻿@model API.ViewModel.StudentViewModels
 
 @{
     ViewData["Title"] = "Update Student By Boss";
@@ -7,26 +6,15 @@
 
 <h2>Update Student Information</h2>
 
-<form asp-action="EditBoss" method="post">
+<form asp-action="EditBoss" method="post" enctype="multipart/form-data">
     <input type="hidden" asp-for="id" />
     <div asp-validation-summary="All" class="text-danger"></div>
+
     <div class="form-group">
         <label asp-for="UserName"></label>
         <input asp-for="UserName" class="form-control" />
         <span asp-validation-for="UserName" class="text-danger"></span>
     </div>
-
-   @*  <div class="form-group">
-        <label asp-for="PassWordHash">Password</label>
-        <input asp-for="PassWordHash" type="password" class="form-control" />
-        <span asp-validation-for="PassWordHash" class="text-danger"></span>
-    </div> *@
-@* 
-    <div class="form-group">
-        <label asp-for="StudentCode"></label>
-        <input asp-for="StudentCode" class="form-control" />
-        <span asp-validation-for="StudentCode" class="text-danger"></span>
-    </div> *@
 
     <div class="form-group">
         <label asp-for="Email"></label>
@@ -56,11 +44,20 @@
         <span asp-validation-for="Gender" class="text-danger"></span>
     </div>
 
+    <!-- Avatar Upload -->
     <div class="form-group">
-        <label asp-for="Avatar">Avatar URL</label>
-        <input asp-for="Avatar" class="form-control" />
-        <span asp-validation-for="Avatar" class="text-danger"></span>
+        <label>Upload Avatar</label>
+        <input type="file" name="avatarFile" class="form-control-file" />
     </div>
+
+    <!-- Show current avatar if available -->
+    @if (!string.IsNullOrEmpty(Model.Avatar))
+    {
+        <div class="form-group">
+            <label>Current Avatar:</label><br />
+            <img src="@Model.Avatar" alt="Avatar" style="max-height:150px;" />
+        </div>
+    }
 
     <div class="form-group">
         <label asp-for="Address"></label>
@@ -86,40 +83,6 @@
     <button type="submit" class="btn btn-primary">Update</button>
     <a asp-action="Index" class="btn btn-secondary">Back</a>
 </form>
-
-<hr />
-
-@* <h3>Current Classes</h3>
-@if (Model.CVMs != null && Model.CVMs.Any())
-{
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Class Name</th>
-                <th>Subject</th>
-                <th>Semester</th>
-                <th>Year</th>
-                <th>Credits</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var cls in Model.CVMs)
-            {
-                <tr>
-                    <td>@cls.ClassName</td>
-                    <td>@cls.SubjectName</td>
-                    <td>@cls.Semester</td>
-                    <td>@cls.YearSchool</td>
-                    <td>@cls.NumberOfCredits</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>No classes found.</p>
-} *@
 
 @section Scripts {
     @{

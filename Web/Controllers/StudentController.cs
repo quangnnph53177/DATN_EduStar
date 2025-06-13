@@ -7,10 +7,12 @@ namespace Web.Controllers
     public class StudentController : Controller
     {
         private readonly HttpClient _client;
-        public StudentController(HttpClient client)
+        private readonly IWebHostEnvironment _env;
+        public StudentController(HttpClient client, IWebHostEnvironment env)
         {
             _client = client;
             _client.BaseAddress = new Uri("https://localhost:7298/");
+            _env = env;
         }
         public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender)
         {             
@@ -80,9 +82,33 @@ namespace Web.Controllers
             var result = JsonConvert.DeserializeObject<StudentViewModels>(response);
             return View(result);
         }
+
         [HttpPost]
-        public async Task<IActionResult> EditBoss(Guid id,StudentViewModels model)
+        public async Task<IActionResult> EditBoss(Guid id, StudentViewModels model, IFormFile avatarFile)
         {
+            if (avatarFile != null && avatarFile.Length > 0)
+            {
+                // Tạo tên file duy nhất
+                var fileName = Path.GetFileNameWithoutExtension(avatarFile.FileName);
+                var extension = Path.GetExtension(avatarFile.FileName);
+                var newFileName = $"{fileName}_{Guid.NewGuid()}{extension}";
+
+                // Đường dẫn thư mục wwwroot/uploads
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                // Lưu file vào wwwroot/uploads
+                var filePath = Path.Combine(uploadsFolder, newFileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await avatarFile.CopyToAsync(stream);
+                }
+
+                // Gán đường dẫn tương đối (hoặc URL nếu muốn)
+                model.Avatar = $"/uploads/{newFileName}";
+            }
+
             var response = await _client.PutAsJsonAsync($"api/Students/boss/{id}", model);
             if (!response.IsSuccessStatusCode)
             {
@@ -90,9 +116,10 @@ namespace Web.Controllers
                 ModelState.AddModelError(string.Empty, $"Cập nhật thất bại: {response.StatusCode} - {error}");
                 return View(model);
             }
+
             return RedirectToAction("Index");
         }
-   
+
         public async Task<IActionResult> Delete(Guid id)
         {
             var response = await _client.DeleteAsync($"api/students/{id}");
