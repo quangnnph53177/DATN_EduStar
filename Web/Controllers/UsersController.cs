@@ -195,48 +195,67 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(UserDTO model, IFormFile imgFile)
         {
-            if (!ModelState.IsValid)
+            try
+                {
+                if (!ModelState.IsValid)
+                    return View(model);
+
+                var client = GetClientWithToken();
+                using var content = new MultipartFormDataContent();
+
+                content.Add(new StringContent(model.UserName ?? ""), "UserName");
+                content.Add(new StringContent(model.PassWordHash ?? ""), "PassWordHash");
+                content.Add(new StringContent(model.Email ?? ""), "Email");
+                content.Add(new StringContent(model.PhoneNumber ?? ""), "PhoneNumber");
+                content.Add(new StringContent(model.FullName ?? ""), "FullName");
+                content.Add(new StringContent(model.Address ?? ""), "Address");
+                content.Add(new StringContent(model.Statuss.ToString()), "Statuss");
+
+                if (model.Dob.HasValue)
+                    content.Add(new StringContent(model.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
+                content.Add(new StringContent(model.Gender.HasValue ? model.Gender.Value.ToString() : ""), "Gender");
+
+                if (model.RoleIds != null && model.RoleIds.Any())
+                {
+                    foreach (var roleId in model.RoleIds)
+                    {
+                        content.Add(new StringContent(roleId.ToString()), "RoleIds");
+                    }
+                }
+
+                if (imgFile != null && imgFile.Length > 0)
+                {
+                    var streamContent = new StreamContent(imgFile.OpenReadStream());
+                    streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
+                    content.Add(streamContent, "imgFile", imgFile.FileName);
+                }
+                var response = await client.PostAsync("https://localhost:7298/api/User/register", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
+                    return RedirectToAction("Index", "Users");
+                }
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                    return RedirectToAction("AccessDenied");
+               TempData["ErrorMessage"] = "Đăng ký không thành công.";
                 return View(model);
 
-            var client = GetClientWithToken();
-            using var content = new MultipartFormDataContent();
-
-            content.Add(new StringContent(model.UserName ?? ""), "UserName");
-            content.Add(new StringContent(model.PassWordHash ?? ""), "PassWordHash");
-            content.Add(new StringContent(model.Email ?? ""), "Email");
-            content.Add(new StringContent(model.PhoneNumber ?? ""), "PhoneNumber");
-            content.Add(new StringContent(model.FullName ?? ""), "FullName");
-            content.Add(new StringContent(model.Address ?? ""), "Address");
-            content.Add(new StringContent(model.Statuss.ToString()), "Statuss");
-
-            if (model.Dob.HasValue)
-                content.Add(new StringContent(model.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
-            content.Add(new StringContent(model.Gender.HasValue ? model.Gender.Value.ToString() : ""), "Gender");
-
-            if (model.RoleIds != null && model.RoleIds.Any())
-            {
-                foreach (var roleId in model.RoleIds)
-                {
-                    content.Add(new StringContent(roleId.ToString()), "RoleIds");
-                }
             }
-
-            if (imgFile != null && imgFile.Length > 0)
+            catch (HttpRequestException ex)
             {
-                var streamContent = new StreamContent(imgFile.OpenReadStream());
-                streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
-                content.Add(streamContent, "imgFile", imgFile.FileName);
+                TempData["ErrorMessage"] = $"Không thể kết nối đến server API: {ex.Message}";
+                return RedirectToAction("Login");
             }
-            var response = await client.PostAsync("https://localhost:7298/api/User/register", content);
-            if (response.IsSuccessStatusCode)
+            catch (TaskCanceledException)
             {
-                TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
-                return RedirectToAction("Index", "Users");
+                TempData["ErrorMessage"] = "Yêu cầu bị timeout khi kết nối API.";
+                return RedirectToAction("Login");
             }
-            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                return RedirectToAction("AccessDenied");
-           TempData["ErrorMessage"] = "Đăng ký không thành công.";
-            return View(model);
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                return View(model);
+            }
         }
         [HttpGet]
         public IActionResult Upload()

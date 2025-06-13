@@ -9,7 +9,7 @@
 }
 @if (TempData["ErrorMessage"] != null)
 {
-    <div class="alert alert-success">@TempData["ErrorMessage"]</div>
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 }
 <h2>Đăng ký tài khoản</h2>
 <a asp-action="Upload" asp-controller="Users" class="btn btn-secondary mt-2">Upload List User</a>
