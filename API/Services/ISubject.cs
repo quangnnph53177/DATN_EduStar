@@ -8,7 +8,7 @@ namespace API.Services
         Task<List<SubjectViewModel>> Getall();
         Task<SubjectViewModel> GetById(int id);
         Task<Subject> CreateSubject(SubjectViewModel sub);
-        Task UpdateSubject(SubjectViewModel subject);
+        Task<bool> UpdateSubject(SubjectViewModel subject);
         Task<List<SubjectViewModel>> Search(string? subjectName, int? numberofCredit, string? subcode, bool? status);
         Task<bool> OpenAndClose(int Id);
         Task<bool> DeleteSubject(int Id);

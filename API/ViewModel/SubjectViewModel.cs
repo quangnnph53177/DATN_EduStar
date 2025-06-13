@@ -1,9 +1,10 @@
 ﻿using API.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace API.ViewModel
 {
     public class SubjectViewModel
-    {
+    { 
         public int Id { get; set; }
 
         public string SubjectName { get; set; } = null!;

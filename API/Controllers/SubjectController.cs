@@ -16,9 +16,23 @@ namespace API.Controllers
             _service = service;
         }
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get(string? subjectName, int? numberofCredit, string? subcode, bool? status)
         {
-            return Ok(await _service.Getall());
+            if(string.IsNullOrEmpty(subjectName)&&
+                string.IsNullOrEmpty(subcode)&&
+                numberofCredit==null&&
+                status==null) 
+            {
+                var re = await _service.Getall();
+                return Ok(re);
+            }
+            var result = await _service.Search(subjectName, numberofCredit, subcode, status);
+            if (result == null || !result.Any())
+            {
+                return NotFound(new { message = "Không tìm thấy môn phù hợp." });
+            }
+
+            return Ok(result);
         }
         [HttpGet("{Id}")]
         public async Task<IActionResult> GetId(int Id)
@@ -30,30 +44,38 @@ namespace API.Controllers
         {
             return Ok(await _service.CreateSubject(sub));
         }
-        [HttpPut("{Id}")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] SubjectViewModel model)
         {
             if (id != model.Id)
             {
-                return BadRequest("Id không khớp");
+                return BadRequest("Id không khớp giữa route và body.");
             }
+
             try
             {
-                await _service.UpdateSubject(model);
-                return Ok(new { message = "Cập nhập thành công" });
+                var success = await _service.UpdateSubject(model);
+
+                if (!success)
+                {
+                    return NotFound(new { message = "Không tìm thấy môn học cần cập nhật." });
+                }
+
+                return Ok(new { message = "Cập nhật thành công." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = $"Lỗi khi cập nhập :{ex.Message}" });
+                return StatusCode(500, new { message = $"Lỗi khi cập nhật: {ex.Message}" });
             }
         }
-        [HttpGet("search")]
-        public async Task<IActionResult> Search(string? subjectname, int? numberofcredot, string? subcode, bool? status)
-        {
-            var result = await _service.Search(subjectname, numberofcredot, subcode, status);
-            return Ok(result);
-        }
-        [HttpPut("Lock")]
+
+        //[HttpGet("search")]
+        //public async Task<IActionResult> Search(string? subjectname, int? numberofcredot, string? subcode, bool? status)
+        //{
+        //    var result = await _service.Search(subjectname, numberofcredot, subcode, status);
+        //    return Ok(result);
+        //}
+        [HttpPut("{id}/Lock")]
         public async Task<IActionResult> Lock(int id)
         {
             return Ok(await _service.OpenAndClose(id));
