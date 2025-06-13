@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Migrations
 {
     [DbContext(typeof(AduDbcontext))]
-    [Migration("20250531085939_dat")]
-    partial class dat
+    [Migration("20250612084349_hi")]
+    partial class hi
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -154,6 +154,9 @@ namespace API.Migrations
                     b.Property<string>("Semester")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("SubjectId")
                         .HasColumnType("int");
@@ -403,10 +406,17 @@ namespace API.Migrations
                     b.Property<int?>("NumberOfCredits")
                         .HasColumnType("int");
 
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit");
+
                     b.Property<string>("SubjectName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("subjectCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
                         .HasName("PK__Subjects__3214EC0750D0CDEB");
