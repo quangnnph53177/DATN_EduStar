@@ -133,6 +133,7 @@ using (var scope = app.Services.CreateScope())
         context.Users.Add(user);
         context.SaveChanges();
     }
+}
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
@@ -149,4 +150,3 @@ using (var scope = app.Services.CreateScope())
     app.MapControllers();
 
     app.Run();
-}
