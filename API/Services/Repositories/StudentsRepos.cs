@@ -348,7 +348,7 @@ namespace API.Services.Repositories
             inforvs.User.UserProfile.FullName = model.FullName;
             inforvs.User.UserProfile.Gender = model.Gender;
             inforvs.User.UserProfile.Address = model.Address;
-            inforvs.User.UserProfile.Avatar = model.Avatar;
+            //if (avatarFile != null&& avatarFile.Length > 0)
             inforvs.User.UserProfile.Dob = model.Dob;
             inforvs.Classes?.Select(u => new ClassViewModel
             {
