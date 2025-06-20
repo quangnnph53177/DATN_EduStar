@@ -1,6 +1,7 @@
 ﻿using API.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Net.Http.Headers;
 
 namespace Web.Controllers
 {
@@ -120,6 +121,50 @@ namespace Web.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpGet]
+        public async Task<IActionResult> EditBeast(Guid id)
+        {
+            var response = await _client.GetStringAsync($"api/Students/{id}");
+            var result = JsonConvert.DeserializeObject<StudentViewModels>(response);
+            return View(result);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditBeast(Guid id, StudentViewModels model, IFormFile avatarFile)
+        {
+            if (avatarFile != null && avatarFile.Length > 0)
+            {
+                // Tạo tên file duy nhất
+                var fileName = Path.GetFileNameWithoutExtension(avatarFile.FileName);
+                var extension = Path.GetExtension(avatarFile.FileName);
+                var newFileName = $"{fileName}_{Guid.NewGuid()}{extension}";
+
+                // Đường dẫn thư mục wwwroot/uploads
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                // Lưu file vào wwwroot/uploads
+                var filePath = Path.Combine(uploadsFolder, newFileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await avatarFile.CopyToAsync(stream);
+                }
+
+                // Gán đường dẫn tương đối (hoặc URL nếu muốn)
+                model.Avatar = $"/uploads/{newFileName}";
+            }
+
+            var response = await _client.PutAsJsonAsync($"api/Students/Beast/{id}", model);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                ModelState.AddModelError(string.Empty, $"Cập nhật thất bại: {response.StatusCode} - {error}");
+                return View(model);
+            }
+
+            return RedirectToAction("Index");
+        }
         public async Task<IActionResult> Delete(Guid id)
         {
             var response = await _client.DeleteAsync($"api/students/{id}");
@@ -138,6 +183,30 @@ namespace Web.Controllers
             var result = JsonConvert.DeserializeObject<List<AuditLogViewModel>>(response);
             return View(result);
         }
-       
+        // thêm cái gửi cho tất cả sinh viên về thông tin lớp học
+       // gửi thông báo chơi chơi
+        [HttpPost]
+        public async Task<IActionResult> SendEmail(int classId, string subject)
+        {
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("classId", classId.ToString()),
+                new KeyValuePair<string, string>("subject", subject)
+             });
+
+            var response = await _client.PostAsync("api/Students/SendEmail", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["Success"] = "Gửi email thành công!";
+            }
+            else
+            {
+                TempData["Error"] = $"Thất bại: {response.StatusCode}";
+            }
+
+            return RedirectToAction("Index"); // hoặc trang bạn muốn quay lại
+        }
+
     }
 }

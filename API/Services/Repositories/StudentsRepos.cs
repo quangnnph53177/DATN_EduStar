@@ -4,6 +4,7 @@ using API.ViewModel;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using OfficeOpenXml;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Security.Claims;
 
@@ -65,7 +66,7 @@ namespace API.Services.Repositories
 
             if (sv.StudentsInfor != null)
                 _context.StudentsInfors.Remove(sv.StudentsInfor);
-
+            
             _context.Users.Remove(sv);
             await _context.SaveChangesAsync();
 
@@ -172,10 +173,10 @@ namespace API.Services.Repositories
         {
 
             var classEntity = await _context.Classes
-        .Include(c => c.Students)
+            .Include(c => c.Students)
             .ThenInclude(si => si.User)
-                .ThenInclude(u => u.UserProfile)
-        .FirstOrDefaultAsync(c => c.Id == Id);
+            .ThenInclude(u => u.UserProfile)
+            .FirstOrDefaultAsync(c => c.Id == Id);
 
             if (classEntity == null || classEntity.Students == null)
                 return new List<StudentViewModels>();
@@ -348,7 +349,7 @@ namespace API.Services.Repositories
             inforvs.User.UserProfile.FullName = model.FullName;
             inforvs.User.UserProfile.Gender = model.Gender;
             inforvs.User.UserProfile.Address = model.Address;
-            //if (avatarFile != null&& avatarFile.Length > 0)
+            inforvs.User.UserProfile.Avatar =model.Avatar;
             inforvs.User.UserProfile.Dob = model.Dob;
             inforvs.Classes?.Select(u => new ClassViewModel
             {

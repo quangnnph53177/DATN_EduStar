@@ -1,0 +1,28 @@
+﻿@model int // classId của lớp cần gửi email
+
+@{
+    ViewData["Title"] = "Gửi Email Thông Báo";
+}
+
+<h2>Gửi Thông Báo Qua Email Cho Sinh Viên Trong Lớp</h2>
+
+<form asp-action="SendEmail" method="post">
+    <input type="hidden" name="classId" value="@Model" />
+
+    <div class="form-group mb-3">
+        <label for="subject">Tiêu đề Email</label>
+        <input type="text" name="subject" id="subject" class="form-control" required placeholder="Nhập tiêu đề email" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Gửi Email</button>
+    <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+</form>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success mt-3">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger mt-3">@TempData["Error"]</div>
+}

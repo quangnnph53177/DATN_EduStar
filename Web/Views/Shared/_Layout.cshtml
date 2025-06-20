@@ -7,70 +7,142 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Web.styles.css" asp-append-version="true" />
+
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+        }
+
+            .sidebar .nav-link {
+                color: #333;
+            }
+
+                .sidebar .nav-link:hover {
+                    background-color: #e9ecef;
+                }
+
+        .loader {
+            height: 60px;
+            aspect-ratio: 1;
+            position: relative;
+        }
+
+            .loader::before,
+            .loader::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                border-radius: 50%;
+                transform-origin: bottom;
+            }
+
+            .loader::after {
+                background: radial-gradient(at 75% 15%,#fffb,#0000 35%), radial-gradient(at 80% 40%,#0000,#0008), radial-gradient(circle 5px,#fff 94%,#0000), radial-gradient(circle 10px,#000 94%,#0000), linear-gradient(#F93318 0 0) top/100% calc(50% - 5px), linear-gradient(#fff 0 0) bottom/100% calc(50% - 5px) #000;
+                background-repeat: no-repeat;
+                animation: l20 1s infinite cubic-bezier(0.5,120,0.5,-120);
+            }
+
+            .loader::before {
+                background: #ddd;
+                filter: blur(8px);
+                transform: scaleY(0.4) translate(-13px, 0px);
+            }
+
+        @@keyframes l20 {
+            30%, 70% {
+                transform: rotate(0deg);
+            }
+
+            49.99% {
+                transform: rotate(0.2deg);
+            }
+
+            50% {
+                transform: rotate(-0.2deg);
+            }
+        }
+    </style>
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Users" asp-action="Index">Danh sách người dùng</a>
-                        </li> 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Statistical" asp-action="DashBoard">Thống kê</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Student" asp-action="Index">Danh sách svật</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Scheduless" asp-action="Index">Lịch học rất nhiều</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="SubjectW" asp-action="Index">Khoai môn</a>
-                        </li>
-                    </ul>
-                    <div class="d-flex align-items-center">
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <span class="navbar-text me-3">
-                                Xin chào, @User.Identity.Name!
-                            </span>
-                            <form method="post" asp-controller="Users" asp-action="Logout" style="display:inline;">
-                                <button type="submit" class="btn btn-link text-dark p-0">Đăng xuất</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <a class="nav-link text-dark" asp-controller="Users" asp-action="Login">Đăng nhập</a>
-                        }
-                    </div>
-                </div>
+<body style="backdrop-filter: blur(2px)">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-3">
+                <h5 class="mb-4">Quản trị</h5>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Index">🏠 Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Users" asp-action="Index">👤 Danh sách người dùng</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Scheduless" asp-action="Index">📅 Lịch học</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="SubjectW" asp-action="Index">📘 Khoai môn</a>
+                    </li>
+                </ul>
+
+                <hr />
+
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <p><strong>👋 Xin chào, @User.Identity.Name</strong></p>
+                    <form method="post" asp-controller="Users" asp-action="Logout">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Đăng xuất</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login">Đăng nhập</a>
+                }
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+
+            <!-- Content -->
+            <div class="col-md-10 pt-3">
+                @RenderBody()
+            </div>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    <!-- Loader -->
+    <div id="page-loader" class="loader my-4 position-fixed top-50 start-50 translate-middle" style="z-index: 1050;"></div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        const loader = document.getElementById("page-loader");
+
+        window.addEventListener("load", () => {
+            if (loader) loader.style.display = "none";
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const links = document.querySelectorAll("a.nav-link, a.btn, a[href]");
+            links.forEach(link => {
+                link.addEventListener("click", (e) => {
+                    const href = link.getAttribute("href");
+                    const isExternal = href && (href.startsWith("http") || href.startsWith("mailto:") || href.startsWith("#"));
+                    const target = link.getAttribute("target");
+                    if (!isExternal && !target) {
+                        loader.style.display = "block";
+                    }
+                });
+            });
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

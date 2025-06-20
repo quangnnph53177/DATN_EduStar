@@ -35,20 +35,23 @@
         <span asp-validation-for="PhoneNumber" class="text-danger"></span>
     </div>
 
+    <!-- Avatar Upload -->
     <div class="form-group">
-        <label asp-for="Avatar">Avatar URL</label>
-        <input asp-for="Avatar" class="form-control" />
-        <span asp-validation-for="Avatar" class="text-danger"></span>
+        <label>Upload Avatar</label>
+        <input type="file" name="avatarFile" class="form-control-file" />
+        <input type="hidden" name="OldAvatar" value="@Model.Avatar" />
     </div>
 
-    <!-- Hiển thị ảnh hiện tại -->
+    <!-- Show current avatar if available -->
     @if (!string.IsNullOrEmpty(Model.Avatar))
     {
         <div class="form-group">
-            <label>Current Avatar</label><br />
-            <img src="@Model.Avatar" alt="Current Avatar" style="max-height: 150px;" />
+            <label>Current Avatar:</label><br />
+            <img src="@Url.Content(Model.Avatar.StartsWith("/") ? Model.Avatar : "/" + Model.Avatar)"
+                 alt="Avatar" style="max-height:150px;" />
         </div>
     }
+
 
     <div class="form-group">
         <label asp-for="Address"></label>
