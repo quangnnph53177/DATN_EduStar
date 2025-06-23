@@ -185,7 +185,7 @@ namespace API.Controllers
                         if (existed == null)
                             return BadRequest("Người thực hiện không tồn tại.");
 
-                        await _logRepos.LogAsync(performedByGuid, "Tạo tài khoản âu nâuuuu", null, newData, performedByGuid);
+                        await _logRepos.LogAsync(createdUser.Id, "Tạo tài khoản âu nâuuuu", null, newData, performedByGuid);
                     }
                     catch (Exception exRow)
                     {
