@@ -62,7 +62,7 @@ namespace API.Controllers
             return Ok(await _service.GetById(Id));
         }
         [HttpPut("boss/{id}")]
-        public async Task<IActionResult> UpdateWithBoss(Guid id, [FromBody] StudentViewModels model)
+        public async Task<IActionResult> UpdateWithBoss(Guid id, StudentViewModels model)
         {
             if (id != model.id)
             {
@@ -80,7 +80,7 @@ namespace API.Controllers
             }
         }
         [HttpPut("beast/{id}")]
-        public async Task<IActionResult> UpdateWithbeast(Guid Id, [FromBody] StudentViewModels model)
+        public async Task<IActionResult> UpdateWithbeast(Guid Id, StudentViewModels model )
         {
             if (Id != model.id)
             {

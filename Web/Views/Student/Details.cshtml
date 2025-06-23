@@ -50,7 +50,7 @@
 
         <dt class="col-sm-2">Trạng thái</dt>
         <dd class="col-sm-10">
-            @(Model.Status ? "Đang hoạt động" : "Đã khóa")
+            @(Model.Status==true ? "Đang hoạt động" : "Đã khóa")
         </dd>
 
         <dt class="col-sm-2">Danh sách lớp</dt>
@@ -84,8 +84,8 @@
 
 <div class="mb-3">
     <form asp-action="Lock" asp-controller="Student" asp-route-id="@Model.id" method="post" style="display:inline;">
-        <button type="submit" class="btn btn-sm @(Model.Status ? "btn-danger" : "btn-success")">
-            @(Model.Status ? "Khóa tài khoản" : "Mở khóa")
+        <button type="submit" class="btn btn-sm @(Model.Status==true ? "btn-danger" : "btn-success")">
+            @(Model.Status==true ? "Khóa tài khoản" : "Mở khóa")
         </button>
     </form>
 </div>

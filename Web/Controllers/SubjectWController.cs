@@ -83,7 +83,7 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(int id, SubjectViewModel model)
         {
-            var response = await _Client.PutAsJsonAsync($"api/subject/boss/{id}", model);
+            var response = await _Client.PutAsJsonAsync($"api/subject/{id}", model);
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();
@@ -92,5 +92,13 @@ namespace Web.Controllers
             }
             return RedirectToAction("Index");
         }
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var response = await _Client.DeleteAsync($"api/subject/{id}" );
+            var json =await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<SubjectViewModel>(json);
+            return View(result);
+        }
     }
-    }
+}

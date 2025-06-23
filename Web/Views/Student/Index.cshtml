@@ -26,24 +26,23 @@
     <div class="col-md-2">
         <input class="form-control" name="email" placeholder="Email" value="@Context.Request.Query["email"]" />
     </div>
-  @*   <div class="col-md-2">
+    <div class="col-md-2">
       @{
     var selectedGender = Context.Request.Query["gender"].ToString();
-}
+        }
 
-<select name="gender" class="form-select">
-    <option value="" @(string.IsNullOrEmpty(selectedGender) ? "selected" : "")>-- Giới tính --</option>
-    <option value="true" @(selectedGender == "true" ? "selected" : "")>Nam</option>
-    <option value="false" @(selectedGender == "false" ? "selected" : "")>Nữ</option>
-</select>
+        <select name="gender" class="form-select">
+            <option value="" selected="@(string.IsNullOrEmpty(selectedGender) ? "selected" : null)">-- Giới tính --</option>
+            <option value="true" selected="@(selectedGender == "true" ? "selected" : null)">Nam</option>
+            <option value="false" selected="@(selectedGender == "false" ? "selected" : null)">Nữ</option>
+        </select>
 
-    </div> *@
+
+    </div>
     <div class="col-md-2">
         <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
     </div>
-    <div class="col-md-2">
-        <button asp-action="Index" class="btn btn-primary w-100">Đặt l</button>
-    </div>
+    
 </form>
 
 <div class="row">
@@ -57,7 +56,7 @@
                 }
                 else
                 {
-                    <img src="https://via.placeholder.com/200x200?text=No+Avatar" class="card-img-top" alt="No Avatar" />
+                    <img src="https://via.placeholder.com/200x200?text=No+Avatar" class="card-img-top" alt="No Avatar" style="height: 200px; object-fit: cover;" />
                 }
 
                 <div class="card-body">
@@ -70,13 +69,14 @@
                         <strong>Gender:</strong> @(student.Gender.HasValue ? (student.Gender.Value ? "Male" : "Female") : "Unknown") <br />
                         <strong>DOB:</strong> @student.Dob?.ToString("dd/MM/yyyy") <br />
                         <strong>Address:</strong> @student.Address <br />
-                        <strong>Status:</strong> @(student.Status ? "Active" : "Inactive")
+                        <strong>Status:</strong> @(student.Status==true ? "Active" : "Inactive")
                     </p>
                 </div>
                 <div class="card-footer text-center">
                     @Html.ActionLink("Edit", "EditBoss", new { id = student.id }, new { @class = "btn btn-primary btn-sm mx-1" })
                     @Html.ActionLink("Details", "Details", new { id = student.id }, new { @class = "btn btn-info btn-sm mx-1" })
-                    @Html.ActionLink("Delete", "Delete", new { id = student.id }, new { @class = "btn btn-danger btn-sm mx-1" })
+                    @Html.ActionLink("Gửi", "SendEmail", new { id = student.id }, new { @class = "btn btn-info btn-sm mx-1" })
+               @*      @Html.ActionLink("Delete", "Delete", new { id = student.id }, new { @class = "btn btn-danger btn-sm mx-1" }) *@
                    
                 </div>
             </div>
