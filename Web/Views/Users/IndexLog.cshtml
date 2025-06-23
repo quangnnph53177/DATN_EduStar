@@ -1,0 +1,78 @@
+﻿@model IEnumerable<API.ViewModel.AuditLogViewModel>
+@{
+    ViewData["Title"] = "Nhật ký hoạt động";
+}
+@functions {
+    public string fmt(string? json)
+    {
+        try
+        {
+            var doc = System.Text.Json.JsonDocument.Parse(json ?? "");
+            return System.Text.Json.JsonSerializer.Serialize(doc, new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+        }
+        catch
+        {
+            return json ?? "";
+        }
+    }
+}
+
+<h2 style="margin-bottom: 20px; font-weight: bold; color: #333;">Nhật ký hoạt động</h2>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Không có bản ghi nào.</div>
+}
+else
+{
+    <div style="overflow-x: auto;">
+        <table class="table table-bordered table-hover table-striped" style="font-size: 14px; border-radius: 8px; table-layout: fixed; width: 100%;">
+            <thead style="background-color: #343a40; color: #fff; text-align: center;">
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th style="width: 150px;">Tên người dùng</th>
+                    <th style="width: 120px;">Hành động</th>
+                    <th style="width: 300px;">Dữ liệu cũ</th>
+                    <th style="width: 300px;">Dữ liệu mới</th>
+                    <th style="width: 150px;">Người thực hiện</th>
+                    <th style="width: 160px;">Thời gian</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    <tr>
+                        <td>@log.Id</td>
+                        <td>@log.UserName</td>
+                        <td>@log.Active</td>
+                        <td>
+                            <details>
+                                <summary style="cursor: pointer; color: #007bff;">Xem chi tiết</summary>
+                                <pre style="white-space: pre-wrap; word-wrap: break-word; background-color: #f8f9fa; padding: 8px; border-radius: 5px; font-size: 13px; font-family: Consolas, monospace; max-height: 250px; overflow: auto;">@fmt(log.OldData)</pre>
+                            </details>
+                        </td>
+                        <td>
+                            <details>
+                                <summary style="cursor: pointer; color: #007bff;">Xem chi tiết</summary>
+                                <pre style="white-space: pre-wrap; word-wrap: break-word; background-color: #f8f9fa; padding: 8px; border-radius: 5px; font-size: 13px; font-family: Consolas, monospace; max-height: 250px; overflow: auto;">@fmt(log.NewData)</pre>
+                            </details>
+                        </td>
+                        <td>@log.PerformeByName</td>
+                        <td>@(log.Timestamp?.ToString("dd/MM/yyyy HH:mm:ss") ?? "N/A")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
