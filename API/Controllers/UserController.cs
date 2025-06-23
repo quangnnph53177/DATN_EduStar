@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol;
 using OfficeOpenXml;
 using System.Globalization;
 using System.Security.Claims;
@@ -31,7 +32,7 @@ namespace API.Controllers
         [Authorize(Policy = "CreateUS")]
         [HttpPost("register")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> Register([FromForm] UserDTO userDto, IFormFile imgFile)
+        public async Task<IActionResult> Register([FromForm] UserDTO userDto, IFormFile? imgFile)
         {
             if (userDto == null || !ModelState.IsValid)
                 return BadRequest("Dữ liệu không hợp lệ");
@@ -41,7 +42,7 @@ namespace API.Controllers
                 var createdUser = await _userRepos.Register(userDto,imgFile);
                 var newData = JsonSerializer.Serialize(new
                 {
-                    createdUser.Id,
+                    createdUser.Email,
                     createdUser.UserName,
                     createdUser.Statuss
                 });
@@ -57,7 +58,7 @@ namespace API.Controllers
                 if (existed == null)
                     return BadRequest("Người thực hiện không tồn tại.");
 
-                await _logRepos.LogAsync(performedByGuid, "Tạo tài khoản", null, newData, performedByGuid);
+                await _logRepos.LogAsync(createdUser.Id, "Tạo tài khoản", null, newData, performedByGuid);
                 return Ok(new { message = "Đăng ký thành công, vui lòng kiểm tra email để xác nhận.", userId = createdUser.Id });
             }
             catch (Exception ex)
@@ -168,7 +169,7 @@ namespace API.Controllers
                         usersCreated.Add(userName);
                         var newData = JsonSerializer.Serialize(new
                         {
-                            createdUser.Id,
+                            createdUser.Email,
                             createdUser.UserName,
                             createdUser.Statuss
                         });
@@ -184,7 +185,7 @@ namespace API.Controllers
                         if (existed == null)
                             return BadRequest("Người thực hiện không tồn tại.");
 
-                        await _logRepos.LogAsync(performedByGuid, "Tạo tài khoản", null, newData, performedByGuid);
+                        await _logRepos.LogAsync(createdUser.Id, "Tạo tài khoản âu nâuuuu", null, newData, performedByGuid);
                     }
                     catch (Exception exRow)
                     {
@@ -205,22 +206,31 @@ namespace API.Controllers
         {
             try
             {
-                await _userRepos.CleanupUnconfirmedUsers();
+                // Gọi repo xử lý xóa tài khoản chưa xác nhận
+                await _userRepos.CleanupUnconfirmedUsers(); // Since the method returns void, no assignment is needed.
 
                 // Ghi log
-                Guid? performedByGuid = null;
                 var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                Guid? performedByGuid = null;
+
                 if (Guid.TryParse(performedBy, out var userGuid))
                 {
                     performedByGuid = userGuid;
                 }
 
-                // Kiểm tra performedBy có tồn tại trong DB  
                 var existed = await _context.Users.FindAsync(performedByGuid);
                 if (existed == null)
                     return BadRequest("Người thực hiện không tồn tại.");
 
-                await _logRepos.LogAsync(performedByGuid, "Xóa tài khoản chưa xác nhận", null, null, performedByGuid);
+                string newData = "Đã xóa tài khoản chưa xác nhận."; // Adjusted to reflect the action.
+
+                await _logRepos.LogAsync(
+                    null, // không ghi cụ thể user bị tác động vì là nhiều user
+                    "Xóa tài khoản chưa xác nhận",
+                    null,
+                    newData,
+                    performedByGuid
+                );
 
                 return Ok("Đã xóa tài khoản chưa xác nhận trong 7 ngày.");
             }
@@ -233,27 +243,68 @@ namespace API.Controllers
         [HttpGet("user")]
         public async Task<IActionResult> GetAllUsers()
         {
+            // Thêm logic lọc theo vai trò vào trước khi trả về users trong GetAllUsers
             try
             {
                 var currentUserRoleIds = User.Claims
-                 .Where(c => c.Type == ClaimTypes.Role)
-                 .Select(c => int.Parse(c.Value))
-                 .ToList();
+                    .Where(c => c.Type == ClaimTypes.Role)
+                    .Select(c => int.Parse(c.Value))
+                    .ToList();
                 var currentUserName = User.Identity?.Name;
                 if (string.IsNullOrEmpty(currentUserName))
                     return Unauthorized("Không tìm thấy thông tin người dùng");
                 var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
 
-                if (!users.Any())
+                // Lọc theo vai trò
+                IEnumerable<UserDTO> filteredUsers;
+                if (currentUserRoleIds.Contains(1)) // Admin
+                {
+                    filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 1 || rid == 2 || rid == 3) && u.UserName != currentUserName);
+                }
+                else if (currentUserRoleIds.Contains(2)) // Giảng viên
+                {
+                    filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 3) && u.UserName != currentUserName);
+                }
+                else
+                {
+                    filteredUsers = users.Where(u => u.UserName == currentUserName); // Sinh viên chỉ xem thông tin của mình
+                }
+
+                if (!filteredUsers.Any())
                     return Forbid();
 
-                return Ok(users);
+                return Ok(filteredUsers);
             }
             catch (Exception ex)
             {
                 return BadRequest(new { error = ex.Message });
             }
         }
+        //[Authorize(Policy = "DetailUS")]
+        //[HttpGet("me")]
+        //public async Task<IActionResult> GetCurrentUser()
+        //{
+        //    var currentUserRoleIds = User.Claims
+        //           .Where(c => c.Type == ClaimTypes.Role)
+        //           .Select(c => int.Parse(c.Value))
+        //           .ToList();
+        //    var currentUserName = User.Identity?.Name;
+        //    if (string.IsNullOrEmpty(currentUserName))
+        //        return Unauthorized("Không tìm thấy thông tin người dùng");
+        //    try
+        //    {
+        //        // Lấy tất cả user, sau đó chỉ lấy user có UserName trùng với user hiện tại
+        //        var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+        //        var user = users.FirstOrDefault(u => u.UserName == currentUserName);
+        //        if (user == null)
+        //            return NotFound("Không tìm thấy người dùng hiện tại.");
+        //        return Ok(user);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(new { error = ex.Message });
+        //    }
+        //}
         [Authorize(Policy = "DetailUS")]
         [HttpGet("searchuser")]
         public async Task<IActionResult> SearchUser([FromQuery] string? keyword)
@@ -293,7 +344,7 @@ namespace API.Controllers
         [Authorize(Policy = "EditUS")]
         [HttpPut("updateuser/{username}")]
        // [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UpdateUser(string username, [FromForm] UserDTO userDto,IFormFile imgFile)
+        public async Task<IActionResult> UpdateUser(string username, [FromForm] UserDTO userDto,IFormFile? imgFile)
         {
             var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
             var currentUserName = User.Identity?.Name;
@@ -313,15 +364,35 @@ namespace API.Controllers
                     return BadRequest("Bạn không có quyền sửa người dùng này.");
 
                 // Serialize old data
-                var oldData = JsonSerializer.Serialize(targetUser);
+                var oldData = JsonSerializer.Serialize(new
+                {
+                    targetUser.Email,
+                    targetUser.UserName,
+                    targetUser.Statuss,
+                    targetUser.FullName,
+                    targetUser.Avatar,
+                    targetUser.Address,
+                    targetUser.PhoneNumber,
+                    targetUser.Dob
+                });
 
-                await _userRepos.UpdateUser(userDto,imgFile);
+                // 4️⃣ Thực hiện cập nhật
+                await _userRepos.UpdateUser(userDto, imgFile);
 
                 // Lấy lại thông tin user sau khi update để log new data
                 var updatedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
                 var updatedUser = updatedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
-                var newData = JsonSerializer.Serialize(updatedUser);
-
+                var newData = JsonSerializer.Serialize(new
+                {
+                    updatedUser.UserName,
+                    updatedUser.Email,
+                    updatedUser.Statuss,
+                    updatedUser.FullName,
+                    updatedUser.Avatar,
+                    updatedUser.Address,
+                    updatedUser.PhoneNumber,
+                    updatedUser.Dob
+                });
                 Guid? performedByGuid = null;
                 var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (Guid.TryParse(performedBy, out var userGuid))
@@ -334,7 +405,7 @@ namespace API.Controllers
                 if (existed == null)
                     return BadRequest("Người thực hiện không tồn tại.");
 
-                await _logRepos.LogAsync(performedByGuid, "Sửa tài khoản", oldData, newData, performedByGuid);
+                await _logRepos.LogAsync(/*updatedUser.Id*/null, "Sửa tài khoản", oldData, newData, performedByGuid);
                 return Ok(new { message = "Cập nhật thành công" });
             }
             catch (Exception ex)
@@ -371,19 +442,19 @@ namespace API.Controllers
                 {
                     oldData = JsonSerializer.Serialize(new
                     {
-                        lockedUser.Id,
+                        lockedUser.Email,
                         lockedUser.UserName,
                         Statuss = !lockedUser.Statuss // Trạng thái trước khi khóa (giả định là ngược lại)
                     });
                     newData = JsonSerializer.Serialize(new
                     {
-                        lockedUser.Id,
+                        lockedUser.Email,
                         lockedUser.UserName,
                         lockedUser.Statuss // Trạng thái sau khi khóa
                     });
                 }
 
-                await _logRepos.LogAsync(performedByGuid, "Khóa tài khoản", oldData, newData, performedByGuid);
+                await _logRepos.LogAsync(lockedUser.Id, "Khóa/Mở tài khoản", oldData, newData, performedByGuid);
                 return Ok(new { success = true, message = result });
             }
             catch (Exception ex)
@@ -404,7 +475,7 @@ namespace API.Controllers
                 {
                     oldData = JsonSerializer.Serialize(new
                     {
-                        userBefore.Id,
+                        userBefore.Email,
                         userBefore.UserName,
                         userBefore.Statuss
                     });
@@ -419,7 +490,7 @@ namespace API.Controllers
                 {
                     newData = JsonSerializer.Serialize(new
                     {
-                        userAfter.Id,
+                        userAfter.Email,
                         userAfter.UserName,
                         userAfter.Statuss
                     });
@@ -438,7 +509,7 @@ namespace API.Controllers
                 if (existed == null)
                     return BadRequest("Người thực hiện không tồn tại.");
 
-                await _logRepos.LogAsync(performedByGuid, $"Đổi vai trò tài khoản sang roleId {newRoleId}", oldData, newData, performedByGuid);
+                await _logRepos.LogAsync(userAfter.Id, $"Đổi vai trò tài khoản sang roleId {newRoleId}", oldData, newData, performedByGuid);
 
                 return Ok(new { username, result });
             }
@@ -498,8 +569,9 @@ namespace API.Controllers
                 NewData = a.NewData,
                 OldData = a.OldData,
                 Active = a.Active,
+                PerformeByName = a.PerformeByNavigation?.UserName,
                 Timestamp = a.Timestamp
-            });
+            }).OrderByDescending(x => x.Timestamp).ToList();
 
             return Ok(result);
         }
