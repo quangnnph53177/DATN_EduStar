@@ -45,10 +45,6 @@ namespace API.Controllers
                     createdUser.Email,
                     createdUser.UserName,
                     createdUser.Statuss
-                }, new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 });
                 Guid? performedByGuid = null;
                 var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -176,10 +172,6 @@ namespace API.Controllers
                             createdUser.Email,
                             createdUser.UserName,
                             createdUser.Statuss
-                        }, new JsonSerializerOptions
-                        {
-                            WriteIndented = true,
-                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                         });
                         Guid? performedByGuid = null;
                         var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -382,10 +374,6 @@ namespace API.Controllers
                     targetUser.Address,
                     targetUser.PhoneNumber,
                     targetUser.Dob
-                }, new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 });
 
                 // 4️⃣ Thực hiện cập nhật
@@ -401,10 +389,6 @@ namespace API.Controllers
                     userDto.Address,
                     userDto.PhoneNumber,
                     userDto.Dob
-                }, new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 });
 
                 //// Lấy lại thông tin user sau khi update để log new data
@@ -462,20 +446,12 @@ namespace API.Controllers
                         lockedUser.Email,
                         lockedUser.UserName,
                         Statuss = !lockedUser.Statuss // Trạng thái trước khi khóa (giả định là ngược lại)
-                    }, new JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                     });
                     newData = JsonSerializer.Serialize(new
                     {
                         lockedUser.Email,
                         lockedUser.UserName,
                         lockedUser.Statuss // Trạng thái sau khi khóa
-                    }, new JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                     });
                 }
 
@@ -503,10 +479,6 @@ namespace API.Controllers
                         userBefore.Email,
                         userBefore.UserName,
                         userBefore.Statuss
-                    }, new JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                     });
                 }
 
@@ -522,10 +494,6 @@ namespace API.Controllers
                         userAfter.Email,
                         userAfter.UserName,
                         userAfter.Statuss
-                    }, new JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                     });
                 }
 

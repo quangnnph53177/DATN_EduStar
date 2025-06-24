@@ -104,32 +104,34 @@
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="SubjectW" asp-action="Index">📘 Khoai môn</a>
                     </li>
-                </ul>
+                
 
-                <hr />
+                    <hr />
 
-                @if (User.Identity.IsAuthenticated)
-                {
-                    <div class="dropdown me-3">
-                        <button class="btn btn-light dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                            👋 Xin chào, @User.Identity?.Name
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                            <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a></li>
-                            <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexLog">🕓 Lịch sử hoạt động</a></li>
-                            <li><hr class="dropdown-divider" /></li>
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <div class="dropdown me-3">
+                            <button class="btn btn-light dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                                👋 Xin chào, @User.Identity?.Name
+                            </button>
+                            <ul aria-labelledby="userMenu" class="nav flex-column">
+                                <li><a class="nav-link" asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a></li>
+                                <li><a class="nav-link" asp-controller="Users" asp-action="IndexLog">🕓 Lịch sử hoạt động</a></li>
                             
-                        </ul>
-                    </div>
-                }
-                else
-                {
-                    <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login">Đăng nhập</a>
-                }
-                <hr />
-                <form method="post" asp-controller="Users" asp-action="Logout" class="dropdown-item p-0 m-0">
-                    <button type="submit" class="btn btn-link w-100 text-start px-3 py-2">🚪 Đăng xuất</button>
-                </form>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login">Đăng nhập</a>
+                    }
+                    <hr />
+                    <li>
+                        <form method="post" asp-controller="Users" asp-action="Logout" class="dropdown-item p-0 m-0">
+                            <button type="submit" class="btn btn-link w-100 text-start px-3 py-2">🚪 Đăng xuất</button>
+                        </form>
+                    </li>
+                </ul>
             </div>
 
             <!-- Content -->
