@@ -35,7 +35,7 @@
                 <img src="https://localhost:7298/@Model.Avatar" alt="Avatar" style="max-width: 150px; border-radius: 10px;" />
             </div>
         }
-        @if (User.Identity.Name == Model.UserName)
+        @if (User.Identity.Name == Model.UserName || User.IsInRole("1"))
          {
             <a asp-action="UpdateUser" asp-route-username="@Model.UserName" class="btn btn-primary mt-3">Chỉnh sửa</a>
          }

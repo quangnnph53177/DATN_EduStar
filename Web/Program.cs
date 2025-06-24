@@ -1,15 +1,27 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Users/Login";
-        options.AccessDeniedPath = "/Users/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromHours(1);
         options.SlidingExpiration = true;
+        options.ClaimsIssuer = "local";
     });
+builder.Services.Configure<CookieAuthenticationOptions>(options =>
+{
+    options.ClaimsIssuer = "local"; // phải match với phần JWT nếu cần
+});
 
+// ❗ RẤT QUAN TRỌNG
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("1")); 
+
+    // Optionally bạn có thể thêm các quyền khác theo Permission nếu cần
+});
 builder.Services.AddHttpClient("EdustarAPI", client =>
 {
     client.BaseAddress = new Uri("https://localhost:7298/");
@@ -19,29 +31,6 @@ builder.Services.AddHttpClient("EdustarAPI", client =>
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 var app = builder.Build();
-
-//Middleware ki?m tra token cookie (b?o v? c�c route c?n ??ng nh?p)
-//app.Use(async (context, next) =>
-//{
-//    var path = context.Request.Path.Value?.ToLower();
-//    var method = context.Request.Method.ToUpper();
-
-//    // N?u truy c?p ???ng d?n ngo�i public (login, css, js,...)
-//    if (!(path!.Contains("/users/login") && !method.Contains("GET") && !method.Contains("POST") && !method.Contains("PUT") &&
-//        !path.StartsWith("/css") && !path.StartsWith("/js") &&
-//        !path.StartsWith("/lib")) // n?u c� th? vi?n static
-//    {
-//        // Ki?m tra cookie token t?n t?i kh�ng
-//        if (!context.Request.Cookies.ContainsKey("JWToken"))
-//        {
-//            // Ch?a ??ng nh?p, chuy?n v? Login
-//            context.Response.Redirect("/Users/Login");
-//            return; // Kh�ng g?i next middleware n?a
-//        }
-//    }
-
-//    await next();
-//});
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -60,6 +49,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Users}/{action=Login}/{id?}");
 
 app.Run();

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text;
+using Azure;
 
 namespace Web.Controllers
 {
@@ -56,17 +57,39 @@ namespace Web.Controllers
                     using var doc = JsonDocument.Parse(responseContent);
 
                     var token = doc.RootElement.GetProperty("token").GetString();
-                    var roleId = doc.RootElement.GetProperty("roleId").GetInt32();
+                    
                     var userName = doc.RootElement.GetProperty("userName").GetString();
 
                     var claims = new List<Claim>
+                     {
+                         new(ClaimTypes.Name, userName ?? ""),
+                         new("JWToken", token ?? "")
+                     };
+                    if (doc.RootElement.TryGetProperty("roleId", out var roleArray) && roleArray.ValueKind == JsonValueKind.Array)
                     {
-                        new(ClaimTypes.Name, userName ?? ""),
-                        new(ClaimTypes.Role, roleId.ToString()),
-                        new("JWToken", token ?? "")
-                    };
-
-                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                        foreach (var role in roleArray.EnumerateArray())
+                        {
+                            var roleValue = role.GetInt32().ToString();
+                            claims.Add(new Claim(ClaimTypes.Role, roleValue));
+                        }
+                    }
+                    if (doc.RootElement.TryGetProperty("permission", out var permissionElement) && permissionElement.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var perm in permissionElement.EnumerateArray())
+                        {
+                            var permission = perm.GetString();
+                            if (!string.IsNullOrWhiteSpace(permission))
+                            {
+                                claims.Add(new Claim("Permission", permission));
+                            }
+                        }
+                    }
+                    var claimsIdentity = new ClaimsIdentity(
+                        claims,
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        ClaimTypes.Name,
+                        ClaimTypes.Role // 👈 RẤT QUAN TRỌNG
+                    );
                     await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
                     Response.Cookies.Append("JWToken", token ?? "", new CookieOptions
@@ -99,9 +122,8 @@ namespace Web.Controllers
                 return View(loginDto);
             }
 
-
         }
-        [HttpPost]
+            [HttpPost]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -141,11 +163,6 @@ namespace Web.Controllers
                     };
 
                     return View(result);
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                {
-                    TempData["ErrorMessage"] = "Bạn không có quyền truy cập danh sách người dùng.";
-                    return RedirectToAction("AccessDenied");
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
@@ -235,8 +252,6 @@ namespace Web.Controllers
                     TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
                     return RedirectToAction("Index", "Users");
                 }
-                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                    return RedirectToAction("AccessDenied");
                TempData["ErrorMessage"] = "Đăng ký không thành công.";
                 return View(model);
 
@@ -272,27 +287,43 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Upload(IFormFile file)
         {
-            if (file == null || file.Length == 0)
+            try
             {
-                TempData["ErrorMessage"] = "Vui lòng chọn tệp để tải lên.";
+                if (file == null || file.Length == 0)
+                {
+                    TempData["ErrorMessage"] = "Vui lòng chọn tệp để tải lên.";
+                    return View();
+                }
+
+                var client = GetClientWithToken();
+
+                using var content = new MultipartFormDataContent();
+                using var fileStream = file.OpenReadStream();
+                content.Add(new StreamContent(fileStream), "file", file.FileName);
+
+                var response = await client.PostAsync("https://localhost:7298/api/User/upload", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    return RedirectToAction("Index", "Users");
+                }
+                TempData["ErrorMessage"] = "Tải lên không thành công.";
                 return View();
             }
-
-            var client = GetClientWithToken();
-
-            using var content = new MultipartFormDataContent();
-            using var fileStream = file.OpenReadStream();
-            content.Add(new StreamContent(fileStream), "file", file.FileName);
-
-            var response = await client.PostAsync("https://localhost:7298/api/User/upload", content);
-            if (response.IsSuccessStatusCode)
+            catch (HttpRequestException ex)
             {
-                return RedirectToAction("Index", "Users");
+                TempData["ErrorMessage"] = $"Không thể kết nối đến server API: {ex.Message}";
+                return RedirectToAction("Login");
             }
-            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                return RedirectToAction("AccessDenied");
-            TempData["ErrorMessage"] = "Tải lên không thành công.";
-            return View();
+            catch (TaskCanceledException)
+            {
+                TempData["ErrorMessage"] = "Yêu cầu bị timeout khi kết nối API.";
+                return RedirectToAction("Login");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                return View();
+            }
         }
         public IActionResult Confirm()
         {
@@ -378,13 +409,22 @@ namespace Web.Controllers
             }
         }
         [HttpGet]
-        public async Task<IActionResult> IndexUser(string username)
+        public async Task<IActionResult> IndexUser(string? username)
         {
             var client = GetClientWithToken();
             if (client == null)
             {
                 TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login");
+            }
+            if (string.IsNullOrEmpty(username))
+            {
+                username = User.Identity?.Name;
+                if (string.IsNullOrEmpty(username))
+                {
+                    TempData["ErrorMessage"] = "Không thể xác định người dùng";
+                    return RedirectToAction("Index");
+                }
             }
             // Gọi API để lấy dữ liệu user cũ
             var response = await client.GetAsync($"https://localhost:7298/api/User/searchuser?keyword={username}");
@@ -661,10 +701,42 @@ namespace Web.Controllers
                 return RedirectToAction("ResetPassword", new { token });
             }
         }
-
-        public IActionResult AccessDenied()
+        [HttpGet]
+        public async Task<IActionResult> IndexLog()
         {
-            return View();
+            try
+            {
+                var client = GetClientWithToken();
+                var response = await client.GetAsync("https://localhost:7298/api/User/log");
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var logs = JsonSerializer.Deserialize<List<AuditLogViewModel>>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return View(logs);
+                }
+                TempData["ErrorMessage"] = "Không thể tải nhật ký hoạt động.";
+                return View(new List<AuditLogViewModel>());
+
+            }
+            catch (HttpRequestException ex)
+            {
+                TempData["ErrorMessage"] = $"Không thể kết nối đến server API: {ex.Message}";
+                return RedirectToAction("Login");
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["ErrorMessage"] = "Yêu cầu bị timeout khi kết nối API.";
+                return RedirectToAction("Login");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                return View();
+            }
         }
     }
 }

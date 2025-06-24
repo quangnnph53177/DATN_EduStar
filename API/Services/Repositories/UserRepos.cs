@@ -204,8 +204,9 @@ namespace API.Services.Repositories
             return new LoginResult
             {
                 Token = token,
-                RoleId = roleId,
-                UserName = user.UserName
+                RoleId = user.Roles.Select(r => r.Id).ToList(),
+                UserName = user.UserName,
+                Permission = permissions
             };
         }
         private string GenerateJwtToken(User user, List<string> permissions)

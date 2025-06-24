@@ -73,8 +73,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CreateUS", policy => policy.RequireClaim("Permission", "Create"));
     options.AddPolicy("DetailUS", policy => policy.RequireClaim("Permission", "Detail"));
     options.AddPolicy("EditUS", policy => policy.RequireClaim("Permission", "Edit"));
+    options.AddPolicy("SearchUS", policy => policy.RequireClaim("Permission", "Search"));
 });
-
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "EduStar", Version = "v1" });

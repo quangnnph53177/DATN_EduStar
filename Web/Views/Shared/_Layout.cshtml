@@ -96,10 +96,25 @@
 
                 @if (User.Identity.IsAuthenticated)
                 {
-                    <p><strong>👋 Xin chào, @User.Identity.Name</strong></p>
+                    <div class="dropdown me-3">
+                        <button class="btn btn-light dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                            👋 Xin chào, @User.Identity?.Name
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                            <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a></li>
+                            <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexLog">🕓 Lịch sử hoạt động</a></li>
+                            <li><hr class="dropdown-divider" /></li>
+                            <li>
+                                <form method="post" asp-controller="Users" asp-action="Logout" class="dropdown-item p-0 m-0">
+                                    <button type="submit" class="btn btn-link w-100 text-start px-3 py-2">🚪 Đăng xuất</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                   @*  <p><strong>👋 Xin chào, @User.Identity.Name</strong></p>
                     <form method="post" asp-controller="Users" asp-action="Logout">
                         <button type="submit" class="btn btn-outline-danger btn-sm">Đăng xuất</button>
-                    </form>
+                    </form> *@
                 }
                 else
                 {

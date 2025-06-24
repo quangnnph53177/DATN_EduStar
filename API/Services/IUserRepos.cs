@@ -23,7 +23,8 @@ namespace API.Services
     public class LoginResult
     {
         public string Token { get; set; }
-        public int RoleId { get; set; }
+        public List<int> RoleId { get; set; }
         public string UserName { get; set; }
+        public List<string> Permission { get; set; }
     }
 }

@@ -15,11 +15,11 @@
 {
     <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 }
-@if (User.IsInRole("1"))
+@if (User.HasClaim("Permission", "Create"))
 {
     <a asp-controller="Users" asp-action="Register" class="btn btn-primary mb-3">Thêm người dùng</a>
 }
-@if (User.IsInRole("1") || User.IsInRole("2"))
+@if (User.HasClaim("Permission", "Search"))
 {
     <form method="get" asp-action="SearchUS" class="mb-3 d-flex">
         <input type="text" name="keyword" class="form-control me-2" placeholder="Nhập từ khóa tìm kiếm" />
@@ -56,7 +56,7 @@
                         <div class="card-footer">
                             <div class="d-flex justify-content-center">
                         <a asp-controller="Users" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm small mx-1 mb-1">🔍</a>
-                                @if (User.IsInRole("1"))
+                        @if (User.HasClaim("Permission", "Create"))
                                 {
                             <a asp-controller="Users" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm small mx-1 mb-1">✏️ </a>
                             <a asp-controller="Users" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm small mx-1 mb-1">🔄</a>

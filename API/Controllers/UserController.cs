@@ -305,7 +305,7 @@ namespace API.Controllers
         //        return BadRequest(new { error = ex.Message });
         //    }
         //}
-        [Authorize(Policy = "DetailUS")]
+        [Authorize(Policy = "SearchUS")]
         [HttpGet("searchuser")]
         public async Task<IActionResult> SearchUser([FromQuery] string? keyword)
         {
@@ -550,6 +550,7 @@ namespace API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+        [Authorize]
         [HttpGet("log")]
         public async Task<IActionResult> GetAuditLogs()
         {
