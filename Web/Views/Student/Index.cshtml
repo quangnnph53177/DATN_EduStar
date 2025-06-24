@@ -10,9 +10,10 @@
         <button type="submit" class="btn btn-success">
             📥 Xuất danh sách sinh viên
         </button>
+        
     </form>
-
 </div>
+<a asp-action="Auditlog">Log</a>
 <form asp-action="Index" method="get" class="row g-3 mb-4">
     <div class="col-md-2">
         <input class="form-control" name="studentCode" placeholder="Mã SV" value="@Context.Request.Query["studentCode"]" />
@@ -27,23 +28,30 @@
         <input class="form-control" name="email" placeholder="Email" value="@Context.Request.Query["email"]" />
     </div>
     <div class="col-md-2">
-      @{
-    var selectedGender = Context.Request.Query["gender"].ToString();
+        @{
+            var selectedGender = Context.Request.Query["gender"].ToString();
         }
-
         <select name="gender" class="form-select">
             <option value="" selected="@(string.IsNullOrEmpty(selectedGender) ? "selected" : null)">-- Giới tính --</option>
             <option value="true" selected="@(selectedGender == "true" ? "selected" : null)">Nam</option>
             <option value="false" selected="@(selectedGender == "false" ? "selected" : null)">Nữ</option>
         </select>
-
-
+    </div>
+    <div class="col-md-2">
+        @{
+            var selectedStatus = Context.Request.Query["status"].ToString();
+        }
+        <select name="status" class="form-select">
+            <option selected="@(string.IsNullOrEmpty(selectedStatus)?"selected":null)">-- Trạng thái --</option>
+            <option value="true" selected="@(selectedStatus == "true" ? "selected" : "")">Hoạt động</option>
+            <option value="false"selected =" @(selectedStatus == "false" ? "selected" : "")">Không hoạt động</option>
+        </select>
     </div>
     <div class="col-md-2">
         <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
     </div>
-    
 </form>
+
 
 <div class="row">
     @foreach (var student in Model)
@@ -69,15 +77,22 @@
                         <strong>Gender:</strong> @(student.Gender.HasValue ? (student.Gender.Value ? "Male" : "Female") : "Unknown") <br />
                         <strong>DOB:</strong> @student.Dob?.ToString("dd/MM/yyyy") <br />
                         <strong>Address:</strong> @student.Address <br />
-                        <strong>Status:</strong> @(student.Status==true ? "Active" : "Inactive")
+                        <strong>Status:</strong> @(student.Status.HasValue ? (student.Status.Value? "Hoạt động":"Không hoạt động"):"Unknown")<br/>
                     </p>
                 </div>
                 <div class="card-footer text-center">
                     @Html.ActionLink("Edit", "EditBoss", new { id = student.id }, new { @class = "btn btn-primary btn-sm mx-1" })
                     @Html.ActionLink("Details", "Details", new { id = student.id }, new { @class = "btn btn-info btn-sm mx-1" })
-                    @Html.ActionLink("Gửi", "SendEmail", new { id = student.id }, new { @class = "btn btn-info btn-sm mx-1" })
+                    @* @Html.ActionLink("Gửi", "SendEmail", new { id = student.id }, new { @class = "btn btn-info btn-sm mx-1" }) *@
                @*      @Html.ActionLink("Delete", "Delete", new { id = student.id }, new { @class = "btn btn-danger btn-sm mx-1" }) *@
-                   
+                   @*  <div class="mb-3"> *@
+                        <form asp-action="Lock" asp-controller="Student" asp-route-id="@student.id" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-sm @(student.Status==true ? "btn-danger" : "btn-success")">
+                                @(student.Status == true ? "Khóa tài khoản" : "Mở khóa")
+                            </button>
+                        </form>
+                  @*   </div> *@
+
                 </div>
             </div>
         </div>

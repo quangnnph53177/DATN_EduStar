@@ -42,7 +42,11 @@ namespace Web.Controllers
             var response = await _client.PostAsJsonAsync($"api/schedules",dto);
             return View(response);
         }
-
+        public async Task<IActionResult>Update(SchedulesDTO dto, int id)
+        {
+            var response = await _client.PutAsJsonAsync($"api/schedules/{id}", dto);
+            return View(response);
+        }
 
     }
 }

@@ -26,46 +26,15 @@
                 <td>@item.UserName</td>
                 <td class="text-center">@item.Active</td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#oldDataModal_@item.Id">
-                        Xem
-                    </button>
-
-                    <!-- Modal OldData -->
-                    <div class="modal fade" id="oldDataModal_@item.Id" tabindex="-1" aria-labelledby="oldDataLabel_@item.Id" aria-hidden="true">
-                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="oldDataLabel_@item.Id">Old Data</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <pre>@item.OldData</pre>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <button type="button" class="btn btn-sm btn-info" onclick="toggleJson('oldData_@item.Id')">Xem</button>
+                    <div id="oldData_@item.Id" class="formatted-json-table mt-2 d-none" data-json="@Html.Raw(Html.Encode(item.OldData))"></div>
                 </td>
 
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#newDataModal_@item.Id">
-                        Xem
-                    </button>
-
-                    <!-- Modal NewData -->
-                    <div class="modal fade" id="newDataModal_@item.Id" tabindex="-1" aria-labelledby="newDataLabel_@item.Id" aria-hidden="true">
-                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="newDataLabel_@item.Id">New Data</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <pre>@item.NewData</pre>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <button type="button" class="btn btn-sm btn-success" onclick="toggleJson('newData_@item.Id')">Xem</button>
+                    <div id="newData_@item.Id" class="formatted-json-table mt-2 d-none" data-json="@Html.Raw(Html.Encode(item.NewData))"></div>
                 </td>
+
 
                 <td>@item.PerformeByName</td>
                 <td>@item.Timestamp</td>
@@ -73,3 +42,49 @@
         }
     </tbody>
 </table>
+@section Scripts {
+    <script>
+        function toggleJson(id) {
+            const container = document.getElementById(id);
+
+            if (!container) return;
+
+            if (container.classList.contains('d-none')) {
+                // Lần đầu hiển thị thì render JSON
+                if (!container.innerHTML.trim()) {
+                    try {
+                        const jsonString = container.getAttribute("data-json");
+                        const json = JSON.parse(jsonString);
+
+                        let html = '<table class="table table-bordered table-sm">';
+                        html += '<thead class="table-light"><tr><th>Trường</th><th>Giá trị</th></tr></thead><tbody>';
+
+                        for (const key in json) {
+                            if (!json.hasOwnProperty(key)) continue;
+
+                            let value = json[key];
+                            const lowerKey = key.toLowerCase();
+
+                            if ((lowerKey.includes("image") || lowerKey.includes("avatar") || lowerKey.includes("photo")) &&
+                                typeof value === "string" &&
+                                (value.startsWith("http") || value.startsWith("/"))) {
+                                value = `<img src="${value}" alt="${key}" style="max-height: 150px;">`;
+                            }
+
+                            html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+                        }
+
+                        html += '</tbody></table>';
+                        container.innerHTML = html;
+                    } catch (err) {
+                        container.innerHTML = '<p class="text-danger">Không thể hiển thị dữ liệu (không phải JSON hợp lệ).</p>';
+                    }
+                }
+
+                container.classList.remove('d-none');
+            } else {
+                container.classList.add('d-none');
+            }
+        }
+    </script>
+}

@@ -188,5 +188,26 @@ namespace API.Services.Repositories
 
             return schedule;
         }
+
+        public async Task UpdateSchedules(SchedulesDTO model)
+        {
+
+            var schedule = await _context.Schedules
+                .FirstOrDefaultAsync(i => i.Id == model.Id);
+
+            if (schedule == null)
+                throw new Exception("Không tìm thấy lịch học cần cập nhật.");
+
+            schedule.ClassId = model.ClassId;
+            schedule.StudyShiftId = model.StudyShiftId;
+            schedule.DayId = model.WeekDayId;
+            schedule.RoomId = model.RoomId;
+
+            _context.Schedules.Update(schedule);
+            await _context.SaveChangesAsync();
+        }
+
+           
+        
     }
 }

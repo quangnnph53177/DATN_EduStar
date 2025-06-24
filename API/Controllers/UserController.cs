@@ -305,7 +305,7 @@ namespace API.Controllers
         //        return BadRequest(new { error = ex.Message });
         //    }
         //}
-        [Authorize(Policy = "SearchUS")]
+       // [Authorize(Policy = "SearchUS")]
         [HttpGet("searchuser")]
         public async Task<IActionResult> SearchUser([FromQuery] string? keyword)
         {
@@ -413,7 +413,7 @@ namespace API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        [Authorize(Policy = "CreateUS")]
+       // [Authorize(Policy = "CreateUS")]
         [HttpPost("lock/{username}")]
         public async Task<IActionResult> LockUser(string username)
         {
@@ -462,7 +462,7 @@ namespace API.Controllers
                 return BadRequest(new { success = false, message = ex.Message });
             }
         }
-        [Authorize(Policy = "CreateUS")]
+        //[Authorize(Policy = "CreateUS")]
         [HttpPut("changerole/{username}")]
         public async Task<IActionResult> ChangeRole(string username, [FromQuery] int newRoleId)
         {

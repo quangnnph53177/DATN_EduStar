@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Chi tiết sinh viên";
 }
+
 <h1>Chi tiết sinh viên</h1>
 
 <div>
@@ -50,47 +51,76 @@
 
         <dt class="col-sm-2">Trạng thái</dt>
         <dd class="col-sm-10">
-            @(Model.Status==true ? "Đang hoạt động" : "Đã khóa")
+            @(Model.Status == true ? "Đang hoạt động" : "Đã khóa")
         </dd>
-
+        @if(Model.RoleId==3){
         <dt class="col-sm-2">Danh sách lớp</dt>
         <dd class="col-sm-10">
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Tên lớp</th>
-                        <th>Môn học</th>
-                        <th>Học kỳ</th>
-                        <th>Năm học</th>
-                        <th>Số tín chỉ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.CVMs)
-                    {
+            @if (Model.CVMs != null && Model.CVMs.Any())
+            {
+                <table class="table table-bordered">
+                    <thead>
                         <tr>
-                            <td>@item.ClassName</td>
-                            <td>@item.SubjectName</td>
-                            <td>@item.Semester</td>
-                            <td>@item.YearSchool</td>
-                            <td>@item.NumberOfCredits</td>
+                            <th>Tên lớp</th>
+                            <th>Môn học</th>
+                            <th>Học kỳ</th>
+                            <th>Năm học</th>
+                            <th>Số tín chỉ</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </dd>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.CVMs)
+                        {
+                            <tr>
+                                <td>@item.ClassName</td>
+                                <td>@item.SubjectName</td>
+                                <td>@item.Semester</td>
+                                <td>@item.YearSchool</td>
+                                <td>@item.NumberOfCredits</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <span>Sinh viên chưa tham gia lớp học nào.</span>
+                    <video controls autoplay muted width="640" height="360">
+                    <source src="/uploads/Recording 2025-02-12 193630.mp4" type="video/mp4" />
+                    Trình duyệt không hỗ trợ video.
+                    </video>
+            }
+            </dd>
+        }
+        else if(Model.RoleId==1)
+        {
+             @* <video controls autoplay muted width="640" height="360">
+                <source src="/uploads/Recording 2025-02-12 193630.mp4" type="video/mp4" />
+                Trình duyệt không hỗ trợ video.
+                </video> *@
+        }
     </dl>
 </div>
 
-<div class="mb-3">
-    <form asp-action="Lock" asp-controller="Student" asp-route-id="@Model.id" method="post" style="display:inline;">
-        <button type="submit" class="btn btn-sm @(Model.Status==true ? "btn-danger" : "btn-success")">
-            @(Model.Status==true ? "Khóa tài khoản" : "Mở khóa")
-        </button>
-    </form>
-</div>
+@if (Model.RoleId == 1)
+{
+    <div class="mb-3">
+        <form asp-action="Lock" asp-controller="Student" asp-route-id="@Model.id" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-sm @(Model.Status == true ? "btn-danger" : "btn-success")">
+                @(Model.Status == true ? "Khóa tài khoản" : "Mở khóa")
+            </button>
+        </form>
+    </div>
 
-<div>
-    @Html.ActionLink("Chỉnh sửa", "EditBoss", new { id = Model.id }, new { @class = "btn btn-warning" }) |
-    <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
-</div>
+    <div>
+        @Html.ActionLink("Chỉnh sửa", "EditBoss", new { id = Model.id }, new { @class = "btn btn-warning" }) |
+        <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+    </div>
+}
+else if (Model.RoleId == 3)
+{
+    <div>
+        @Html.ActionLink("Chỉnh sửa", "EditBeast", new { id = Model.id }, new { @class = "btn btn-warning" }) |
+        <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+    </div>
+}

@@ -10,6 +10,7 @@ namespace API.Services
         Task<List<SchedulesViewModel>> GetByStudent(Guid Id);
         Task AutogenerateSchedule();
         Task<Schedule> CreateSchedules(SchedulesDTO model);
+        Task UpdateSchedules(SchedulesDTO model);
         Task<byte[]> ExportSchedules(List<SchedulesViewModel> model);
     }
 }

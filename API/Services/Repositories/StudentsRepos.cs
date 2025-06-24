@@ -136,28 +136,30 @@ namespace API.Services.Repositories
 
         public async Task<StudentViewModels> GetById(Guid Id)
         {
-            var inforvs = await _context.StudentsInfors
-                .Include(u => u.User)
-                .ThenInclude(p => p.UserProfile)
-                .Include(c => c.Classes)
+            var inforvs = await _context.Users
+                .Include(r=>r.Roles)
+                .Include(u => u.UserProfile)
+                .Include(p => p.StudentsInfor)
+                .ThenInclude(c => c.Classes)
                 .ThenInclude(s => s.Subject)
-                .FirstOrDefaultAsync(d => d.UserId == Id);
-           
+                .FirstOrDefaultAsync(d => d.Id == Id);
+
             var model = new StudentViewModels()
             {
 
-                id = inforvs.UserId,
-                FullName = inforvs.User.UserProfile.FullName,
-                UserName = inforvs.User.UserName,
-                Email = inforvs.User.Email,
-                PhoneNumber = inforvs.User.PhoneNumber,
-                StudentCode = inforvs.StudentsCode,
-                Gender = inforvs.User.UserProfile.Gender,
-                Avatar = inforvs.User.UserProfile.Avatar,
-                Address = inforvs.User.UserProfile.Address,
-                Dob = inforvs.User.UserProfile.Dob,
-                Status = inforvs.User.Statuss.GetValueOrDefault(),
-                CVMs = inforvs.Classes?.Select(u => new ClassViewModel
+                id = inforvs.Id,
+                FullName = inforvs.UserProfile.FullName,
+                UserName = inforvs.UserName,
+                Email = inforvs.Email,
+                PhoneNumber = inforvs.PhoneNumber,
+                StudentCode = inforvs.StudentsInfor.StudentsCode,
+                Gender = inforvs.UserProfile.Gender,
+                Avatar = inforvs.UserProfile.Avatar,
+                Address = inforvs.UserProfile.Address,
+                Dob = inforvs.UserProfile.Dob,
+                RoleId = inforvs.Roles.FirstOrDefault().Id,
+                Status = inforvs.Statuss.GetValueOrDefault(),
+                CVMs = inforvs.StudentsInfor.Classes?.Select(u => new ClassViewModel
                 {
                     ClassName = u.NameClass,
                     SubjectName = u.Subject.SubjectName,
@@ -214,7 +216,7 @@ namespace API.Services.Repositories
             return true;
         }
 
-        public async Task<List<StudentViewModels>> Search(string? Studencode, string? fullName, string? username, string? email, bool? gender)
+        public async Task<List<StudentViewModels>> Search(string? Studencode, string? fullName, string? username, string? email, bool? gender, bool? status)
         {
             var query = _context.Users.Include(u => u.UserProfile).Include(s => s.StudentsInfor).AsSplitQuery();
             if (!string.IsNullOrWhiteSpace(fullName))
@@ -236,6 +238,10 @@ namespace API.Services.Repositories
             if (gender.HasValue)
             { 
                 query =query.Where(g=>g.UserProfile.Gender==gender.Value);
+            }
+            if (status.HasValue) 
+            {
+                query = query.Where(s => s.Statuss == status.Value);
             }
 
                 var result = await query.OrderBy(s => s.StudentsInfor.StudentsCode).Select(u => new StudentViewModels
@@ -316,13 +322,15 @@ namespace API.Services.Repositories
 
         public async Task UpdatebyBoss(StudentViewModels model)
         {
-            var inforvs = await _context.StudentsInfors
-                 .Include(u => u.User)
-                 .ThenInclude(p => p.UserProfile)
-                 .Include(c => c.Classes)
+            await Validate(model, isupdate: true);
+            var inforvs = await _context.Users
+                 .Include(u => u.UserProfile)
+                 .Include(r=> r.Roles)
+                 .Include(p => p.StudentsInfor)
+                 .ThenInclude(c => c.Classes)
                  .ThenInclude(s => s.Subject)
-                 .FirstOrDefaultAsync(d => d.UserId == model.id);
-            var olddataClass = inforvs.Classes.Select(u => new ClassViewModel
+                 .FirstOrDefaultAsync(d => d.Id == model.id);
+            var olddataClass = inforvs.StudentsInfor.Classes.Select(u => new ClassViewModel
             {
                 ClassName = u.NameClass,
                 SubjectName = u.Subject.SubjectName,
@@ -332,26 +340,26 @@ namespace API.Services.Repositories
             }).ToList();
             var olddata = JsonConvert.SerializeObject(new
             {
-                inforvs.User.UserName,
-                inforvs.User.Email,
-                inforvs.User.PhoneNumber,
-                inforvs.User.UserProfile.FullName,
-                inforvs.User.UserProfile.Gender,
-                inforvs.User.UserProfile.Avatar,
-                inforvs.User.UserProfile.Address,
-                inforvs.User.UserProfile.Dob,
+                inforvs.UserName,
+                inforvs.Email,
+                inforvs.PhoneNumber,
+                inforvs.UserProfile.FullName,
+                inforvs.UserProfile.Gender,
+                inforvs.UserProfile.Avatar,
+                inforvs.UserProfile.Address,
+                inforvs.UserProfile.Dob,
                 Classes = olddataClass
             });
-            inforvs.User.UserName = model.UserName;
+            inforvs.UserName = model.UserName;
             //inforvs.User.PassWordHash = model.PassWordHash;
-            inforvs.User.Email = model.Email;
-            inforvs.User.PhoneNumber = model.PhoneNumber;
-            inforvs.User.UserProfile.FullName = model.FullName;
-            inforvs.User.UserProfile.Gender = model.Gender;
-            inforvs.User.UserProfile.Address = model.Address;
-            inforvs.User.UserProfile.Avatar =model.Avatar;
-            inforvs.User.UserProfile.Dob = model.Dob;
-            inforvs.Classes?.Select(u => new ClassViewModel
+            inforvs.Email = model.Email;
+            inforvs.PhoneNumber = model.PhoneNumber;
+            inforvs.UserProfile.FullName = model.FullName;
+            inforvs.UserProfile.Gender = model.Gender;
+            inforvs.UserProfile.Address = model.Address;
+            inforvs.UserProfile.Avatar =model.Avatar;
+            inforvs.UserProfile.Dob = model.Dob;
+            inforvs.StudentsInfor.Classes?.Select(u => new ClassViewModel
             {
                 ClassName = u.NameClass,
                 SubjectName = u.Subject.SubjectName,
@@ -359,8 +367,8 @@ namespace API.Services.Repositories
                 YearSchool = u.YearSchool ?? 0,
                 NumberOfCredits = u.Subject.NumberOfCredits ?? 0
             }).ToList();
-            _context.StudentsInfors.Update(inforvs);
-            var newataClass = inforvs.Classes.Select(u => new ClassViewModel
+            _context.Users.Update(inforvs);
+            var newataClass = inforvs.StudentsInfor.Classes.Select(u => new ClassViewModel
             {
                 ClassName = u.NameClass,
                 SubjectName = u.Subject.SubjectName,
@@ -370,14 +378,14 @@ namespace API.Services.Repositories
             }).ToList();
             var newData = JsonConvert.SerializeObject(new
             {
-                inforvs.User.UserName,
-                inforvs.User.Email,
-                inforvs.User.PhoneNumber,
-                inforvs.User.UserProfile.FullName,
-                inforvs.User.UserProfile.Gender,
-                inforvs.User.UserProfile.Avatar,
-                inforvs.User.UserProfile.Address,
-                inforvs.User.UserProfile.Dob,
+                inforvs.UserName,
+                inforvs.Email,
+                inforvs.PhoneNumber,
+                inforvs.UserProfile.FullName,
+                inforvs.UserProfile.Gender,
+                inforvs.UserProfile.Avatar,
+                inforvs.UserProfile.Address,
+                inforvs.UserProfile.Dob,
                 Classes = olddataClass
             });
             await _context.SaveChangesAsync();
@@ -385,7 +393,7 @@ namespace API.Services.Repositories
             Guid? performeBy = currentUserId != Guid.Empty ? currentUserId : null;
             var audit = new Auditlog
             {
-                Userid = inforvs.UserId,
+                Userid = inforvs.Id,
                 PerformeBy = performeBy,
                 NewData = newData,
                 OldData = olddata,
@@ -400,8 +408,7 @@ namespace API.Services.Repositories
         {
             var audit = _context.Auditlogs.Include(a=>a.PerformeByNavigation).Include(x => x.User).ToList();
             return audit;
-        }
-
+        } 
         public async Task SendNotificationtoClass(int classId, string subject)
         {
             var in4class = await _context.Classes
@@ -415,7 +422,7 @@ namespace API.Services.Repositories
             string message = $"Xin chào các bạn sinh viên,\n\n" +
                      $"Đây là thông báo về lớp học:\n" +
                      $"- Tên lớp: {in4class.NameClass}\n" +
-                     $"- Môn học: {in4class.Subject.SubjectName}\n" +
+                     $"- Môn học: {in4class.Subject.SubjectName}\n" + 
                      $"- Học kỳ: {in4class.Semester}\n" +
                      $"- Năm học: {in4class.YearSchool}\n\n" +
                      $"Vui lòng theo dõi thông tin và chuẩn bị học tập.\n\n" +
@@ -424,6 +431,61 @@ namespace API.Services.Repositories
             foreach (var email in lststudeninclass)
             {
                 await _email.SendEmail(email, subject, message);
+            }
+        }
+        public async Task SendAsync(string subject,string message,Guid id)
+        {
+            var lststudent= await _context.Users.FirstOrDefaultAsync(c=>c.Id==id);
+           
+          await _email.SendEmail(lststudent.Email, subject, message );
+        }
+        public async Task Validate(StudentViewModels model , bool isupdate= false)
+        {
+            if (string.IsNullOrWhiteSpace(model.UserName))
+            {
+                throw new ArgumentNullException("Tên đăng nhập không được để trống");
+            }
+            if (string.IsNullOrWhiteSpace(model.Email)|| !model.Email.Contains("@gmail.com"))
+            {
+                throw new ArgumentNullException("Email không hợp lệ ");
+            }
+            if (string.IsNullOrWhiteSpace(model.FullName))
+            {
+                throw new ArgumentNullException("Họ tên không được để trống");
+            }
+            if (string.IsNullOrWhiteSpace(model.Address))
+            {
+                throw new ArgumentNullException("Địa chỉ không được để trống");
+            }
+            if (model.Dob == null)
+            {
+                throw new ArgumentException("Vui lòng thêm ngày sinh");
+            }
+            if (model.Gender == null)
+            {
+                throw new ArgumentException("Vui lòng chọn giới tính");
+            }
+            if (!isupdate)
+            {
+                if(await _context.Users.AllAsync(c => c.UserName == model.UserName))
+                {
+                    throw new ArgumentException("Tên đăng nhập đã tồn tại");
+                }
+                if(await _context.Users.AllAsync(e=> e.Email == model.Email))
+                {
+                    throw new ArgumentException("Email đã tồn tại");
+                }
+            }
+            else
+            {
+                if(await _context.Users.AnyAsync(u=> u.UserName==model.UserName && u.Id != model.id))
+                {
+                    throw new ArgumentException("Tên đăng nhập đã tồn tại");
+                }
+                if(await _context.Users.AnyAsync(e=>e.Email == model.Email && e.Id != model.id))
+                {
+                    throw new ArgumentException("Email đã tồn tại");
+                }
             }
         }
     }

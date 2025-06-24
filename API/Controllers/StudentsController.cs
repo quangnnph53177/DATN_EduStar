@@ -18,19 +18,20 @@ namespace API.Controllers
 
         }
         [HttpGet]
-        public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender)
+        public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status)
         {
             if (string.IsNullOrEmpty(StudentCode) &&
                     string.IsNullOrEmpty(fullName) &&
                     string.IsNullOrEmpty(username) &&
                     string.IsNullOrEmpty(email) &&
-                        gender == null)
+                        gender == null&&
+                        status ==null)
             {
                 var itemindex = await _service.GetAllStudents();
 
                 return Ok(itemindex);
             }
-            var result = await _service.Search(StudentCode, fullName, username, email, gender);
+            var result = await _service.Search(StudentCode, fullName, username, email, gender, status);
 
             if (result == null || !result.Any())
             {
@@ -42,19 +43,28 @@ namespace API.Controllers
         [HttpGet("auditlog")]
         public async Task<IActionResult> Log()
         {
-            var item = await _service.GetAuditLogs();
-            if (item == null) return null;
-            var result = item.Select(a => new AuditLogViewModel
+            try
             {
-                Id = a.Id,
-                UserName = a.User.UserName,
-                NewData = a.NewData,
-                OldData = a.OldData,
-                Active = a.Active,
-                Timestamp = a.Timestamp,
+                var data = await _service.GetAuditLogs();
+                if (data == null) return NotFound("Không có dữ liệu audit.");
 
-            });
-            return Ok(result);
+                var result = data.Select(a => new AuditLogViewModel
+                {
+                    Id = a.Id,
+                    UserName = a.User?.UserName ?? "Unknown",
+                    NewData = a.NewData,
+                    OldData = a.OldData,
+                    Active = a.Active,
+                    Timestamp = a.Timestamp
+                }).ToList();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log ex.Message vào log file nếu cần
+                return StatusCode(500, "Lỗi server khi lấy audit log.");
+            }
         }
         [HttpGet("{Id}")]
         public async Task<IActionResult> Details(Guid Id)
@@ -166,6 +176,12 @@ namespace API.Controllers
         {
             await _service.SendNotificationtoClass(classId, subject );
             return Ok();
+        }
+        [HttpPost("gui")]
+        public async Task<IActionResult> send(string subject, string message, Guid id)
+        {
+            await _service.SendAsync(subject, message, id);
+            return Ok("đã gửi thành công");
         }
 
     }

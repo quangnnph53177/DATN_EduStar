@@ -1,4 +1,4 @@
-﻿using API.Services;
+﻿ using API.Services;
 using API.ViewModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -61,6 +61,23 @@ namespace API.Controllers
         public async Task<IActionResult> Getid(int id)
         {
             return Ok(await _services.GetById(id));
+        }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Updatesch(int id, SchedulesDTO model)
+        {
+            if (id == null)
+            {
+                return BadRequest("Id không khớp");
+            }
+            try
+            {
+                await _services.UpdateSchedules(model);
+                return Ok(new { message = "Cập nhật thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Lỗi khi cập nhật: {ex.Message}" });
+            }
         }
     }
 }

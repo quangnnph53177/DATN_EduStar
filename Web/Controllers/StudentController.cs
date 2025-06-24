@@ -15,7 +15,7 @@ namespace Web.Controllers
             _client.BaseAddress = new Uri("https://localhost:7298/");
             _env = env;
         }
-        public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender)
+        public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status)
         {             
             var queryParams = new List<string>();
             if (!string.IsNullOrWhiteSpace(StudentCode)) queryParams.Add($"studentCode={StudentCode}");
@@ -23,6 +23,7 @@ namespace Web.Controllers
             if (!string.IsNullOrWhiteSpace(username)) queryParams.Add($"username={username}");
             if (!string.IsNullOrWhiteSpace(email)) queryParams.Add($"email={email}");
             if (gender.HasValue) queryParams.Add($"gender={gender.Value}");
+            if(status.HasValue) queryParams.Add($"status={status.Value}" );
 
             string query = queryParams.Count > 0 ? "api/students?" + string.Join("&", queryParams) : "api/students";
             var response = await _client.GetAsync(query);
@@ -41,6 +42,7 @@ namespace Web.Controllers
         {
             var response = await _client.GetStringAsync($"api/students/{id}");
             var result = JsonConvert.DeserializeObject<StudentViewModels>(response);
+            
             return View(result);
         }
         [HttpPost]
@@ -87,27 +89,31 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> EditBoss(Guid id, StudentViewModels model, IFormFile avatarFile)
         {
+            var oldresponse = await _client.GetStringAsync($"api/students/{id}");
+            var oldata = JsonConvert.DeserializeObject<StudentViewModels>(oldresponse);
             if (avatarFile != null && avatarFile.Length > 0)
             {
-                // Tạo tên file duy nhất
+                
                 var fileName = Path.GetFileNameWithoutExtension(avatarFile.FileName);
                 var extension = Path.GetExtension(avatarFile.FileName);
                 var newFileName = $"{fileName}_{Guid.NewGuid()}{extension}";
 
-                // Đường dẫn thư mục wwwroot/uploads
+                
                 var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads");
                 if (!Directory.Exists(uploadsFolder))
                     Directory.CreateDirectory(uploadsFolder);
 
-                // Lưu file vào wwwroot/uploads
+               
                 var filePath = Path.Combine(uploadsFolder, newFileName);
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await avatarFile.CopyToAsync(stream);
                 }
-
-                // Gán đường dẫn tương đối (hoặc URL nếu muốn)
                 model.Avatar = $"/uploads/{newFileName}";
+            }
+            else
+            {
+                model.Avatar = oldata.Avatar;
             }
 
             var response = await _client.PutAsJsonAsync($"api/Students/boss/{id}", model);
@@ -132,6 +138,8 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> EditBeast(Guid id, StudentViewModels model, IFormFile avatarFile)
         {
+            var oldresponse = await _client.GetStringAsync($"api/students/{id}");
+            var oldata = JsonConvert.DeserializeObject<StudentViewModels>(oldresponse);
             if (avatarFile != null && avatarFile.Length > 0)
             {
                 // Tạo tên file duy nhất
@@ -154,7 +162,10 @@ namespace Web.Controllers
                 // Gán đường dẫn tương đối (hoặc URL nếu muốn)
                 model.Avatar = $"/uploads/{newFileName}";
             }
-
+            else
+            {
+                model.Avatar = oldata.Avatar;
+            }
             var response = await _client.PutAsJsonAsync($"api/Students/Beast/{id}", model);
             if (!response.IsSuccessStatusCode)
             {
@@ -179,8 +190,17 @@ namespace Web.Controllers
 
         public async Task<IActionResult> Auditlog()
         {
-            var response = await _client.GetStringAsync("api/Students/auditlog");
-            var result = JsonConvert.DeserializeObject<List<AuditLogViewModel>>(response);
+            var response = await _client.GetAsync("api/Students/auditlog");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("API Error: " + error);
+                return StatusCode((int)response.StatusCode, "Không thể lấy audit log");
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<List<AuditLogViewModel>>(json);
             return View(result);
         }
         // thêm cái gửi cho tất cả sinh viên về thông tin lớp học
