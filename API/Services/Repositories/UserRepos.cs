@@ -314,6 +314,7 @@ namespace API.Services.Repositories
 
             return users.Select(u => new UserDTO
             {
+                Id = u.Id,
                 UserName = u.UserName,
                 Email = u.Email,
                 PhoneNumber = u.PhoneNumber,
@@ -369,14 +370,18 @@ namespace API.Services.Repositories
 
             // Kiểm tra UserProfile có null không, nếu null thì khởi tạo
             if (upuser.UserProfile == null)
-                upuser.UserProfile = new UserProfile();
-
+            {
+                upuser.UserProfile = new UserProfile
+                {
+                    UserId = upuser.Id  // 👈 Bắt buộc gán nếu chưa có
+                };
+            }
             // FullName
             if (!string.IsNullOrWhiteSpace(userd.FullName))
                 upuser.UserProfile.FullName = userd.FullName;
 
-            //if (!string.IsNullOrWhiteSpace(userd.UserCode))
-            //    upuser.UserProfile.UserCode = userd.UserCode;
+            if (!string.IsNullOrWhiteSpace(userd.UserCode))
+                upuser.UserProfile.UserCode = userd.UserCode;
 
             // Gender
             if (userd.Gender.HasValue)
@@ -403,8 +408,8 @@ namespace API.Services.Repositories
                 if (!string.IsNullOrWhiteSpace(upuser.UserProfile.Avatar))
                 {
                     var oldAvatarPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", upuser.UserProfile.Avatar.TrimStart('/'));
-                    if (System.IO.File.Exists(oldAvatarPath))
-                        System.IO.File.Delete(oldAvatarPath);
+                    if (File.Exists(oldAvatarPath))
+                        File.Delete(oldAvatarPath);
                 }
 
                 // 4. Lưu ảnh mới

@@ -8,6 +8,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text;
 using Azure;
+using API.Models;
 
 namespace Web.Controllers
 {
@@ -57,12 +58,13 @@ namespace Web.Controllers
                     using var doc = JsonDocument.Parse(responseContent);
 
                     var token = doc.RootElement.GetProperty("token").GetString();
-                    
+                    //var userId = doc.RootElement.GetProperty("userId").GetInt32();
                     var userName = doc.RootElement.GetProperty("userName").GetString();
 
                     var claims = new List<Claim>
                      {
                          new(ClaimTypes.Name, userName ?? ""),
+                         //new(ClaimTypes.NameIdentifier, userId.ToString()),
                          new("JWToken", token ?? "")
                      };
                     if (doc.RootElement.TryGetProperty("roleId", out var roleArray) && roleArray.ValueKind == JsonValueKind.Array)
@@ -499,6 +501,7 @@ namespace Web.Controllers
                {
                    { new StringContent(userDto.UserName ?? ""), "UserName" },
                    { new StringContent(userDto.FullName ?? ""), "FullName" },
+                   { new StringContent(userDto.UserCode ?? ""), "UserCode" },
                    { new StringContent(userDto.Email ?? ""), "Email" },
                    { new StringContent(userDto.PhoneNumber ?? ""), "PhoneNumber" },
                    { new StringContent(string.Join(",", userDto.RoleIds ?? new List<int>())), "RoleId" },

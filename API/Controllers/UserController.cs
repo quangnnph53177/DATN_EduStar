@@ -343,7 +343,6 @@ namespace API.Controllers
         }
         [Authorize(Policy = "EditUS")]
         [HttpPut("updateuser/{username}")]
-       // [Consumes("multipart/form-data")]
         public async Task<IActionResult> UpdateUser(string username, [FromForm] UserDTO userDto,IFormFile? imgFile)
         {
             var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
@@ -366,9 +365,10 @@ namespace API.Controllers
                 // Serialize old data
                 var oldData = JsonSerializer.Serialize(new
                 {
-                    targetUser.Email,
                     targetUser.UserName,
+                    targetUser.Email,
                     targetUser.Statuss,
+                    targetUser.UserCode,
                     targetUser.FullName,
                     targetUser.Avatar,
                     targetUser.Address,
@@ -378,21 +378,22 @@ namespace API.Controllers
 
                 // 4️⃣ Thực hiện cập nhật
                 await _userRepos.UpdateUser(userDto, imgFile);
-
-                // Lấy lại thông tin user sau khi update để log new data
-                var updatedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
-                var updatedUser = updatedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
                 var newData = JsonSerializer.Serialize(new
                 {
-                    updatedUser.UserName,
-                    updatedUser.Email,
-                    updatedUser.Statuss,
-                    updatedUser.FullName,
-                    updatedUser.Avatar,
-                    updatedUser.Address,
-                    updatedUser.PhoneNumber,
-                    updatedUser.Dob
+                    userDto.UserName,
+                    userDto.Email,
+                    userDto.Statuss,
+                    userDto.UserCode,
+                    userDto.FullName,
+                    userDto.Avatar,
+                    userDto.Address,
+                    userDto.PhoneNumber,
+                    userDto.Dob
                 });
+
+                //// Lấy lại thông tin user sau khi update để log new data
+                //var updatedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+                //var updatedUser = updatedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
                 Guid? performedByGuid = null;
                 var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (Guid.TryParse(performedBy, out var userGuid))
@@ -405,7 +406,7 @@ namespace API.Controllers
                 if (existed == null)
                     return BadRequest("Người thực hiện không tồn tại.");
 
-                await _logRepos.LogAsync(/*updatedUser.Id*/null, "Sửa tài khoản", oldData, newData, performedByGuid);
+                await _logRepos.LogAsync(targetUser.Id, $"Sửa tài khoản {username}", oldData, newData, performedByGuid);
                 return Ok(new { message = "Cập nhật thành công" });
             }
             catch (Exception ex)
@@ -454,7 +455,7 @@ namespace API.Controllers
                     });
                 }
 
-                await _logRepos.LogAsync(lockedUser.Id, "Khóa/Mở tài khoản", oldData, newData, performedByGuid);
+                await _logRepos.LogAsync(lockedUser.Id, $"Khóa/Mở tài khoản {username}", oldData, newData, performedByGuid);
                 return Ok(new { success = true, message = result });
             }
             catch (Exception ex)
@@ -566,7 +567,7 @@ namespace API.Controllers
             var result = logs.Select(a => new AuditLogViewModel
             {
                 Id = a.Id,
-                UserName = a.User?.UserName,
+                UserName = a.User?.UserName == currentUserName ? "Bạn" : a.User?.UserName ?? "Không xác định",
                 NewData = a.NewData,
                 OldData = a.OldData,
                 Active = a.Active,
