@@ -39,30 +39,18 @@ namespace API.Services.Repositories
         public async Task<List<Auditlog>> GetAuditLogsAsync(List<int> currentUserRoleIds, string? currentUserName)
         {
             var query = _context.Auditlogs
-               .Include(a => a.User) // để lấy User.UserName
-               .ThenInclude(u => u.Roles)
-               .AsQueryable();
+                .Include(a => a.User) // Lấy thông tin người bị thao tác
+                .ThenInclude(u => u.Roles)
+                .Include(a => a.PerformeByNavigation) // Nếu cần lấy tên người thực hiện (PerformBy)
+                .AsQueryable();
 
-            if (currentUserRoleIds.Contains(1))
+            if (!currentUserRoleIds.Contains(1)) // Nếu KHÔNG phải Admin
             {
-                // Admin xem toàn bộ
-            }
-            //else if (currentUserRoleIds.Contains(2))
-            //{
-            //    // Giảng viên: log của chính mình hoặc của sinh viên
-            //    query = query.Where(a =>
-            //        a.User != null && (
-            //            a.User.UserName == currentUserName ||
-            //            a.User.Roles.Any(r => r.Id == 3)
-            //        ));
-            //}
-            else
-            {
-                // Sinh viên: chỉ xem log của mình
-                query = query.Where(a => a.User != null && a.User.UserName == currentUserName);
+                // Chỉ xem các log mà mình là đối tượng bị thao tác
+                query = query.Where(a => a.PerformeByNavigation != null && a.PerformeByNavigation.UserName == currentUserName);
             }
 
-            return await query.ToListAsync();
+            return await query.OrderByDescending(a => a.Timestamp).ToListAsync();
         }
     }
 }
