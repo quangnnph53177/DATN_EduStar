@@ -92,13 +92,12 @@ namespace Web.Controllers
             }
             return RedirectToAction("Index");
         }
-        [HttpGet]
+   
         public async Task<IActionResult> Delete(int id)
         {
             var response = await _Client.DeleteAsync($"api/subject/{id}" );
             var json =await response.Content.ReadAsStringAsync();
-            var result = JsonConvert.DeserializeObject<SubjectViewModel>(json);
-            return View(result);
+            return RedirectToAction(nameof(Index));
         }
     }
 }

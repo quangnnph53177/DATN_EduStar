@@ -32,7 +32,7 @@ namespace API.Services.Repositories
 
         public async Task<bool> DeleteSubject(int Id)
         {
-            var del =await _context.Subjects.FindAsync(Id);
+            var del =await _context.Subjects.FirstOrDefaultAsync(s=>s.Id==Id);
             if (del.Status == false)
             {
                 _context.Subjects.Remove(del);

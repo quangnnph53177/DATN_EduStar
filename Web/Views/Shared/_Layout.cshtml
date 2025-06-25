@@ -6,9 +6,11 @@
     <title>@ViewData["Title"] - Web</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/StyleSheet.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Web.styles.css" asp-append-version="true" />
 
     <style>
+
         .sidebar {
             min-height: 100vh;
             background-color: #f8f9fa;
@@ -87,27 +89,33 @@
                 }
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Home" asp-action="Index">🏠 Home</a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active-flame" : "")"
+                           asp-controller="Home" asp-action="Index">🏠 Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Users" asp-action="Index">👤 Danh sách người dùng</a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Users" ? "active-flame" : "")"
+                           asp-controller="Users" asp-action="Index">👤 Danh sách người dùng</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Statistical" ? "active-flame" : "")"
+                           asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Student" ? "active-flame" : "")"
+                           asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Scheduless" asp-action="Index">📅 Lịch học</a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Scheduless" ? "active-flame" : "")"
+                           asp-controller="Scheduless" asp-action="Index">📅 Lịch học</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="SubjectW" asp-action="Index">📘 Khoai môn</a>
-                    </li> 
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="ClassMvc" asp-action="Index">Class</a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "SubjectW" ? "active-flame" : "")"
+                           asp-controller="SubjectW" asp-action="Index">📘 Khoai môn</a>
                     </li>
-                
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClassMvc" ? "active-flame" : "")"
+                           asp-controller="ClassMvc" asp-action="Index">Class</a>
+                    </li>
 
                     <hr />
 
@@ -118,9 +126,14 @@
                                 👋 Xin chào, @User.Identity?.Name
                             </button>
                             <ul aria-labelledby="userMenu" class="nav flex-column">
-                                <li><a class="nav-link" asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a></li>
-                                <li><a class="nav-link" asp-controller="Users" asp-action="IndexLog">🕓 Lịch sử hoạt động</a></li>
-                            
+                                <li>
+                                    <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexUser" ? "active-flame" : "")"
+                                       asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a>
+                                </li>
+                                <li>
+                                    <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexLog" ? "active-flame" : "")"
+                                       asp-controller="Users" asp-action="IndexLog">🕓 Lịch sử hoạt động</a>
+                                </li>
                             </ul>
                         </div>
                     }
@@ -128,6 +141,7 @@
                     {
                         <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login">Đăng nhập</a>
                     }
+
                     <hr />
                     <li>
                         <form method="post" asp-controller="Users" asp-action="Logout" class="dropdown-item p-0 m-0">
@@ -135,6 +149,7 @@
                         </form>
                     </li>
                 </ul>
+
             </div>
 
             <!-- Content -->

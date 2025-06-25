@@ -44,8 +44,16 @@ namespace API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(SchedulesDTO model)
         {
-            var result = await _services.CreateSchedules(model);
-            return Ok(result);
+            
+            try
+            {
+                await _services.CreateSchedules(model);
+                return Ok(new { message = "Thêm thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Lỗi khi thêm: {ex.Message}" });
+            }
         }
         [HttpGet("excel")]
         public async Task<IActionResult> exportbyexcel(Guid id)
@@ -78,6 +86,13 @@ namespace API.Controllers
             {
                 return BadRequest(new { message = $"Lỗi khi cập nhật: {ex.Message}" });
             }
+
+        }
+        [HttpDelete("{Id}")]
+        public async Task<IActionResult> Delete(int Id)
+        {
+            await _services.DeleteSchedules(Id);
+            return Ok(new { message = "xóa thành công" });
         }
     }
 }

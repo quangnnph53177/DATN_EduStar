@@ -15,7 +15,6 @@ namespace API.Controllers
         public StudentsController(IStudent service)
         {
             _service = service;
-
         }
         [HttpGet]
         public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status)

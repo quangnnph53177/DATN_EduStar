@@ -12,5 +12,6 @@ namespace API.Services
         Task<Schedule> CreateSchedules(SchedulesDTO model);
         Task UpdateSchedules(SchedulesDTO model);
         Task<byte[]> ExportSchedules(List<SchedulesViewModel> model);
+        Task DeleteSchedules(int Id);
     }
 }

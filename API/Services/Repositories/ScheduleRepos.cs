@@ -89,6 +89,15 @@ namespace API.Services.Repositories
         }
         public async Task<Schedule> CreateSchedules(SchedulesDTO model)
         {
+
+            bool istrung = _context.Schedules.Any(
+                i => i.Id != model.Id
+                && i.ClassId == model.ClassId
+                && i.StudyShiftId == model.StudyShiftId
+                && i.RoomId == model.RoomId
+                && i.DayId == model.WeekDayId);
+            if (istrung)
+                throw new Exception("Có lịch trùng");
             var sc = new Schedule()
             {
                 Id = model.Id,
@@ -102,6 +111,12 @@ namespace API.Services.Repositories
             return sc;
         }
 
+        public async Task DeleteSchedules(int Id)
+        {
+            var delete =await _context.Schedules.FirstOrDefaultAsync(c => c.Id == Id);
+            _context.Schedules.Remove(delete);
+            await _context.SaveChangesAsync();
+        }
         public async Task<byte[]> ExportSchedules(List<SchedulesViewModel> model)
         {
             using var package = new ExcelPackage();
@@ -197,7 +212,14 @@ namespace API.Services.Repositories
 
             if (schedule == null)
                 throw new Exception("Không tìm thấy lịch học cần cập nhật.");
-
+            bool istrung = _context.Schedules.Any(
+                i => i.Id != model.Id
+                && i.ClassId==model.ClassId
+                && i.StudyShiftId==model.StudyShiftId
+                && i.RoomId==model.RoomId
+                && i.DayId ==model.WeekDayId);
+            if (istrung)
+                throw new Exception("Có lịch trùng"); 
             schedule.ClassId = model.ClassId;
             schedule.StudyShiftId = model.StudyShiftId;
             schedule.DayId = model.WeekDayId;
@@ -205,9 +227,6 @@ namespace API.Services.Repositories
 
             _context.Schedules.Update(schedule);
             await _context.SaveChangesAsync();
-        }
-
-           
-        
+        }         
     }
 }
