@@ -22,7 +22,7 @@ namespace API.Services.Repositories
                     OldData = oldData,
                     NewData = newData,
                     PerformeBy = performedBy,
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.Now
                 };
                 _context.Auditlogs.Add(log);
                 return _context.SaveChangesAsync();

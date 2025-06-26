@@ -204,7 +204,8 @@ namespace Web.Controllers
             {
                 new SelectListItem { Value = "1", Text = "Admin" },
                 new SelectListItem { Value = "2", Text = "Teacher" },
-                new SelectListItem { Value = "3", Text = "Student" }
+                new SelectListItem { Value = "3", Text = "Student" },
+                new SelectListItem { Value = "4", Text = "BTTS" }
             };
 
             ViewBag.RoleList = roles;
@@ -212,7 +213,7 @@ namespace Web.Controllers
             return View(new UserDTO());
         }
         [HttpPost]
-        public async Task<IActionResult> Register(UserDTO model, IFormFile imgFile)
+        public async Task<IActionResult> Register(UserDTO model, IFormFile? imgFile)
         {
             try
                 {
@@ -254,8 +255,12 @@ namespace Web.Controllers
                     TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
                     return RedirectToAction("Index", "Users");
                 }
-               TempData["ErrorMessage"] = "Đăng ký không thành công.";
-                return View(model);
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(); // 🔥 Đọc lỗi chi tiết từ API
+                    TempData["ErrorMessage"] = $"Đăng ký không thành công: {errorContent}";
+                    return View(model);
+                }
 
             }
             catch (HttpRequestException ex)

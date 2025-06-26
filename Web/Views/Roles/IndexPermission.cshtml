@@ -1,0 +1,41 @@
+﻿@model List<API.Models.Permission>
+@{
+    ViewData["Title"] = "Danh sách quyền hệ thống";
+}
+
+<h2>Danh sách quyền hệ thống</h2>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Tên quyền</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            int i = 1;
+            foreach (var perm in Model)
+            {
+                <tr>
+                    <td>@i</td>
+                    <td>@perm.PermissionName</td>
+                </tr>
+                i++;
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="2" class="text-center">Không có quyền nào được khai báo.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<a asp-action="Index" asp-controller="Roles" class="btn btn-secondary mt-2">Quay lại</a>

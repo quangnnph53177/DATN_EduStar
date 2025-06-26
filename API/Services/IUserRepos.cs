@@ -9,7 +9,7 @@ namespace API.Services
         //Task<UserDTO> SearchUser(string? username, string? usercode, string? fullname, string? email);
         Task<IEnumerable<UserDTO>> GetAllUsers(List<int> currentUserRoleIds, string? currentUserName);
         Task<IEnumerable<UserDTO>> GetAllUsersNoTeacher(List<int> currentUserRoleIds, string? currentUserName);
-        Task<User> Register(UserDTO user, IFormFile imgFile);
+        Task<User> Register(UserDTO user, IFormFile? imgFile);
         Task CleanupUnconfirmedUsers();
         Task<LoginResult> Login(string userName, string password);
         Task UpdateUser(UserDTO userd, IFormFile imgFile);

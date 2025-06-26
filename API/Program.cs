@@ -29,6 +29,8 @@ builder.Services.AddScoped<IStatistical, StatisticalRepos>();
 builder.Services.AddScoped<IShedulesRepos, ScheduleRepos>();
 builder.Services.AddScoped<IAuditLogRepos, AuditLogRepos>();
 builder.Services.AddScoped<ISubject ,SubjectRepos > ();
+builder.Services.AddScoped<IRoleRepos, RoleRepos>();
+builder.Services.AddScoped<IPermissionRepos, PermissionRepos>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>

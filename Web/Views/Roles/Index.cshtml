@@ -1,0 +1,60 @@
+﻿@model List<API.Models.Role>
+
+@{
+    ViewData["Title"] = "Danh sách vai trò";
+}
+<a asp-action="IndexPermission" asp-controller="Roles" class="btn btn-primary mt-2">Danh sách quyền</a>
+<a asp-action="AssignPermissions" asp-controller="Roles" class="btn btn-primary mt-2">Phân quyền</a>
+
+<h2>Danh sách vai trò</h2>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Tên vai trò</th>
+            <th>Danh sách quyền</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            int index = 1;
+            foreach (var role in Model)
+            {
+                <tr>
+                    <td>@index</td>
+                    <td>@role.RoleName</td>
+                    <td>
+                        @if (role.Permissions != null && role.Permissions.Any())
+                        {
+                            <ul>
+                                @foreach (var perm in role.Permissions)
+                                {
+                                    <li>@perm.PermissionName</li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <em>Không có quyền</em>
+                        }
+                    </td>
+                </tr>
+                index++;
+            }
+        }
+        else
+        {
+            <tr><td colspan="3" class="text-center">Không có dữ liệu</td></tr>
+        }
+    </tbody>
+</table>
