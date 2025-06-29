@@ -1,0 +1,40 @@
+﻿@model dynamic
+
+@{
+    ViewData["Title"] = "Gán sinh viên vào lớp";
+    var classId = ViewBag.ClassId;
+}
+
+<h1 class="mt-4">Gán sinh viên vào lớp</h1>
+<h3 class="mt-2">Lớp: @classId</h3>
+<hr />
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @ViewBag.ErrorMessage
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="AssignStudent" method="post">
+            <div class="form-group mb-3">
+                <label for="studentId" class="control-label">Mã sinh viên (GUID)</label>
+                <input type="text" id="studentId" name="studentId" class="form-control" placeholder="Nhập ID sinh viên" required />
+            </div>
+            <input type="hidden" name="classId" value="@classId" />
+            <div class="form-group mb-3">
+                <input type="submit" value="Gán" class="btn btn-success" />
+                <a asp-action="Details" asp-route-id="@classId" class="btn btn-secondary">Hủy</a>
+            </div>
+            @Html.AntiForgeryToken()
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

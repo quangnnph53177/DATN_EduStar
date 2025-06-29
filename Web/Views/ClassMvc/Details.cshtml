@@ -1,0 +1,127 @@
+﻿@model API.ViewModel.ClassViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết Lớp học";
+}
+
+<h1 class="mt-4">Chi tiết Lớp học</h1>
+<hr />
+
+@* Hiển thị thông báo lỗi chung từ ViewBag *@
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @ViewBag.ErrorMessage
+    </div>
+}
+
+@* Kiểm tra nếu Model có dữ liệu *@
+@if (Model != null)
+{
+    @* Phần hiển thị thông tin chi tiết lớp học *@
+    <div class="card mt-3">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Thông tin chi tiết</h3>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Mã lớp</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.ClassId)</dd>
+
+                <dt class="col-sm-3">Tên lớp</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.ClassName)</dd>
+
+                <dt class="col-sm-3">Mô tả</dt>
+                <dd class="col-sm-9">@(string.IsNullOrEmpty(Model.Description) ? "Không có" : Model.Description)</dd>
+
+                <dt class="col-sm-3">Môn học</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.SubjectName)</dd>
+
+                <dt class="col-sm-3">Học kỳ</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.Semester)</dd>
+
+                <dt class="col-sm-3">Năm học</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.YearSchool)</dd>
+
+                <dt class="col-sm-3">Số tín chỉ</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.NumberOfCredits)</dd>
+            </dl>
+        </div>
+    </div>
+
+    @* Phần hiển thị danh sách sinh viên trong lớp (từ code bé cung cấp) *@
+    <h4 class="mt-5">Danh sách sinh viên trong lớp</h4>
+    @if (Model.Students != null && Model.Students.Any())
+    {
+        <table class="table table-striped table-bordered mt-3">
+            <thead class="thead-light">
+                <tr>
+                    <th>Mã sinh viên</th>
+                    <th>Tên sinh viên</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Chức năng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var student in Model.Students)
+                {
+                    <tr>
+                        <td>@Html.DisplayFor(modelItem => student.StudentCode)</td>
+                        <td>@Html.DisplayFor(modelItem => student.FullName)</td>
+                        <td>@Html.DisplayFor(modelItem => student.Email)</td>
+                        <td>@Html.DisplayFor(modelItem => student.PhoneNumber)</td>
+                        <td>
+                            @* Form để gọi action RemoveStudent *@
+                            <form asp-action="RemoveStudent" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sinh viên này khỏi lớp không?');">
+                                <input type="hidden" name="classId" value="@Model.ClassId" />
+                                <input type="hidden" name="studentId" value="@student.id" />
+                                <button type="submit" class="btn btn-sm btn-danger">Xóa khỏi lớp</button>
+                                @Html.AntiForgeryToken()
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info mt-3">Lớp này hiện không có sinh viên nào.</div>
+    }
+
+    @* Các nút chức năng ở cuối trang *@
+    <div class="mt-4">
+        <a asp-action="Edit" asp-route-id="@Model.ClassId" class="btn btn-warning">Sửa</a>
+        <a asp-action="AssignStudent" asp-route-id="@Model.ClassId" class="btn btn-success">Gán thêm sinh viên</a>
+        <a asp-action="History" asp-route-id="@Model.ClassId" class="btn btn-info">Xem lịch sử lớp</a>
+        <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+    </div>
+}
+else
+{
+    @* Hiển thị khi không tìm thấy Model *@
+    <div class="alert alert-danger mt-4" role="alert">
+        Không tìm thấy thông tin lớp học. Vui lòng kiểm tra lại ID.
+    </div>
+}
+
+@* Hiển thị thông báo thành công/thất bại từ TempData *@
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success mt-3" role="alert">
+        @TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger mt-3" role="alert">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
