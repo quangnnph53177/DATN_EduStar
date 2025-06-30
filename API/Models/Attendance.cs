@@ -12,6 +12,8 @@ public partial class Attendance
     public Guid? UserId { get; set; }
 
     public DateTime? CreateAt { get; set; }
+    public DateTime? Starttime { get; set; }
+    public DateTime? Endtime { get; set; }
 
     public virtual ICollection<AttendanceDetail> AttendanceDetails { get; set; } = new List<AttendanceDetail>();
 

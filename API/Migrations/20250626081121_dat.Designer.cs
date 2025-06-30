@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Migrations
 {
     [DbContext(typeof(AduDbcontext))]
-    [Migration("20250612084349_hi")]
-    partial class hi
+    [Migration("20250626081121_dat")]
+    partial class dat
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -256,7 +256,7 @@ namespace API.Migrations
                         .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id")
-                        .HasName("PK__DayOfWee__3214EC079A470A2D");
+                        .HasName("PK__DayOfWeek__3214EC079A470A2D");
 
                     b.ToTable("DayOfWeeks");
                 });
@@ -398,7 +398,10 @@ namespace API.Migrations
             modelBuilder.Entity("API.Models.Subject", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -414,14 +417,44 @@ namespace API.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("subjectCode")
-                        .IsRequired()
+                    b.Property<string>("Subjectcode")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
-                        .HasName("PK__Subjects__3214EC0750D0CDEB");
+                        .HasName("PK__Subjects__3214EC0741AE97DC");
 
                     b.ToTable("Subjects");
+                });
+
+            modelBuilder.Entity("API.Models.SubjectsNew", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("NumberOfCredits")
+                        .HasColumnType("int");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SubjectName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Subjectcode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id")
+                        .HasName("PK__Subjects__3214EC07BAD5CEE7");
+
+                    b.ToTable("Subjects_New", (string)null);
                 });
 
             modelBuilder.Entity("API.Models.User", b =>
@@ -624,7 +657,7 @@ namespace API.Migrations
                     b.HasOne("API.Models.Subject", "Subject")
                         .WithMany("Classes")
                         .HasForeignKey("SubjectId")
-                        .HasConstraintName("FK__Classes__Subject__4F7CD00D");
+                        .HasConstraintName("FK_Classes_Subject");
 
                     b.Navigation("Subject");
                 });

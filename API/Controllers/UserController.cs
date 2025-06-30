@@ -16,7 +16,7 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class UserController : ControllerBase
 
     {
@@ -29,7 +29,7 @@ namespace API.Controllers
             _logRepos = auditLogRepos;
             _context = aduDbcontext;
         }
-        [Authorize(Policy = "CreateUS")]
+       // [Authorize(Policy = "CreateUS")]
         [HttpPost("register")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Register([FromForm] UserDTO userDto, IFormFile? imgFile)
@@ -95,7 +95,7 @@ namespace API.Controllers
                 return Unauthorized(new { success = false, error = ex.Message });
             }
         }
-        [Authorize(Policy = "CreateUS")]
+       // [Authorize(Policy = "CreateUS")]
         [HttpPost("upload")]
         public async Task<IActionResult> Upload(IFormFile file)
         {
@@ -200,7 +200,7 @@ namespace API.Controllers
                 return BadRequest(new { error = "Lỗi khi xử lý file Excel: " + ex.Message });
             }
         }
-        [Authorize(Policy = "CreateUS")]
+       // [Authorize(Policy = "CreateUS")]
         [HttpDelete("cleanup-unconfirmed")]
         public async Task<IActionResult> CleanupUnconfirmed()
         {
@@ -239,7 +239,7 @@ namespace API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        [Authorize(Policy = "DetailUS")]
+        //[Authorize(Policy = "DetailUS")]
         [HttpGet("user")]
         public async Task<IActionResult> GetAllUsers()
         {
@@ -341,7 +341,7 @@ namespace API.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-        [Authorize(Policy = "EditUS")]
+       // [Authorize(Policy = "EditUS")]
         [HttpPut("updateuser/{username}")]
         public async Task<IActionResult> UpdateUser(string username, [FromForm] UserDTO userDto,IFormFile? imgFile)
         {
@@ -551,7 +551,7 @@ namespace API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        [Authorize]
+        //[Authorize]
         [HttpGet("log")]
         public async Task<IActionResult> GetAuditLogs()
         {

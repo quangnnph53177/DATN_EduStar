@@ -30,7 +30,7 @@ builder.Services.AddHttpClient("EdustarAPI", client =>
     client.DefaultRequestHeaders.Accept.Add(
         new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 });
-builder.Services.AddDbContext<AduDbcontext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("Default ")));
+builder.Services.AddDbContext<AduDbcontext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 var app = builder.Build();

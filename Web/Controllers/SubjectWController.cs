@@ -97,7 +97,7 @@ namespace Web.Controllers
         {
             var response = await _Client.DeleteAsync($"api/subject/{id}" );
             var json =await response.Content.ReadAsStringAsync();
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index));  
         }
     }
 }

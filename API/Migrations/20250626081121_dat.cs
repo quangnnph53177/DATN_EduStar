@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace API.Migrations
 {
     /// <inheritdoc />
-    public partial class hi : Migration
+    public partial class dat : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,7 +21,7 @@ namespace API.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK__DayOfWee__3214EC079A470A2D", x => x.Id);
+                    table.PrimaryKey("PK__DayOfWeek__3214EC079A470A2D", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -84,16 +84,34 @@ namespace API.Migrations
                 name: "Subjects",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     SubjectName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    subjectCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     NumberOfCredits = table.Column<int>(type: "int", nullable: true),
+                    Subjectcode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Status = table.Column<bool>(type: "bit", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK__Subjects__3214EC0750D0CDEB", x => x.Id);
+                    table.PrimaryKey("PK__Subjects__3214EC0741AE97DC", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Subjects_New",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SubjectName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NumberOfCredits = table.Column<int>(type: "int", nullable: true),
+                    Subjectcode = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Status = table.Column<bool>(type: "bit", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__Subjects__3214EC07BAD5CEE7", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -153,7 +171,7 @@ namespace API.Migrations
                 {
                     table.PrimaryKey("PK__Classes__3214EC07EDA37A0C", x => x.Id);
                     table.ForeignKey(
-                        name: "FK__Classes__Subject__4F7CD00D",
+                        name: "FK_Classes_Subject",
                         column: x => x.SubjectId,
                         principalTable: "Subjects",
                         principalColumn: "Id");
@@ -570,6 +588,9 @@ namespace API.Migrations
 
             migrationBuilder.DropTable(
                 name: "StudentInClass");
+
+            migrationBuilder.DropTable(
+                name: "Subjects_New");
 
             migrationBuilder.DropTable(
                 name: "UserProfiles");
