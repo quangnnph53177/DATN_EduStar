@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -25,7 +26,7 @@ namespace API.Services.Repositories
             _configuration = configuration;
             _emailService = emailService;
         }
-        public async Task<User> Register(UserDTO usd, IFormFile imgFile)
+        public async Task<User> Register(UserDTO usd, IFormFile? imgFile)
         {
             // Kiểm tra thông tin đầu vào  
             if (string.IsNullOrWhiteSpace(usd.UserName) || string.IsNullOrWhiteSpace(usd.PassWordHash) || string.IsNullOrWhiteSpace(usd.Email))
@@ -109,7 +110,7 @@ namespace API.Services.Repositories
                 UserCode = userCode,
                 Gender = usd.Gender,
                 Dob = usd.Dob.HasValue ? DateOnly.FromDateTime(usd.Dob.Value) : null,
-                Avatar = usd.Avatar,
+                Avatar = usd.Avatar ?? "/images/avatars/defaults.png",
                 Address = usd.Address
             });
 
@@ -152,7 +153,7 @@ namespace API.Services.Repositories
         }
         public async Task CleanupUnconfirmedUsers()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var expiredUsers = await _context.Users
                 .Where(u => u.Statuss == false && EF.Functions.DateDiffDay(u.CreateAt, now) >= 7)
@@ -219,10 +220,9 @@ namespace API.Services.Repositories
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.UserName),
-
+                new Claim(ClaimTypes.Name, user.UserName)
             };
-
+            claims.AddRange(user.Roles.Select(r => new Claim("RoleName", r.RoleName) /* Tên vai trò*/ ));
             // Thêm RoleId (sử dụng roleId để kiểm tra quyền nhanh gọn)
             claims.AddRange(user.Roles.Select(r => new Claim(ClaimTypes.Role, r.Id.ToString())));
 
@@ -231,7 +231,7 @@ namespace API.Services.Repositories
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(1),
+                Expires = DateTime.Now.AddHours(1),
                 SigningCredentials = credentials,
                 Issuer = jwtSettings["Issuer"],
                 Audience = jwtSettings["Audience"]

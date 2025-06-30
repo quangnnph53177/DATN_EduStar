@@ -1,0 +1,46 @@
+﻿@model API.ViewModel.AssignPermissionDTO
+@{
+    ViewData["Title"] = "Gán quyền cho vai trò";
+    var roles = ViewBag.Roles as List<SelectListItem>;
+    var permissions = ViewBag.Permissions as List<API.Models.Permission>;
+}
+
+<h2>Gán quyền cho vai trò</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<form asp-action="AssignPermissions" method="post">
+    <div class="form-group">
+        <label for="RoleId">Chọn vai trò:</label>
+        <select asp-for="RoleId" class="form-control" asp-items="roles">
+            <option value="">-- Chọn vai trò --</option>
+        </select>
+    </div>
+
+    <div class="form-group mt-3">
+        <label>Danh sách quyền:</label>
+        <div class="form-check">
+            @foreach (var perm in permissions)
+            {
+                <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="PermissionIds"
+                           value="@perm.Id"
+                           id="perm_@perm.Id" />
+                    <label class="form-check-label" for="perm_@perm.Id">@perm.PermissionName</label>
+                </div>
+            }
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Gán quyền</button>
+</form>
+<a asp-action="Index" asp-controller="Roles" class="btn btn-secondary mt-2">Quay lại</a>
