@@ -15,7 +15,7 @@ namespace API.Controllers
             _permissionRepos = permissionRepos;
         }
         [HttpPost("create")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = "CreateUS")]
         public async Task<IActionResult> CreatePermission([FromBody] string permissionName)
         {
             if (string.IsNullOrEmpty(permissionName))

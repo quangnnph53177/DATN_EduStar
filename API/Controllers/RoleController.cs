@@ -17,7 +17,7 @@ namespace API.Controllers
             _roleRepos = roleRepos;
         }
         [HttpPost("assign-permissions")]
-        [Authorize(Policy = "CreateUS")]
+        [Authorize(Policy = "AddRoleUS")]
         public async Task<IActionResult> AssignPermissions([FromBody] AssignPermissionDTO dto)
         {
             if (dto == null || dto.PermissionIds == null || dto.PermissionIds.Count == 0)
