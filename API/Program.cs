@@ -31,6 +31,7 @@ builder.Services.AddScoped<IAuditLogRepos, AuditLogRepos>();
 builder.Services.AddScoped<ISubject ,SubjectRepos > ();
 builder.Services.AddScoped<IRoleRepos, RoleRepos>();
 builder.Services.AddScoped<IPermissionRepos, PermissionRepos>();
+builder.Services.AddScoped<IAttendance , Attendancerepos>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -136,7 +137,7 @@ using (var scope = app.Services.CreateScope())
         context.SaveChanges();
     }
 }
-// Configure the HTTP request pipeline.
+//Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();

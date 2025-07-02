@@ -2,6 +2,7 @@
 {
     public class AttendancesessionViewModel
     {
+        public  string SessionCode { get; set; }
         public int Schedulesid { get; set; }
         public int ClassId { get; set; }
         public string NameClass { get; set; }
