@@ -77,6 +77,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("DetailUS", policy => policy.RequireClaim("Permission", "Detail"));
     options.AddPolicy("EditUS", policy => policy.RequireClaim("Permission", "Edit"));
     options.AddPolicy("SearchUS", policy => policy.RequireClaim("Permission", "Search"));
+    options.AddPolicy("AddRoleUS", policy => policy.RequireClaim("Permission", "AddRole"));
 });
 builder.Services.AddSwaggerGen(c =>
 {

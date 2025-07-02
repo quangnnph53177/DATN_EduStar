@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Web.Controllers
 {
-    [Authorize(Policy = "AddRole")]
     public class RolesController : Controller
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -87,6 +86,7 @@ namespace Web.Controllers
         //        return RedirectToAction("Index", "Roles");
         //    }
         //}
+
         [HttpGet]
         public async Task<IActionResult> AssignPermissions()
         {
