@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Web.Controllers
 {
-    [Authorize] //phân quyền đây 
+   // [Authorize] //phân quyền đây 
     public class ClassMvcController : Controller
     {
         private readonly HttpClient _httpClient;
