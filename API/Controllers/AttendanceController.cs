@@ -37,7 +37,7 @@ namespace API.Controllers
         {
             return Ok(await _service.CheckInStudent(dto));
         }
-        [Authorize]
+       
         [HttpGet("history")]
         public async Task<IActionResult> History(Guid studentId)
         {

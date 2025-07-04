@@ -184,6 +184,8 @@ namespace API.Services.Repositories
                 .Include(u => u.Roles)
                 .ThenInclude(r => r.Permissions)
                 .FirstOrDefaultAsync(u => u.UserName == userName);
+       
+
             if (user == null)
                 throw new Exception("Tên đăng nhập không tồn tại.");
 
@@ -209,6 +211,7 @@ namespace API.Services.Repositories
                 UserName = user.UserName,
                 Permission = permissions
             };
+
         }
         private string GenerateJwtToken(User user, List<string> permissions)
         {
