@@ -288,6 +288,38 @@ namespace API.Migrations
                         .HasName("PK__Permissi__3214EC07B10A1991");
 
                     b.ToTable("Permission", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            PermissionName = "Create"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            PermissionName = "Detail"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            PermissionName = "Edit"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            PermissionName = "Search"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            PermissionName = "ProcessComplaint"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            PermissionName = "AddRole"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Role", b =>
@@ -307,6 +339,23 @@ namespace API.Migrations
                         .HasName("PK__Roles__3214EC0791E90BA9");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            RoleName = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            RoleName = "Teacher"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            RoleName = "Student"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Room", b =>
@@ -525,6 +574,68 @@ namespace API.Migrations
                     b.HasIndex(new[] { "PermissionId" }, "IX_RolePermission_PermissionId");
 
                     b.ToTable("RolePermission", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 1
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 2
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 3
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 4
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 5
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 6
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 2
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 3
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 4
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 5
+                        },
+                        new
+                        {
+                            RoleId = 3,
+                            PermissionId = 2
+                        },
+                        new
+                        {
+                            RoleId = 3,
+                            PermissionId = 3
+                        });
                 });
 
             modelBuilder.Entity("StudentInClass", b =>

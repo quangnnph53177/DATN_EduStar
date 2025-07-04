@@ -231,6 +231,14 @@ public partial class AduDbcontext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Permissi__3214EC07B10A1991");
 
             entity.ToTable("Permission");
+            entity.HasData(
+               new Permission { Id = 1, PermissionName = "Create" },
+               new Permission { Id = 2, PermissionName = "Detail" },
+               new Permission { Id = 3, PermissionName = "Edit" },
+               new Permission { Id = 4, PermissionName = "Search" },
+               new Permission { Id = 5, PermissionName = "ProcessComplaint" },
+               new Permission { Id = 6, PermissionName = "AddRole" }
+           );
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -238,6 +246,11 @@ public partial class AduDbcontext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC0791E90BA9");
 
             entity.Property(e => e.RoleName).HasMaxLength(28);
+            entity.HasData(
+                new Role { Id = 1, RoleName = "Admin" },
+                new Role { Id = 2, RoleName = "Teacher" },
+                new Role { Id = 3, RoleName = "Student" }
+            );
 
             entity.HasMany(d => d.Permissions).WithMany(p => p.Roles)
                 .UsingEntity<Dictionary<string, object>>(
@@ -253,7 +266,27 @@ public partial class AduDbcontext : DbContext
                         j.HasKey("RoleId", "PermissionId").HasName("PK__RolePerm__6400A1A882414258");
                         j.ToTable("RolePermission");
                         j.HasIndex(new[] { "PermissionId" }, "IX_RolePermission_PermissionId");
-                    });
+
+                        j.HasData(
+                           // Admin (RoleId = 1)
+                           new { RoleId = 1, PermissionId = 1 },
+                           new { RoleId = 1, PermissionId = 2 },
+                           new { RoleId = 1, PermissionId = 3 },
+                           new { RoleId = 1, PermissionId = 4 },
+                           new { RoleId = 1, PermissionId = 5 },
+                           new { RoleId = 1, PermissionId = 6 },
+                            // Teacher (RoleId = 2)
+                            new { RoleId = 2, PermissionId = 2 },
+                            new { RoleId = 2, PermissionId = 3 },
+                            new { RoleId = 2, PermissionId = 4 },
+                            new { RoleId = 2, PermissionId = 5 },
+                            // Student (RoleId = 3)
+                            new { RoleId = 3, PermissionId = 2 },
+                            new { RoleId = 3, PermissionId = 3 }
+
+                           );
+                    } 
+                );
         });
 
         modelBuilder.Entity<Room>(entity =>

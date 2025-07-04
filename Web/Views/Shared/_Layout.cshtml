@@ -118,15 +118,6 @@
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active-flame" : "")"
                            asp-controller="Attendance" asp-action="IndexSession">📘 Điểm danh</a>
 
-                    @if (User.HasClaim("Permission", "AddRole"))
-
-                    {
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Roles" ? "active-flame" : "")"
-                           asp-controller="Roles" asp-action="Index">👤 Phân quyền người dùng</a>
-                    </li>                        
-                    }
-
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClassMvc" ? "active-flame" : "")"
                            asp-controller="ClassMvc" asp-action="Index">🏫 Class</a>
@@ -145,28 +136,34 @@
 
                     <hr />
 
-                    @if (User.Identity.IsAuthenticated)
-                    {
-                        <div class="dropdown me-3">
-                            <button class="btn btn-light" type="button"  aria-expanded="false">
+                    <div class="dropdown me-3">
+                                @if (User.Identity.IsAuthenticated)
+                                {
+                            <button class="btn btn-light dropdown-toggle" type="button" id="userDropdown"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
                                 👋 Xin chào, @User.Identity?.Name
                             </button>
-                            <ul aria-labelledby="userMenu" class="nav flex-column">
+
+                            <ul class="dropdown-menu" aria-labelledby="userDropdown">
                                 <li>
-                                    <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexUser" ? "active-flame" : "")"
-                                       asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a>
+                                    <a class="dropdown-item @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexUser" ? "active-flame" : "")"
+                                       asp-controller="Users" asp-action="IndexUser">
+                                        👤 Hồ sơ cá nhân
+                                    </a>
                                 </li>
                                 <li>
-                                    <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexLog" ? "active-flame" : "")"
-                                       asp-controller="Users" asp-action="IndexLog">🕓 Lịch sử hoạt động</a>
+                                    <a class="dropdown-item @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexLog" ? "active-flame" : "")"
+                                       asp-controller="Users" asp-action="IndexLog">
+                                        🕓 Lịch sử hoạt động
+                                    </a>
                                 </li>
                             </ul>
-                        </div>
-                    }
-                    else
-                    {
-                        <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login"> 🔐 Đăng nhập</a>
-                    }
+                                }
+                                else
+                                {
+                            <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login"> 🔐 Đăng nhập</a>
+                                }
+                    </div>
 
                     <hr />
                     <li>

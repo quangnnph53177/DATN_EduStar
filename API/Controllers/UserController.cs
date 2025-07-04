@@ -137,7 +137,10 @@ namespace API.Controllers
                             continue;
                         }
                         if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
+                        {
+                            usersFailed.Add(new { Row = row, Reason = "Thiếu username hoặc password." });
                             continue;
+                        }
 
                         DateTime? dob = null;
                         if (DateTime.TryParseExact(dobText, new[] { "d/M/yyyy", "dd/MM/yyyy", "M/d/yyyy" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDob))

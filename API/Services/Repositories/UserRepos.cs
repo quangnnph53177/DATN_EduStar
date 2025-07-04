@@ -90,7 +90,10 @@ namespace API.Services.Repositories
                 // Gán đường dẫn ảo vào DTO
                 usd.Avatar = $"/images/avatars/{uniqueFileName}";
             }
-
+            if (usd.Dob.HasValue && usd.Dob.Value.Date >= DateTime.Now.Date)
+            {
+                throw new Exception("Ngày sinh không hợp lệ. Hãy nhập lại ngày sinh.");
+            }
             var user = new User
             {
                 Id = Guid.NewGuid(),
