@@ -1,7 +1,7 @@
 ﻿@model API.ViewModel.UserDTO
 @{
     ViewData["Title"] = "Đăng ký tài khoản";
-    var roleList = ViewBag.RoleList as List<SelectListItem>;
+    var roleList = ViewBag.RoleSelectList as List<SelectListItem>;
 }
 @if (TempData["SuccessMessage"] != null)
 {

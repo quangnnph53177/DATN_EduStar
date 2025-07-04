@@ -200,16 +200,23 @@ namespace Web.Controllers
                 TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login");
             }
-            var roles = new List<SelectListItem>
+            var reponse = client.GetAsync("https://localhost:7298/api/Role/getroles").Result;
+            if (!reponse.IsSuccessStatusCode)
             {
-                new SelectListItem { Value = "1", Text = "Admin" },
-                new SelectListItem { Value = "2", Text = "Teacher" },
-                new SelectListItem { Value = "3", Text = "Student" },
-                new SelectListItem { Value = "4", Text = "BTTS" }
-            };
-
-            ViewBag.RoleList = roles;
-
+                TempData["ErrorMessage"] = "Không thể lấy danh sách vai trò.";
+                return RedirectToAction("Index");
+            }
+            var rolesJson = reponse.Content.ReadAsStringAsync().Result;
+            var roles = JsonSerializer.Deserialize<List<Role>>(rolesJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            var roleSelectList = roles?.Select(r => new SelectListItem
+            {
+                Value = r.Id.ToString(),
+                Text = r.RoleName,
+            }).ToList() ?? new List<SelectListItem>();
+            ViewBag.RoleSelectList = roleSelectList;
             return View(new UserDTO());
         }
         [HttpPost]
