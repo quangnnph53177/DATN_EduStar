@@ -113,9 +113,11 @@
                         asp-controller="SubjectW" asp-action="Index">📘 Khoai môn</a>
                     </li>
                      <li class="nav-item">
+                    <li class="nav-item">
+
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active-flame" : "")"
                            asp-controller="Attendance" asp-action="IndexSession">📘 Điểm danh</a>
-                    </li>
+
                     @if (User.HasClaim("Permission", "AddRole"))
 
                     {
@@ -124,17 +126,29 @@
                            asp-controller="Roles" asp-action="Index">👤 Phân quyền người dùng</a>
                     </li>                        
                     }
+
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClassMvc" ? "active-flame" : "")"
-                           asp-controller="ClassMvc" asp-action="Index">Class</a>
+                           asp-controller="ClassMvc" asp-action="Index">🏫 Class</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Complaint" ? "active-flame" : "")"
+                           asp-controller="Complaint" asp-action="Index"> ⚠️ Khiếu nại</a>
+                    </li>
+                    @if (User.HasClaim("Permission", "Create"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Roles" ? "active-flame" : "")"
+                               asp-controller="Roles" asp-action="Index">🛡️ Phân quyền người dùng</a>
+                        </li>
+                    }
 
                     <hr />
 
                     @if (User.Identity.IsAuthenticated)
                     {
                         <div class="dropdown me-3">
-                            <button class="btn btn-light dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn btn-light" type="button"  aria-expanded="false">
                                 👋 Xin chào, @User.Identity?.Name
                             </button>
                             <ul aria-labelledby="userMenu" class="nav flex-column">
@@ -151,7 +165,7 @@
                     }
                     else
                     {
-                        <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login">Đăng nhập</a>
+                        <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login"> 🔐 Đăng nhập</a>
                     }
 
                     <hr />

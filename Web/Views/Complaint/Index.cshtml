@@ -1,0 +1,81 @@
+﻿@model List<API.ViewModel.ComplaintDTO>
+@{
+    ViewData["Title"] = "Danh sách khiếu nại";
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <strong>@TempData["ErrorMessage"]</strong><br />
+        <small class="text-muted">@TempData["ApiErrorDetail"]</small>
+    </div>
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <strong>@TempData["SuccessMessage"]</strong>
+    </div>
+}
+
+<h2>Danh sách khiếu nại</h2>
+<a asp-controller="Complaint" asp-action="ClassChangeComplaint" class="btn btn-primary mb-3">Khiếu nại đổi lớp</a>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Loại</th>
+            <th>Lý do</th>
+            <th>Trạng thái</th>
+            <th>Người gửi</th>
+            <th>Người xử lý</th>
+            <th>Ngày tạo</th>
+            <th>Phản hồi</th>
+            <th>Xử lý lúc</th>
+            @if (User.HasClaim("Permission", "ProcessComplaint"))
+            {
+                <th>Chức năng</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.ComplaintType</td>
+                <td>@item.Reason</td>
+                <td>
+                    @if (item.Statuss == "Pending")
+                    {
+                        <span class="text-warning">Chờ xử lý</span>
+                    }
+                    else if (item.Statuss == "Approved")
+                    {
+                        <span class="text-success">Chấp thuận</span>
+                    }
+                    else if (item.Statuss == "Rejected")
+                    {
+                        <span class="text-danger">Từ chối</span>
+                    }
+                    else
+                    {
+                        <span>@item.Statuss</span>
+                    }
+                </td>
+                <td>@item.StudentName</td>
+                <td>@item.ProcessedByName</td>
+                <td>@item.CreateAt?.ToString("dd/MM/yyyy HH:mm")</td>
+                <td>@item.ResponseNote</td>
+                <td>@item.ProcessedAt?.ToString("dd/MM/yyyy HH:mm")</td>
+                @if (User.HasClaim("Permission", "ProcessComplaint"))
+                {
+                    <td>
+                        @if (item.Statuss == "Pending")
+                        {
+                            <a asp-action="ProcessClassComplaint" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Xử lý</a>
+                        }
+                    </td>
+                }
+        </tr>
+    }
+    </tbody>
+</table>
