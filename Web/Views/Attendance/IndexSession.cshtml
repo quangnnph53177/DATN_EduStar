@@ -1,0 +1,38 @@
+﻿@using API.ViewModel
+@model List<IndexAttendanceViewModel>
+
+<h2>Danh sách phiên điểm danh</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Mã phiên</th>
+            <th>Lớp</th>
+            <th>Môn học</th>
+            <th>Ca học</th>
+            <th>Thứ</th>
+            <th>Phòng</th>
+            <th>Bắt đầu</th>
+            <th>Kết thúc</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.SessionCode</td>
+                <td>@item.ClassName</td>
+                <td>@item.SubjectName</td>
+                <td>@item.ShiftStudy</td>
+                <td>@item.WeekDay</td>
+                <td>@item.RoomCode</td>
+                <td>@item.StartTime?.ToString("HH:mm")</td>
+                <td>@item.EndTime?.ToString("HH:mm")</td>
+                <td>
+                    <a asp-action="Detail" asp-route-id="@item.AttendanceId" class="btn btn-info btn-sm">Chi tiết</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

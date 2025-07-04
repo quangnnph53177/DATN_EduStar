@@ -2,162 +2,165 @@
 using API.Models;
 using API.ViewModel;
 using Microsoft.EntityFrameworkCore;
-using OpenCvSharp;
+using static API.Models.AttendanceDetail;
 
 namespace API.Services.Repositories
 {
-    public class Attendancerepos : IAttendance
+    public class AttendanceRepos : IAttendance
     {
         private readonly AduDbcontext _context;
-        private readonly IWebHostEnvironment _env;
-
-        public Attendancerepos(AduDbcontext context, IWebHostEnvironment env)
+        public AttendanceRepos(AduDbcontext context)
         {
             _context = context;
-            _env = env;
         }
 
-        public async Task CreateSession(CreateAttendanceSessionViewModel model)
+        public async Task<bool> CheckInStudent(CheckInDto dto)  
         {
-            var session = new Attendance()
+            var detail = await _context.AttendanceDetails
+                .FirstOrDefaultAsync(a => a.AttendanceId == dto.AttendanceId && a.StudentId == dto.StudentId);
+
+            if (detail == null)
+            {
+                detail = new AttendanceDetail
+                {
+                    AttendanceId = dto.AttendanceId,
+                    StudentId = dto.StudentId,
+                    Status = dto.Status,
+                    CheckinTime = DateTime.Now,
+                    Description = "Điểm danh thủ công bởi GV",
+                    
+                };
+                _context.AttendanceDetails.Add(detail);
+            }
+            else
+            {
+                detail.Status = dto.Status;
+                detail.CheckinTime = DateTime.Now;
+                detail.Description = "Cập nhật điểm danh thủ công";
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task CreateSession(CreateAttendanceViewModel model)
+        {
+            var session = new Attendance
             {
                 SchedulesId = model.SchedulesId,
-                UserId = model.CreatedByUserId,
-                Starttime = DateTime.Now,
-                Endtime = DateTime.Now.AddMinutes(30),
+                SessionCode = model.SessionCode,
                 CreateAt = DateTime.Now,
-                SessionCode = Guid.NewGuid().ToString().Substring(0, 6)
+                Endtime = DateTime.Now.AddMinutes(30),
+                Starttime = DateTime.Now,
             };
             _context.Attendances.Add(session);
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<StudentAttendanceViewModel>> GetStudentsForAttendance(int id)
+        public async Task<List<IndexAttendanceViewModel>> GetAllSession()
         {
+            var attendance =await _context.Schedules
+                .Include(s => s.Class)
+                .ThenInclude(s => s.Subject)
+                .Include(s => s.StudyShift)
+                .Include(s => s.Room)
+                .Include(s => s.Day)
+                .Include(s => s.Attendances)
+                .Where(a=> a.Attendances.Any())
+            .Select(u => new IndexAttendanceViewModel
+            {
+                AttendanceId = u.Attendances.FirstOrDefault().Id,
+                SessionCode = u.Attendances.FirstOrDefault().SessionCode,
+                SubjectName = u.Class.Subject.SubjectName,
+                ClassName = u.Class.NameClass,
+                ShiftStudy = u.StudyShift.StudyShiftName,
+                WeekDay = u.Day.Weekdays,
+                RoomCode = u.Room.RoomCode,
+                StartTime = u.Attendances.FirstOrDefault().Starttime,
+                EndTime = u.Attendances.FirstOrDefault().Endtime,
+            }).ToListAsync();
+            return attendance;
+        }
+
+        public async Task<IndexAttendanceViewModel> GetByIndex(int attendanceId)
+        {
+            // Lấy thông tin phiên + thông tin lớp học liên quan
             var attendance = await _context.Attendances
                 .Include(a => a.Schedules)
                     .ThenInclude(s => s.Class)
                         .ThenInclude(c => c.Students)
-                            .ThenInclude(s => s.User)
-                            .ThenInclude(u => u.UserProfile)
-                .FirstOrDefaultAsync(s => s.Id == id);
+                            .ThenInclude(si => si.User) 
+                                .ThenInclude(u => u.UserProfile)
+                .Include(a => a.Schedules).ThenInclude(s => s.Class).ThenInclude(c => c.Subject)
+                .Include(a => a.Schedules).ThenInclude(s => s.Room)
+                .Include(a => a.Schedules).ThenInclude(s => s.StudyShift)
+                .Include(a => a.Schedules).ThenInclude(s => s.Day)
+                .Include(a => a.AttendanceDetails)    
+                .FirstOrDefaultAsync(a => a.Id == attendanceId);
 
             if (attendance == null)
-                throw new Exception("Không tìm thấy phiên điểm danh");
+                return null;
 
-            var checkedIns = await _context.AttendanceDetails
-                .Where(x => x.AttendanceId == id)
-                .Select(x => x.StudentId)
-                .ToListAsync();
+            var schedule = attendance.Schedules;
+            var @class = schedule.Class;
 
-            return attendance.Schedules.Class.Students.Select(s => new StudentAttendanceViewModel
+            var result = new IndexAttendanceViewModel
             {
-                StudentId = s.UserId,
-                StudentCode = s.StudentsCode,
-                FullName = s.User?.UserName,
-                Email = s.User?.Email,
-                Avatar = s.User?.UserProfile?.Avatar,
-                HasCheckedIn = checkedIns.Contains(s.UserId)
-            }).ToList();
+                AttendanceId = attendance.Id,
+                SessionCode = attendance.SessionCode,
+                SubjectName = @class.Subject.SubjectName,
+                ClassName = @class.NameClass,
+                ShiftStudy = schedule.StudyShift.StudyShiftName,
+                WeekDay = schedule.Day.Weekdays,
+                RoomCode = schedule.Room.RoomCode,
+                StartTime = attendance.Starttime,
+                EndTime = attendance.Endtime,
+                stinclass = @class.Students.Select(c => {
+                    var detail = attendance.AttendanceDetails
+                        .FirstOrDefault(ad => ad.StudentId == c.UserId);
+
+                    return new StudentAttendanceViewModel
+                    {
+                        StudentId = c.UserId,
+                        StudentCode = c.StudentsCode,
+                        FullName = c.User.UserProfile.FullName,
+                        Email = c.User.Email,
+                        HasCheckedIn = detail?.CheckinTime != null,
+
+                        Status = detail?.Status.ToString()
+
+                    };
+                }).ToList()
+            };
+
+            return result;
         }
 
-        public async Task<(bool match, string message)> Recognize(string base64, int attendanceId)
+        public async Task<List<StudentAttendanceHistory>> GetHistoryForStudent(Guid studentId)
         {
-            var clean64 = base64.Replace("data:image/jpeg;base64,", "").Replace(" ", "+");
-            var imageBytes = Convert.FromBase64String(clean64);
-            var captured = Cv2.ImDecode(imageBytes, ImreadModes.Grayscale);
-
-            if (captured.Empty()) return (false, "❌ Ảnh không hợp lệ");
-
-            var faces = new List<Mat>();
-            var labels = new List<int>();
-            var labelMap = new Dictionary<int, Guid>();
-
-            int label = 0;
-            var users = _context.Users.Include(u => u.UserProfile).Where(u => u.UserProfile != null).ToList();
-
-            foreach (var user in users)
+                var result = await _context.AttendanceDetails
+            .Include(d => d.Attendance)
+                .ThenInclude(a => a.Schedules)
+                    .ThenInclude(s => s.Class)
+                        .ThenInclude(c => c.Subject)
+            .Include(d => d.Attendance.Schedules.StudyShift)
+            .Include(d => d.Attendance.Schedules.Day)
+            .Where(d => d.StudentId == studentId)
+            .Select(d => new StudentAttendanceHistory
             {
-                var path = Path.Combine(_env.WebRootPath, user.UserProfile.Avatar.TrimStart('/'));
-                if (!System.IO.File.Exists(path)) continue;
+                SubjectName = d.Attendance.Schedules.Class.Subject.SubjectName,
+                ClassName = d.Attendance.Schedules.Class.NameClass,
+                Shift = d.Attendance.Schedules.StudyShift.StudyShiftName,
+                WeekDay = d.Attendance.Schedules.Day.Weekdays,
+                CheckInTime = d.CheckinTime,
+                Status = d.Status == AttendanceStatus.Present ? "✅ Có mặt"
+                        : d.Status == AttendanceStatus.Late ? "🕒 Đi trễ"
+                        : "❌ Vắng",
+                Description = d.Description,
+                AttendanceDate = d.Attendance.Starttime.GetValueOrDefault(),
+            }).ToListAsync();
 
-                var img = Cv2.ImRead(path, ImreadModes.Grayscale);
-                if (img.Empty()) continue;
-
-                Cv2.EqualizeHist(img, img);
-                faces.Add(img);
-                labels.Add(label);
-                labelMap[label] = user.Id;
-                label++;
-            }
-
-            if (faces.Count < 2) return (false, "❌ Dữ liệu mẫu không đủ để nhận diện.");
-
-            var recognizer = OpenCvSharp.Face.LBPHFaceRecognizer.Create();
-            recognizer.Train(faces, labels);
-            recognizer.Predict(captured, out int predictLabel, out double confidence);
-
-            if (confidence < 80 && labelMap.TryGetValue(predictLabel, out Guid userId))
-            {
-                var detail = new AttendanceDetail
-                {
-                    StudentId = userId,
-                    AttendanceId = attendanceId,
-                    Status = AttendanceDetail.AttendanceStatus.Present,
-                    CheckinTime = DateTime.Now,
-                    ImagePath = SaveImage(userId, imageBytes)
-                };
-
-                _context.AttendanceDetails.Add(detail);
-                await _context.SaveChangesAsync();
-                return (true, $"✅ Chào {userId}, điểm danh thành công ({confidence:0.00})");
-            }
-
-            return (false, "❌ Không nhận diện được.");
-        }
-
-        private string SaveImage(Guid userId, byte[] bytes)
-        {
-            var folder = Path.Combine(_env.WebRootPath, "evidence");
-            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-            var file = $"{userId}_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
-            var path = Path.Combine(folder, file);
-            System.IO.File.WriteAllBytes(path, bytes);
-            return $"/evidence/{file}";
-        }
-
-        public async Task<List<AttendancesessionViewModel>> GetAllSessions()
-        {
-            return await _context.Attendances
-            .Include(a => a.Schedules)
-                .ThenInclude(s => s.Class)
-                .Select(a => new AttendancesessionViewModel
-                {
-                    
-                    SessionCode = a.SessionCode,
-                    NameClass = a.Schedules.Class.NameClass,
-                    StartTime = a.Starttime.HasValue? TimeOnly.FromDateTime(a.Starttime.Value):null,
-                    EndTime = a.Endtime.HasValue ? TimeOnly.FromDateTime(a.Endtime.Value) : null,
-                }).ToListAsync();
-        }
-
-        public async Task<List<StudentCheckInSessionViewModel>> GetSessionsForStudent(Guid studentId)
-        {
-            var sessions = await _context.StudentsInfors
-                .Where(sc => sc.UserId == studentId)
-                .Include(sc => sc.Classes)
-                .ThenInclude(c => c.Schedules)
-                .ThenInclude(s => s.Attendances)
-                .SelectMany(sc => sc.Classes.FirstOrDefault().Schedules.SelectMany(s => s.Attendances))
-                .ToListAsync();
-
-            return sessions.Select(s => new StudentCheckInSessionViewModel
-            {
-                AttendanceId = s.Id,
-                ClassName = s.Schedules.Class.NameClass,
-                StartTime = s.Starttime,
-                EndTime = s.Endtime,
-            }).ToList();
+                return result;
         }
     }
 }

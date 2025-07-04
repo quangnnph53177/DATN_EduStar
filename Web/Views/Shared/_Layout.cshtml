@@ -112,15 +112,12 @@
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "SubjectW" ? "active-flame" : "")"
                         asp-controller="SubjectW" asp-action="Index">📘 Khoai môn</a>
                     </li>
-<<<<<<< HEAD
-                    <li class="nav-item">
+                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active-flame" : "")"
-                           asp-controller="Attendance" asp-action="CheckInPage">📘 Điểm danh</a>
+                           asp-controller="Attendance" asp-action="IndexSession">📘 Điểm danh</a>
                     </li>
                     @if (User.HasClaim("Permission", "AddRole"))
-=======
-                    @if (User.HasClaim("Permission", "Create"))
->>>>>>> 46f9ead5804d1bbfcdf6a8d0f978cbdd74a0518f
+
                     {
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Roles" ? "active-flame" : "")"

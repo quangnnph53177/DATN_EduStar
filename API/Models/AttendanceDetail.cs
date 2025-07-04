@@ -12,11 +12,9 @@ public partial class AttendanceDetail
     public int? AttendanceId { get; set; }
     public enum AttendanceStatus
     {
-        Present,
-        Absent,
-        Late,
-        Leave,
-        Unknown
+        Present=1,
+        Absent=0,
+        Late=2
     }
     public AttendanceStatus Status { get; set; }
     public DateTime? CheckinTime { get; set; }

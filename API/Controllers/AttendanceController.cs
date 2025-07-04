@@ -1,5 +1,6 @@
 ﻿using API.Services;
 using API.ViewModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,22 +15,33 @@ namespace API.Controllers
         {
             _service = service;
         }
-        [HttpGet("{Id}")]
-        public async Task<IActionResult> StudentsForAttendance(int Id)
-        {
-           
-            return Ok(await _service.GetStudentsForAttendance(Id));
-        }
         [HttpPost]
-        public async Task<IActionResult> CreateSession(CreateAttendanceSessionViewModel model)
+        public async Task<IActionResult> CreateSession(CreateAttendanceViewModel model)
         {
             await _service.CreateSession(model);
             return Ok(model);
         }
-        [HttpGet("student/{studentId}")]
-        public async Task<IActionResult> GetSessionsForStudent(Guid studentId)
+        [HttpGet]
+        public async Task<IActionResult> GetAllSession()
         {
-            return Ok(await _service.GetSessionsForStudent(studentId));
+            var session=  await _service.GetAllSession();
+            return Ok(session);
+        }
+        [HttpGet("{Id}")]
+        public  async Task<IActionResult> GetDetailsession(int Id)
+        {
+            return Ok (await _service.GetByIndex(Id));
+        }
+        [HttpPost("checkin")]
+        public async Task<IActionResult> Checkin([FromBody] CheckInDto dto)
+        {
+            return Ok(await _service.CheckInStudent(dto));
+        }
+        [Authorize]
+        [HttpGet("history")]
+        public async Task<IActionResult> History(Guid studentId)
+        {
+            return Ok(await _service.GetHistoryForStudent(studentId));
         }
     }
 }

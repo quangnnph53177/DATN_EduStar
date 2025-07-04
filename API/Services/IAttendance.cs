@@ -4,10 +4,10 @@ namespace API.Services
 {
     public interface IAttendance
     {
-        Task CreateSession(CreateAttendanceSessionViewModel model);
-        Task<List<StudentAttendanceViewModel>> GetStudentsForAttendance(int id);
-        Task<(bool match, string message)> Recognize(string base64, int attendanceId);
-        Task<List<AttendancesessionViewModel>> GetAllSessions(); // Admin or Lecturer
-        Task<List<StudentCheckInSessionViewModel>> GetSessionsForStudent(Guid studentId); // For student
+        Task CreateSession(CreateAttendanceViewModel model);
+        Task<List<IndexAttendanceViewModel>> GetAllSession();
+        Task<IndexAttendanceViewModel> GetByIndex(int attendance);
+        Task<bool> CheckInStudent(CheckInDto dto);
+        Task<List<StudentAttendanceHistory>> GetHistoryForStudent(Guid studentId);
     }
 }
