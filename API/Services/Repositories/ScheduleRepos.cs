@@ -98,6 +98,7 @@ namespace API.Services.Repositories
                 && i.DayId == model.WeekDayId);
             if (istrung)
                 throw new Exception("Có lịch trùng");
+            
             var sc = new Schedule()
             {
                 Id = model.Id,
@@ -144,6 +145,7 @@ namespace API.Services.Repositories
         {
             var schedule =await _context.Schedules
                 .Include(c=>c.Class)
+                .ThenInclude(s=>s.Subject)
                 .Include(r=>r.Room)
                 .Include(d=>d.Day)
                 .Include(s=> s.StudyShift)
@@ -155,17 +157,22 @@ namespace API.Services.Repositories
         {
             var schedule = await _context.Schedules
                 .Include(c=>c.Class)
+                .ThenInclude(s=>s.Subject)
                 .Include (r=>r.Room)
                 .Include(d=>d.Day)
                 .Include(s=> s.StudyShift)
                 .AsSplitQuery().FirstOrDefaultAsync(e=> e.Id ==id);
             var model = new SchedulesViewModel()
             {
-                Id =schedule.Id,
-                ClassName=schedule.Class.NameClass,
+                Id = schedule.Id,
+                ClassName = schedule.Class.NameClass,
+                SubjectName = schedule.Class.Subject.SubjectName,
                 RoomCode = schedule.Room.RoomCode,
                 WeekDay = schedule.Day.Weekdays,
-                StudyShift= schedule.StudyShift.StudyShiftName
+                StudyShift = schedule.StudyShift.StudyShiftName,
+                starttime =schedule.StudyShift.StartTime,
+                endtime =schedule.StudyShift.EndTime,
+                
             };
             return model;
         }

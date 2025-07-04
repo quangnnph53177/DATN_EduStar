@@ -45,7 +45,6 @@ public partial class AduDbcontext : DbContext
     public virtual DbSet<StudyShift> StudyShifts { get; set; }
 
     public virtual DbSet<Subject> Subjects { get; set; }
-
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
@@ -88,7 +87,7 @@ public partial class AduDbcontext : DbContext
 
             entity.HasIndex(e => e.StudentId, "IX_AttendanceDetails_StudentId");
 
-            entity.Property(e => e.Statuss).HasMaxLength(20);
+            entity.Property(e => e.Status).HasMaxLength(20);
 
             entity.HasOne(d => d.Attendance).WithMany(p => p.AttendanceDetails)
                 .HasForeignKey(d => d.AttendanceId)
@@ -151,7 +150,7 @@ public partial class AduDbcontext : DbContext
 
             entity.HasOne(d => d.Subject).WithMany(p => p.Classes)
                 .HasForeignKey(d => d.SubjectId)
-                .HasConstraintName("FK__Classes__Subject__4F7CD00D");
+                .HasConstraintName("FK_Classes_Subject");
 
             entity.HasMany(d => d.Students).WithMany(p => p.Classes)
                 .UsingEntity<Dictionary<string, object>>(
@@ -222,7 +221,7 @@ public partial class AduDbcontext : DbContext
 
         modelBuilder.Entity<DayOfWeekk>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__DayOfWee__3214EC079A470A2D");
+            entity.HasKey(e => e.Id).HasName("PK__DayOfWeek__3214EC079A470A2D");
 
             entity.Property(e => e.Weekdays).HasMaxLength(10);
         });
@@ -305,7 +304,6 @@ public partial class AduDbcontext : DbContext
             entity.ToTable("StudentsInfor");
 
             entity.Property(e => e.UserId).ValueGeneratedNever();
-       
             entity.Property(e => e.StudentsCode).HasMaxLength(50);
 
             entity.HasOne(d => d.User).WithOne(p => p.StudentsInfor)
@@ -322,11 +320,11 @@ public partial class AduDbcontext : DbContext
 
         modelBuilder.Entity<Subject>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Subjects__3214EC0750D0CDEB");
+            entity.HasKey(e => e.Id).HasName("PK__Subjects__3214EC0741AE97DC");
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.SubjectName).HasMaxLength(200);
         });
+
 
         modelBuilder.Entity<User>(entity =>
         {

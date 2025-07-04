@@ -20,7 +20,7 @@ namespace API.Services.Repositories
             {
                 Id = sub.Id,
                 SubjectName = sub.SubjectName,
-                subjectCode = sub.subjectCode,
+                Subjectcode = sub.subjectCode,
                 Description= sub.Description,
                 NumberOfCredits = sub.NumberOfCredits,
                 Status = sub.Status,
@@ -50,7 +50,7 @@ namespace API.Services.Repositories
             {
                 Id = c.Id,
                 SubjectName = c.SubjectName,
-                subjectCode= c.subjectCode,
+                subjectCode= c.Subjectcode,
                 NumberOfCredits = c.NumberOfCredits,
                 Description = c.Description,
                Status = c.Status,
@@ -65,7 +65,7 @@ namespace API.Services.Repositories
             {
                 Id= id,
                 SubjectName=details.SubjectName,
-                subjectCode= details.subjectCode,
+                subjectCode= details.Subjectcode,
                 NumberOfCredits=details.NumberOfCredits,
                 Description=details.Description,
                 Status = details.Status,
@@ -92,7 +92,7 @@ namespace API.Services.Repositories
             }
             if (!string.IsNullOrWhiteSpace(subcode))
             {
-                query = query.Where(c => c.subjectCode.ToLower().Contains(subcode));
+                query = query.Where(c => c.Subjectcode.ToLower().Contains(subcode));
             }
             if (numberofCredit.HasValue)
             {
@@ -102,11 +102,11 @@ namespace API.Services.Repositories
             {
                 query = query.Where(c => c.Status == status);  
             }
-            var model = await query.OrderBy(c=>c.subjectCode).Select(c => new SubjectViewModel
+            var model = await query.OrderBy(c=>c.Subjectcode).Select(c => new SubjectViewModel
             {
                 Id = c.Id,
                 SubjectName=c.SubjectName,
-                subjectCode = c.subjectCode,
+                subjectCode = c.Subjectcode,
                 NumberOfCredits=c.NumberOfCredits,
                 Description=c.Description,
                 Status=c.Status,
@@ -124,7 +124,7 @@ namespace API.Services.Repositories
 
             // Cập nhật thông tin
             con.SubjectName = subject.SubjectName;
-            con.subjectCode = subject.subjectCode;
+            con.Subjectcode = subject.subjectCode;
             con.NumberOfCredits = subject.NumberOfCredits;
             con.Description = subject.Description;
             con.Status = subject.Status;

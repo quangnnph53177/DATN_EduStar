@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Migrations
 {
     [DbContext(typeof(AduDbcontext))]
-    [Migration("20250612084349_hi")]
-    partial class hi
+    [Migration("20250702080257_ac")]
+    partial class ac
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,8 +38,18 @@ namespace API.Migrations
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
 
+                    b.Property<DateTime?>("Endtime")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("SchedulesId")
                         .HasColumnType("int");
+
+                    b.Property<string>("SessionCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("Starttime")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -65,12 +75,18 @@ namespace API.Migrations
                     b.Property<int?>("AttendanceId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("CheckinTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Statuss")
+                    b.Property<string>("ImagePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("int");
 
                     b.Property<Guid?>("StudentId")
                         .HasColumnType("uniqueidentifier");
@@ -256,7 +272,7 @@ namespace API.Migrations
                         .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id")
-                        .HasName("PK__DayOfWee__3214EC079A470A2D");
+                        .HasName("PK__DayOfWeek__3214EC079A470A2D");
 
                     b.ToTable("DayOfWeeks");
                 });
@@ -398,7 +414,10 @@ namespace API.Migrations
             modelBuilder.Entity("API.Models.Subject", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -414,12 +433,11 @@ namespace API.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("subjectCode")
-                        .IsRequired()
+                    b.Property<string>("Subjectcode")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
-                        .HasName("PK__Subjects__3214EC0750D0CDEB");
+                        .HasName("PK__Subjects__3214EC0741AE97DC");
 
                     b.ToTable("Subjects");
                 });
@@ -624,7 +642,7 @@ namespace API.Migrations
                     b.HasOne("API.Models.Subject", "Subject")
                         .WithMany("Classes")
                         .HasForeignKey("SubjectId")
-                        .HasConstraintName("FK__Classes__Subject__4F7CD00D");
+                        .HasConstraintName("FK_Classes_Subject");
 
                     b.Navigation("Subject");
                 });

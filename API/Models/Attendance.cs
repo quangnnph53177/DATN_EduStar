@@ -10,8 +10,10 @@ public partial class Attendance
     public int? SchedulesId { get; set; }
 
     public Guid? UserId { get; set; }
-
+    public string SessionCode { get; set; }
     public DateTime? CreateAt { get; set; }
+    public DateTime? Starttime { get; set; }
+    public DateTime? Endtime { get; set; }
 
     public virtual ICollection<AttendanceDetail> AttendanceDetails { get; set; } = new List<AttendanceDetail>();
 

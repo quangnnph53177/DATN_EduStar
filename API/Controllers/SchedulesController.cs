@@ -23,6 +23,7 @@ namespace API.Controllers
             {
                 Id = c.Id,
                 ClassName= c.Class.NameClass,
+                SubjectName =c.Class.Subject.SubjectName,
                 RoomCode = c.Room.RoomCode,
                 StudyShift = c.StudyShift.StudyShiftName,
                 WeekDay = c.Day.Weekdays
