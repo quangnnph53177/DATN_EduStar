@@ -1,6 +1,6 @@
 ﻿namespace API.ViewModel
 {
-    public class ComplaintViewModel
+    public class ComplaintDTO
     {
         public int Id { get; set; }
         public string? ComplaintType { get; set; }

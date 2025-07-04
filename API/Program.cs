@@ -31,6 +31,7 @@ builder.Services.AddScoped<IAuditLogRepos, AuditLogRepos>();
 builder.Services.AddScoped<ISubject ,SubjectRepos > ();
 builder.Services.AddScoped<IRoleRepos, RoleRepos>();
 builder.Services.AddScoped<IPermissionRepos, PermissionRepos>();
+builder.Services.AddScoped<IComplaintRepos, ComplaintRepos>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -76,6 +77,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("DetailUS", policy => policy.RequireClaim("Permission", "Detail"));
     options.AddPolicy("EditUS", policy => policy.RequireClaim("Permission", "Edit"));
     options.AddPolicy("SearchUS", policy => policy.RequireClaim("Permission", "Search"));
+    options.AddPolicy("ProcessComplaintUS", policy => policy.RequireClaim("Permission", "ProcessComplaint"));
     options.AddPolicy("AddRoleUS", policy => policy.RequireClaim("Permission", "AddRole"));
 });
 builder.Services.AddSwaggerGen(c =>

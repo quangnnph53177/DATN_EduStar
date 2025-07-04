@@ -1,0 +1,44 @@
+﻿@model API.ViewModel.ClassChangeComplaintDTO
+@{
+    ViewBag.Title = "Gửi khiếu nại đổi lớp";
+}
+
+<h2 class="mb-4">Gửi khiếu nại đổi lớp</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<form asp-action="ClassChangeComplaint" method="post">
+    <div class="mb-3">
+        <label asp-for="CurrentClassId" class="form-label">Lớp hiện tại</label>
+        <input asp-for="CurrentClassId" class="form-control" />
+        <span asp-validation-for="CurrentClassId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="RequestedClassId" class="form-label">Lớp muốn chuyển đến</label>
+        <input asp-for="RequestedClassId" class="form-control" />
+        <span asp-validation-for="RequestedClassId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Reason" class="form-label">Lý do khiếu nại</label>
+        <textarea asp-for="Reason" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Reason" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Gửi khiếu nại</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Quay lại danh sách</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

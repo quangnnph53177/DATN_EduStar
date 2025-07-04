@@ -1,0 +1,45 @@
+﻿@model API.ViewModel.ProcessComplaintDTO
+@{
+    ViewData["Title"] = "Xử lý khiếu nại đổi lớp";
+}
+
+<h2 class="mb-4">Xử lý khiếu nại đổi lớp</h2>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <strong>@TempData["ErrorMessage"]</strong>
+    </div>
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <strong>@TempData["SuccessMessage"]</strong>
+    </div>
+}
+
+<form asp-action="ProcessClassComplaint" method="post">
+    <input type="hidden" asp-for="ComplaintId" />
+    <div class="mb-3">
+        <label asp-for="Status" class="form-label fw-bold">Trạng thái xử lý</label>
+        <select asp-for="Status" class="form-select">
+            <option value="">-- Chọn trạng thái --</option>
+            <option value="Approved">Chấp thuận đổi lớp</option>
+            <option value="Rejected">Từ chối</option>
+        </select>
+        <span asp-validation-for="Status" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Note" class="form-label fw-bold">Phản hồi</label>
+        <textarea asp-for="Note" rows="4" class="form-control" placeholder="Nhập nội dung phản hồi..."></textarea>
+        <span asp-validation-for="Note" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-success">Gửi xử lý</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Quay lại danh sách</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
