@@ -26,7 +26,7 @@ namespace API.Controllers
                 SubjectName =c.Class.Subject.SubjectName,
                 RoomCode = c.Room.RoomCode,
                 StudyShift = c.StudyShift.StudyShiftName,
-                WeekDay = c.Day.Weekdays
+                WeekDay = c.Day.Weekdays.ToString(),
             });
             return Ok(check);
         }
@@ -39,8 +39,8 @@ namespace API.Controllers
         [HttpPost("arrangeschedules")]
         public async Task<IActionResult> getarrschedule()
         {
-            var  result = _services.AutogenerateSchedule();
-            return Ok(result);
+            await _services.AutogenerateSchedule();
+            return Ok(new { success = true, message = "Tạo lịch học tự động thành công" } );
         }
         [HttpPost]
         public async Task<IActionResult> Create(SchedulesDTO model)

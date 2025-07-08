@@ -9,5 +9,6 @@ namespace API.Services
         Task<IndexAttendanceViewModel> GetByIndex(int attendance);
         Task<bool> CheckInStudent(CheckInDto dto);
         Task<List<StudentAttendanceHistory>> GetHistoryForStudent(Guid studentId);
+        Task<List<IndexAttendanceViewModel>> Search(int? classId, int? studyShiftid, int? roomid, int? subjectid);
     }
 }

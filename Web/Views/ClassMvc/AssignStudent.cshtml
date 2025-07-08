@@ -1,12 +1,13 @@
 ﻿@model dynamic
-
 @{
     ViewData["Title"] = "Gán sinh viên vào lớp";
     var classId = ViewBag.ClassId;
+    var nameClass = ViewBag.NameClass;
+
 }
 
 <h1 class="mt-4">Gán sinh viên vào lớp</h1>
-<h3 class="mt-2">Lớp: @classId</h3>
+<h3 class="mt-2">Lớp: @nameClass</h3>
 <hr />
 
 @if (ViewBag.ErrorMessage != null)

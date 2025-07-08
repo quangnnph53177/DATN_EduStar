@@ -74,7 +74,7 @@ namespace API.Services.Repositories
                 SubjectName = u.Class.Subject.SubjectName,
                 ClassName = u.Class.NameClass,
                 ShiftStudy = u.StudyShift.StudyShiftName,
-                WeekDay = u.Day.Weekdays,
+                WeekDay = u.Day.Weekdays.ToString(),
                 RoomCode = u.Room.RoomCode,
                 StartTime = u.Attendances.FirstOrDefault().Starttime,
                 EndTime = u.Attendances.FirstOrDefault().Endtime,
@@ -111,7 +111,7 @@ namespace API.Services.Repositories
                 SubjectName = @class.Subject.SubjectName,
                 ClassName = @class.NameClass,
                 ShiftStudy = schedule.StudyShift.StudyShiftName,
-                WeekDay = schedule.Day.Weekdays,
+                WeekDay = schedule.Day.Weekdays.ToString(),
                 RoomCode = schedule.Room.RoomCode,
                 StartTime = attendance.Starttime,
                 EndTime = attendance.Endtime,
@@ -151,7 +151,7 @@ namespace API.Services.Repositories
                 SubjectName = d.Attendance.Schedules.Class.Subject.SubjectName,
                 ClassName = d.Attendance.Schedules.Class.NameClass,
                 Shift = d.Attendance.Schedules.StudyShift.StudyShiftName,
-                WeekDay = d.Attendance.Schedules.Day.Weekdays,
+                WeekDay = d.Attendance.Schedules.Day.Weekdays.ToString(),
                 CheckInTime = d.CheckinTime,
                 Status = d.Status == AttendanceStatus.Present ? "✅ Có mặt"
                         : d.Status == AttendanceStatus.Late ? "🕒 Đi trễ"
@@ -161,6 +161,48 @@ namespace API.Services.Repositories
             }).ToListAsync();
 
                 return result;
+        }
+
+        public async Task<List<IndexAttendanceViewModel>> Search(int? classId, int? studyShiftid, int? roomid, int? subjectid)
+        {
+            var query = _context.Attendances
+                .Include(s => s.Schedules)
+                .ThenInclude(c => c.Class)
+                .ThenInclude(t => t.Subject)
+                .Include(s => s.Schedules)
+                .ThenInclude(s => s.StudyShift)
+                .Include(s => s.Schedules)
+                .ThenInclude(s => s.Room).AsSplitQuery();
+            if (classId.HasValue)
+            {
+                query = query.Where(c => c.Schedules.Class.Id == classId.Value);
+            }
+            if (studyShiftid.HasValue) 
+            {
+                query = query.Where(ss => ss.Schedules.StudyShift.Id == studyShiftid.Value);
+            }
+            if (roomid.HasValue) 
+            {
+                query = query.Where(r => r.Schedules.Room.Id == roomid.Value);
+            }
+            if (subjectid.HasValue)
+            {
+                query = query.Where(s => s.Schedules.Class.Subject.Id == subjectid.Value);
+            }
+            var result =await query.OrderBy(s => s.User.Id).Select(s => new IndexAttendanceViewModel
+            {
+                AttendanceId = s.Id,
+                SessionCode = s.SessionCode,
+                ClassName = s.Schedules.Class.NameClass,
+                SubjectName =s.Schedules.Class.Subject.SubjectName,
+                ShiftStudy = s.Schedules.StudyShift.StudyShiftName,
+                RoomCode=s.Schedules.Room.RoomCode,
+                WeekDay=s.Schedules.Day.Weekdays.ToString(),
+                StartTime=s.Starttime,
+                EndTime=s.Endtime,
+
+            }).ToListAsync();
+            return result;
         }
     }
 }

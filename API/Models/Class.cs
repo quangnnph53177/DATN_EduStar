@@ -14,7 +14,7 @@ public partial class Class
     public string? Semester { get; set; }
 
     public int? YearSchool { get; set; }
-
+    public  DateTime? StartTime { get; set; }
     public bool? Status { get; set; }
 
     public virtual ICollection<ClassChange> ClassChangeCurrentClasses { get; set; } = new List<ClassChange>();
