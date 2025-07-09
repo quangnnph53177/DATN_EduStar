@@ -1,8 +1,5 @@
-﻿@using API.ViewModel
-@model IndexAttendanceViewModel
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+﻿
+@model API.ViewModel.IndexAttendanceViewModel
 
 <h3 class="my-3">Chi tiết phiên điểm danh: @Model.SessionCode</h3>
 
@@ -18,23 +15,19 @@
     <tbody>
         @foreach (var sv in Model.stinclass)
         {
-            var isPresent = sv.Status == "1";
-            var switchId = $"toggle-{sv.StudentId}";
+            var selectId = $"status-{sv.StudentId}";
             <tr>
                 <td>@sv.StudentCode</td>
                 <td>@sv.FullName</td>
                 <td>@sv.Email</td>
                 <td>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input toggle-switch" type="checkbox"
-                               id="@switchId"
-                               data-student="@sv.StudentId"
-                               data-attendance="@Model.AttendanceId"
-                        @(isPresent ? "checked" : "")>
-                        <label class="form-check-label" for="@switchId">
-                            @(isPresent ? "✅ Có mặt" : "❌ Vắng")
-                        </label>
-                    </div>
+                    <select class="form-select attendance-dropdown" id="@selectId"
+                            data-student="@sv.StudentId"
+                            data-attendance="@Model.AttendanceId">
+                        <option value="0" selected="@(sv.Status == "Absent" ? "selected" : null)">❌ Vắng</option>
+                        <option value="1" selected="@(sv.Status == "Present" ? "selected" : null)">✅ Có mặt</option>
+                        <option value="2" selected="@(sv.Status == "Late" ? "selected" : null)">⏰ Đi muộn</option>
+                    </select>
                 </td>
             </tr>
         }
@@ -45,54 +38,45 @@
 <div id="snackbar" class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
     <div id="snackbar-alert" class="toast align-items-center text-white bg-success border-0" role="alert">
         <div class="d-flex">
-            <div class="toast-body" id="snackbar-message">
-                Điểm danh thành công!
-            </div>
+            <div class="toast-body" id="snackbar-message">Đã cập nhật điểm danh</div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     </div>
 </div>
 
-<script>
-    function showSnackbar(message, isSuccess) {
-        const alertBox = $('#snackbar-alert');
-        const messageBox = $('#snackbar-message');
-        messageBox.text(message);
-        alertBox.removeClass('bg-success bg-danger');
+@section Scripts {
+    <script>
+        function showSnackbar(message, isSuccess) {
+            const alertBox = $('#snackbar-alert');
+            const messageBox = $('#snackbar-message');
+            messageBox.text(message);
+            alertBox.removeClass('bg-success bg-danger');
+            alertBox.addClass(isSuccess ? 'bg-success' : 'bg-danger');
+            new bootstrap.Toast(alertBox[0]).show();
+        }
 
-        if (isSuccess)
-            alertBox.addClass('bg-success');
-        else
-            alertBox.addClass('bg-danger');
+        $(document).ready(function () {
+            $('.attendance-dropdown').change(function () {
+                const status = $(this).val();
+                const studentId = $(this).data('student');
+                const attendanceId = $(this).data('attendance');
 
-        const toast = new bootstrap.Toast(alertBox[0]);
-        toast.show();
-    }
-
-    $(document).ready(function () {
-        $('.toggle-switch').change(function () {
-            const isChecked = $(this).is(':checked');
-            const studentId = $(this).data('student');
-            const attendanceId = $(this).data('attendance');
-            const status = isChecked ? 1 : 0;
-
-            $.ajax({
-                url: '/Attendance/Detail',
-                method: 'POST',
-                data: {
-                    AttendanceId: attendanceId,
-                    StudentId: studentId,
-                    Status: status
-                },
-                success: function () {
-                    const label = isChecked ? "✅ Có mặt" : "❌ Vắng";
-                    $(`label[for='toggle-${studentId}']`).text(label);
-                    showSnackbar("Cập nhật điểm danh thành công!", true);
-                },
-                error: function () {
-                    showSnackbar("❌ Lỗi khi cập nhật điểm danh.", false);
-                }
+                $.ajax({
+                    url: '/Attendance/Detail',
+                    method: 'POST',
+                    data: {
+                        AttendanceId: attendanceId,
+                        StudentId: studentId,
+                        Status: status
+                    },
+                    success: function () {
+                        showSnackbar("✅ Cập nhật thành công", true);
+                    },
+                    error: function () {
+                        showSnackbar("❌ Cập nhật thất bại", false);
+                    }
+                });
             });
         });
-    });
-</script>
+    </script>
+}

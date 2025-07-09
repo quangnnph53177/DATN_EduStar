@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -32,6 +33,8 @@ builder.Services.AddScoped<ISubject ,SubjectRepos > ();
 builder.Services.AddScoped<IRoleRepos, RoleRepos>();
 builder.Services.AddScoped<IPermissionRepos, PermissionRepos>();
 builder.Services.AddScoped<IAttendance , AttendanceRepos>();
+builder.Services.AddScoped<IComplaintRepos, ComplaintRepos>();
+builder.Services.AddScoped<IRoom, RoomRepos>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -66,8 +69,10 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = jwtSettings["Audience"],
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero // không delay khi hết hạn
+        ClockSkew = TimeSpan.Zero, // không delay khi hết hạn
+        RoleClaimType = ClaimTypes.Role
     };
+
 });
 
 builder.Services.AddAuthorization(options =>

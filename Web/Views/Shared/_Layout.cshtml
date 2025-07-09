@@ -4,72 +4,90 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Web</title>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/StyleSheet.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Web.styles.css" asp-append-version="true" />
 
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .full-height {
+            height: 100vh;
+            overflow: hidden;
+        }
 
         .sidebar {
-        min-height: 100vh;
-        background-color: #f8f9fa;
-        border-right: 1px solid #ddd;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+        }
+
+        .main-content {
+            height: 100vh;
+            overflow-y: auto;
+            padding: 1rem;
         }
 
         .sidebar .nav-link {
-        color: #333;
+            color: #333;
         }
 
-        .sidebar .nav-link:hover {
-        background-color: #e9ecef;
-        }
+            .sidebar .nav-link:hover {
+                background-color: #e9ecef;
+            }
 
         .loader {
-        height: 60px;
-        aspect-ratio: 1;
-        position: relative;
+            height: 60px;
+            aspect-ratio: 1;
+            position: relative;
         }
 
-        .loader::before,
-        .loader::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        transform-origin: bottom;
-        }
+            .loader::before,
+            .loader::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                border-radius: 50%;
+                transform-origin: bottom;
+            }
 
-        .loader::after {
-        background: radial-gradient(at 75% 15%,#fffb,#0000 35%), radial-gradient(at 80% 40%,#0000,#0008), radial-gradient(circle 5px,#fff 94%,#0000), radial-gradient(circle 10px,#000 94%,#0000), linear-gradient(#F93318 0 0) top/100% calc(50% - 5px), linear-gradient(#fff 0 0) bottom/100% calc(50% - 5px) #000;
-        background-repeat: no-repeat;
-        animation: l20 1s infinite cubic-bezier(0.5,120,0.5,-120);
-        }
+            .loader::after {
+                background: radial-gradient(at 75% 15%, #fffb, #0000 35%), radial-gradient(at 80% 40%, #0000, #0008), radial-gradient(circle 5px, #fff 94%, #0000), radial-gradient(circle 10px, #000 94%, #0000), linear-gradient(#F93318 0 0) top/100% calc(50% - 5px), linear-gradient(#fff 0 0) bottom/100% calc(50% - 5px) #000;
+                background-repeat: no-repeat;
+                animation: l20 1s infinite cubic-bezier(0.5, 120, 0.5, -120);
+            }
 
-        .loader::before {
-        background: #ddd;
-        filter: blur(8px);
-        transform: scaleY(0.4) translate(-13px, 0px);
-        }
+            .loader::before {
+                background: #ddd;
+                filter: blur(8px);
+                transform: scaleY(0.4) translate(-13px, 0px);
+            }
 
         @@keyframes l20 {
-        30%, 70% {
-        transform: rotate(0deg);
-        }
+            30%, 70% {
+                transform: rotate(0deg);
+            }
 
-        49.99% {
-        transform: rotate(0.2deg);
-        }
+            49.99% {
+                transform: rotate(0.2deg);
+            }
 
-        50% {
-        transform: rotate(-0.2deg);
-        }
+            50% {
+                transform: rotate(-0.2deg);
+            }
         }
     </style>
 </head>
 <body style="backdrop-filter: blur(2px)">
-    <div class="container-fluid">
-        <div class="row">
+    <div class="container-fluid full-height">
+        <div class="row h-100">
             <!-- Sidebar -->
             <div class="col-md-2 sidebar p-3">
                 @{
@@ -87,44 +105,43 @@
                 {
                     <h5 class="mb-4">Sinh viên</h5>
                 }
+
                 <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active-flame" : "")"
-                        asp-controller="Home" asp-action="Index">🏠 Home</a>
+                           asp-controller="Home" asp-action="Index">🏠 Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Users" ? "active-flame" : "")"
-                        asp-controller="Users" asp-action="Index">👤 Danh sách người dùng</a>
+                           asp-controller="Users" asp-action="Index">👤 Danh sách người dùng</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Statistical" ? "active-flame" : "")"
-                        asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a>
+                           asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Student" ? "active-flame" : "")"
-                        asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a>
+                           asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Scheduless" ? "active-flame" : "")"
-                        asp-controller="Scheduless" asp-action="Index">📅 Lịch học</a>
+                           asp-controller="Scheduless" asp-action="Index">📅 Lịch học</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "SubjectW" ? "active-flame" : "")"
-                        asp-controller="SubjectW" asp-action="Index">📘 Khoai môn</a>
+                           asp-controller="SubjectW" asp-action="Index">📘 Khoai môn</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active-flame" : "")"
                            asp-controller="Attendance" asp-action="IndexSession">📘 Điểm danh</a>
-
+                    </li>
                     @if (User.HasClaim("Permission", "AddRole"))
-
                     {
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Roles" ? "active-flame" : "")"
-                           asp-controller="Roles" asp-action="Index">👤 Phân quyền người dùng</a>
-                    </li>                        
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Roles" ? "active-flame" : "")"
+                               asp-controller="Roles" asp-action="Index">👤 Phân quyền người dùng</a>
+                        </li>
                     }
-
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClassMvc" ? "active-flame" : "")"
                            asp-controller="ClassMvc" asp-action="Index">🏫 Class</a>
@@ -133,6 +150,7 @@
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Complaint" ? "active-flame" : "")"
                            asp-controller="Complaint" asp-action="Index"> ⚠️ Khiếu nại</a>
                     </li>
+
                     @if (User.HasClaim("Permission", "Create"))
                     {
                         <li class="nav-item">
@@ -144,8 +162,8 @@
                     <hr />
 
                     <div class="dropdown me-3">
-                                @if (User.Identity.IsAuthenticated)
-                                {
+                        @if (User.Identity.IsAuthenticated)
+                        {
                             <button class="btn btn-light dropdown-toggle" type="button" id="userDropdown"
                                     data-bs-toggle="dropdown" aria-expanded="false">
                                 👋 Xin chào, @User.Identity?.Name
@@ -154,22 +172,18 @@
                             <ul class="dropdown-menu" aria-labelledby="userDropdown">
                                 <li>
                                     <a class="dropdown-item @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexUser" ? "active-flame" : "")"
-                                       asp-controller="Users" asp-action="IndexUser">
-                                        👤 Hồ sơ cá nhân
-                                    </a>
+                                       asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexLog" ? "active-flame" : "")"
-                                       asp-controller="Users" asp-action="IndexLog">
-                                        🕓 Lịch sử hoạt động
-                                    </a>
+                                       asp-controller="Users" asp-action="IndexLog">🕓 Lịch sử hoạt động</a>
                                 </li>
                             </ul>
-                                }
-                                else
-                                {
+                        }
+                        else
+                        {
                             <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login"> 🔐 Đăng nhập</a>
-                                }
+                        }
                     </div>
 
                     <hr />
@@ -179,11 +193,10 @@
                         </form>
                     </li>
                 </ul>
-
             </div>
 
             <!-- Content -->
-            <div class="col-md-10 pt-3">
+            <div class="col-md-10 main-content">
                 @RenderBody()
             </div>
         </div>

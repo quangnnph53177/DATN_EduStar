@@ -379,7 +379,7 @@ namespace API.Services.Repositories
             {
                 upuser.UserProfile = new UserProfile
                 {
-                    UserId = upuser.Id  // 👈 Bắt buộc gán nếu chưa có
+                    UserId = upuser.Id  // Bắt buộc gán nếu chưa có
                 };
             }
             // FullName

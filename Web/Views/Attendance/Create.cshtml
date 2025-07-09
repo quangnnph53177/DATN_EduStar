@@ -1,0 +1,29 @@
+﻿@model API.ViewModel.CreateAttendanceViewModel
+
+@{
+    ViewData["Title"] = "Tạo phiên điểm danh";
+}
+
+<h3 class="my-3">Tạo phiên điểm danh</h3>
+
+<form asp-action="Create" method="post" class="border p-4 rounded bg-light">
+    <div class="mb-3">
+        <label asp-for="SchedulesId" class="form-label">Chọn lịch học</label>
+        <select asp-for="SchedulesId" class="form-select" asp-items="ViewBag.Schedules">
+            <option value="">-- Chọn lịch học --</option>
+        </select>
+        <span asp-validation-for="SchedulesId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="SessionCode" class="form-label">Mã phiên điểm danh</label>
+        <input asp-for="SessionCode" class="form-control" />
+        <span asp-validation-for="SessionCode" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Tạo phiên</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

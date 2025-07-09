@@ -106,7 +106,7 @@ namespace Web.Controllers
             ViewBag.DayList = weekday.Select(w => new SelectListItem
             {
                 Value = w.Id.ToString(),
-                Text = w.Weekdays
+                Text = w.Weekdays.ToString()
             }).ToList();
             var studyShift = await _context.StudyShifts.ToListAsync();
             ViewBag.ShiftList = studyShift.Select(s => new SelectListItem

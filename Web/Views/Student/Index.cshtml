@@ -4,97 +4,156 @@
     ViewData["Title"] = "Student List";
 }
 
-<h2>Student List</h2>
+<h2>Danh sách sinh viên</h2>
+<a asp-action="Auditlog">Log</a>
+
+@{
+    var selectedGender = Context.Request.Query["gender"].ToString();
+    var selectedStatus = Context.Request.Query["status"].ToString();
+}
+
+<form asp-action="Index" method="get" class="mb-3">
+    <div class="row">
+        <div class="col-12 text-end">
+            <div class="d-inline-flex flex-wrap gap-2 justify-content-end align-items-end">
+                <!-- Mã SV -->
+                <input class="form-control form-control-sm" name="studentCode" placeholder=" Mã SV"
+                       value="@Context.Request.Query["studentCode"]" style="width: 150px;" />
+
+                <!-- Nút tìm kiếm -->
+                <button type="submit" class="btn btn-sm btn-primary">
+                     Tìm kiếm
+                </button>
+
+                <!-- Nút tìm kiếm nâng cao -->
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleAdvancedSearch">
+                     Nâng cao
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔽 Tìm kiếm nâng cao -->
+    <div id="advancedSearch" class="card card-body mt-2" style="display: none;">
+        <div class="row g-2">
+            <div class="col-md-2">
+                <input class="form-control form-control-sm" name="fullName" placeholder="Họ tên"
+                       value="@Context.Request.Query["fullName"]" />
+            </div>
+            <div class="col-md-2">
+                <input class="form-control form-control-sm" name="username" placeholder="Username"
+                       value="@Context.Request.Query["username"]" />
+            </div>
+            <div class="col-md-2">
+                <input class="form-control form-control-sm" name="email" placeholder="Email"
+                       value="@Context.Request.Query["email"]" />
+            </div>
+            <div class="col-md-2">
+                <select name="gender" class="form-select form-select-sm">
+                    <option value="">-- Giới tính --</option>
+                    <option value="true" selected="@(selectedGender == "true")">Nam</option>
+                    <option value="false" selected="@(selectedGender == "false")">Nữ</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">-- Trạng thái --</option>
+                    <option value="true" selected="@(selectedStatus == "true")">Hoạt động</option>
+                    <option value="false" selected="@(selectedStatus == "false")">Không hoạt động</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-grid">
+                <button type="submit" class="btn btn-sm btn-success">Áp dụng</button>
+            </div>
+            <div class="col-md-1 d-grid">
+                <a href="@Url.Action("Index")" class="btn btn-sm btn-secondary">Xóa lọc</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+
 <div class="mb-3 text-end">
     <form asp-action="Export" method="post">
         <button type="submit" class="btn btn-success">
             📥 Xuất danh sách sinh viên
         </button>
-        
     </form>
 </div>
-<a asp-action="Auditlog">Log</a>
-<form asp-action="Index" method="get" class="row g-3 mb-4">
-    <div class="col-md-2">
-        <input class="form-control" name="studentCode" placeholder="Mã SV" value="@Context.Request.Query["studentCode"]" />
-    </div>
-    <div class="col-md-2">
-        <input class="form-control" name="fullName" placeholder="Họ tên" value="@Context.Request.Query["fullName"]" />
-    </div>
-    <div class="col-md-2">
-        <input class="form-control" name="username" placeholder="Username" value="@Context.Request.Query["username"]" />
-    </div>
-    <div class="col-md-2">
-        <input class="form-control" name="email" placeholder="Email" value="@Context.Request.Query["email"]" />
-    </div>
-    <div class="col-md-2">
-        @{
-            var selectedGender = Context.Request.Query["gender"].ToString();
-        }
-        <select name="gender" class="form-select">
-            <option value="" selected="@(string.IsNullOrEmpty(selectedGender) ? "selected" : null)">-- Giới tính --</option>
-            <option value="true" selected="@(selectedGender == "true" ? "selected" : null)">Nam</option>
-            <option value="false" selected="@(selectedGender == "false" ? "selected" : null)">Nữ</option>
-        </select>
-    </div>
-    <div class="col-md-2">
-        @{
-            var selectedStatus = Context.Request.Query["status"].ToString();
-        }
-        <select name="status" class="form-select">
-            <option selected="@(string.IsNullOrEmpty(selectedStatus)?"selected":null)">-- Trạng thái --</option>
-            <option value="true" selected="@(selectedStatus == "true" ? "selected" : "")">Hoạt động</option>
-            <option value="false"selected =" @(selectedStatus == "false" ? "selected" : "")">Không hoạt động</option>
-        </select>
-    </div>
-    <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
-    </div>
-</form>
+<table class="table table-bordered table-hover table-striped align-middle">
+    <thead class="table-dark text-center">
+        <tr>
+            @* <th>Avatar</th> *@
+            <th>Mã SV</th>
+            <th>Họ tên</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Điện thoại</th>
+            <th>Giới tính</th>
+            <th>Ngày sinh</th>
+            <th>Địa chỉ</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var student in Model)
+        {
+            <tr class="text-center">
+               @*  <td>
+                    <img src="@(string.IsNullOrEmpty(student.Avatar) ? "https://via.placeholder.com/80?text=No+Avatar" : student.Avatar)"
+                         alt="Avatar"
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%;" />
+                </td> *@
+                <td>@student.StudentCode</td>
+                <td class="text-start">@student.FullName</td>
+                <td>@student.UserName</td>
+                <td>@student.Email</td>
+                <td>@student.PhoneNumber</td>
+                <td>@(student.Gender.HasValue ? (student.Gender.Value ? "Nam" : "Nữ") : "Chưa rõ")</td>
+                <td>@student.Dob?.ToString("dd/MM/yyyy")</td>
+                <td class="text-start">@student.Address</td>
+                <td>
+                    <span class="badge bg-@(student.Status == true ? "success" : "secondary")">
+                        @(student.Status == true ? "Hoạt động" : "Không hoạt động")
+                    </span>
+                </td>
+                <td>
+                    <div class="d-flex justify-content-center gap-1">
+                        @Html.ActionLink("Sửa", "EditBoss", new { id = student.id }, new { @class = "btn btn-sm btn-primary" })
+                        @Html.ActionLink("Chi tiết", "Details", new { id = student.id }, new { @class = "btn btn-sm btn-info" })
 
-
-<div class="row">
-    @foreach (var student in Model)
-    {
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                @if (!string.IsNullOrEmpty(student.Avatar))
-                {
-                    <img src="@student.Avatar" class="card-img-top" alt="Avatar" style="height: 200px; object-fit: cover;" />
-                }
-                else
-                {
-                    <img src="https://via.placeholder.com/200x200?text=No+Avatar" class="card-img-top" alt="No Avatar" style="height: 200px; object-fit: cover;" />
-                }
-
-                <div class="card-body">
-                    <h5 class="card-title">@student.FullName</h5>
-                    <p class="card-text">
-                        <strong>Student Code:</strong> @student.StudentCode <br />
-                        <strong>User Name:</strong> @student.UserName <br />
-                        <strong>Email:</strong> @student.Email <br />
-                        <strong>Phone:</strong> @student.PhoneNumber <br />
-                        <strong>Gender:</strong> @(student.Gender.HasValue ? (student.Gender.Value ? "Male" : "Female") : "Unknown") <br />
-                        <strong>DOB:</strong> @student.Dob?.ToString("dd/MM/yyyy") <br />
-                        <strong>Address:</strong> @student.Address <br />
-                        <strong>Status:</strong> @(student.Status.HasValue ? (student.Status.Value? "Hoạt động":"Không hoạt động"):"Unknown")<br/>
-                    </p>
-                </div>
-                <div class="card-footer text-center">
-                    @Html.ActionLink("Edit", "EditBoss", new { id = student.id }, new { @class = "btn btn-primary btn-sm mx-1" })
-                    @Html.ActionLink("Details", "Details", new { id = student.id }, new { @class = "btn btn-info btn-sm mx-1" })
-                    @* @Html.ActionLink("Gửi", "SendEmail", new { id = student.id }, new { @class = "btn btn-info btn-sm mx-1" }) *@
-               @*      @Html.ActionLink("Delete", "Delete", new { id = student.id }, new { @class = "btn btn-danger btn-sm mx-1" }) *@
-                   @*  <div class="mb-3"> *@
                         <form asp-action="Lock" asp-controller="Student" asp-route-id="@student.id" method="post" style="display:inline;">
                             <button type="submit" class="btn btn-sm @(student.Status==true ? "btn-danger" : "btn-success")">
-                                @(student.Status == true ? "Khóa tài khoản" : "Mở khóa")
+                                @(student.Status == true ? "Khóa" : "Mở")
                             </button>
                         </form>
-                  @*   </div> *@
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+@section Scripts {
+    <script>
+        document.getElementById('toggleAdvancedSearch')?.addEventListener('click', function () {
+            const advanced = document.getElementById('advancedSearch');
+            if (advanced.style.display === 'none' || advanced.style.display === '') {
+                advanced.style.display = 'block';
+            } else {
+                advanced.style.display = 'none';
+            }
+        });
 
-                </div>
-            </div>
-        </div>
-    }
-</div>
+        // Tự động mở nếu có dữ liệu lọc nâng cao
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const fields = ['fullName', 'username', 'email', 'gender', 'status'];
+            const isUsed = fields.some(field => params.get(field));
+            if (isUsed) {
+                document.getElementById('advancedSearch').style.display = 'block';
+            }
+        });
+    </script>
+}
