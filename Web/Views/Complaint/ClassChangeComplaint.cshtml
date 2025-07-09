@@ -17,13 +17,13 @@
 <form asp-action="ClassChangeComplaint" method="post">
     <div class="mb-3">
         <label asp-for="CurrentClassId" class="form-label">Lớp hiện tại</label>
-        <input asp-for="CurrentClassId" class="form-control" />
+        <select asp-for="CurrentClassId" class="form-select" asp-items="ViewBag.ClassList"></select>
         <span asp-validation-for="CurrentClassId" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
         <label asp-for="RequestedClassId" class="form-label">Lớp muốn chuyển đến</label>
-        <input asp-for="RequestedClassId" class="form-control" />
+        <select asp-for="RequestedClassId" class="form-select" asp-items="ViewBag.RequestedClassList"></select>
         <span asp-validation-for="RequestedClassId" class="text-danger"></span>
     </div>
 

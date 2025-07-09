@@ -1,6 +1,9 @@
 ﻿using API.ViewModel;
+using Azure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace Web.Controllers
 {
@@ -29,7 +32,7 @@ namespace Web.Controllers
         public async Task<IActionResult> Index()
         {
             var client = GetClientWithToken();
-            if (client == null) return RedirectToAction("Login", "Account");
+            if (client == null) return RedirectToAction("Login", "Users");
             try
             {
                 var response = await client.GetAsync("api/complaints/complaints");
@@ -70,9 +73,47 @@ namespace Web.Controllers
             }
         }
         [HttpGet]
-        public IActionResult ClassChangeComplaint()
+        public async Task<IActionResult> ClassChangeComplaint()
         {
-            return View();
+            var client = GetClientWithToken();
+            if (client == null) return RedirectToAction("Login", "Users");
+
+            try
+            {
+                var classlstresponse = await client.GetAsync("api/Complaints/GetstudentinClass");
+                var reponse = await client.GetAsync("/api/Class/GetOtherClasses/{currentClassId}");
+
+                if (!classlstresponse.IsSuccessStatusCode || !reponse.IsSuccessStatusCode)
+                {
+                    var errorContent = await classlstresponse.Content.ReadAsStringAsync();
+                    TempData["ErrorMessage"] = $"Không thể lấy danh sách lớp. Lỗi: {classlstresponse.StatusCode}, Nội dung: {errorContent}";
+                    return View();
+                }
+                var classlst = await classlstresponse.Content.ReadAsStringAsync();
+                var responseContent = await reponse.Content.ReadAsStringAsync();
+
+                var classList = JsonSerializer.Deserialize<List<ClassCreateViewModel>>(responseContent, new JsonSerializerOptions{PropertyNameCaseInsensitive = true});
+                var result = JsonSerializer.Deserialize<List<ClassCreateViewModel>>(classlst,new JsonSerializerOptions{PropertyNameCaseInsensitive = true});
+
+                // Gán vào ViewBag dạng SelectList
+                ViewBag.ClassList = result.Select(c => new SelectListItem
+                {
+                    Value = c.SubjectId.ToString(), // hoặc c.Id nếu bạn có ID lớp
+                    Text = c.ClassName
+                }).ToList();
+                ViewBag.RequestedClassList = classList.Select(c => new SelectListItem
+                {
+                    Value = c.SubjectId.ToString(), // hoặc c.Id nếu bạn có ID lớp
+                    Text = $"{c.ClassName} - {c.Semester}"
+                }).ToList();
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                return View(new List<ClassCreateViewModel>());
+            }
         }
         [HttpPost]
         public async Task<IActionResult> ClassChangeComplaint(ClassChangeComplaintDTO dto)

@@ -42,7 +42,7 @@ namespace API.Controllers
             var  result = _services.AutogenerateSchedule();
             return Ok(result);
         }
-        [HttpPost]
+        [HttpPost("create")]
         public async Task<IActionResult> Create(SchedulesDTO model)
         {
             

@@ -4,6 +4,8 @@ using API.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace API.Controllers
@@ -62,6 +64,53 @@ namespace API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Lỗi khi đăng ký khiếu nại: {ex.Message}");
             }
         }
+        [HttpGet("GetstudentinClass")]
+        [Authorize]
+        public async Task<IActionResult> GetStudentInClass()
+        {
+            try
+            {
+                // Lấy userId từ token JWT
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                    return Unauthorized("Không tìm thấy thông tin người dùng.");
+
+                var userId = Guid.Parse(userIdClaim.Value);
+                var classes = await _repos.GetClassesOfStudent(userId);
+                return Ok(classes);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("GetOtherClasses/{currentClassId}")]
+        [Authorize]
+        public async Task<IActionResult> GetOtherClasses(int currentClassId)
+        {
+            try
+            {
+                var result = await _repos.GetClassesInSameSubject(currentClassId);
+
+                // Nếu dùng DTO:
+                var classDtos = result.Select(c => new ClassCreateViewModel
+                {
+                    ClassName = c.NameClass,
+                    Semester = c.Semester,
+                    SubjectId = c.SubjectId ?? 0,
+                    YearSchool = (int)c.YearSchool
+                }).ToList();
+
+                return Ok(classDtos);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
         [Authorize(Policy = "ProcessComplaintUS")]
         [HttpPut("process/{id}")]
         public async Task<IActionResult> ProcessComplaint(int id, [FromBody] ProcessComplaintDTO dto)
@@ -83,5 +132,6 @@ namespace API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+        
     }
 }

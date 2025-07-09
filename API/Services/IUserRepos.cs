@@ -16,6 +16,7 @@ namespace API.Services
         Task<bool> ConfirmEmail(string token);
         Task<string> LockUser(string userName);
         Task<string> ChangeRole(string userName, int newRoleId);
+        //Task<IEnumerable<UserDTO>> GetStudentByTeacher(Guid teacherId);
         Task ForgetPassword(string email);
         Task<string> ResetPassword(string token, string newPassword);
 

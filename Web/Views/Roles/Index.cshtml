@@ -3,10 +3,10 @@
 @{
     ViewData["Title"] = "Danh sách vai trò";
 }
+<h2>Danh sách vai trò</h2>
 <a asp-action="IndexPermission" asp-controller="Roles" class="btn btn-primary mt-2">Danh sách quyền</a>
 <a asp-action="AssignPermissions" asp-controller="Roles" class="btn btn-primary mt-2">Phân quyền</a>
 
-<h2>Danh sách vai trò</h2>
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success">@TempData["SuccessMessage"]</div>
@@ -15,11 +15,12 @@
 {
     <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 }
-
+<br />
+<br />
 <table class="table table-bordered">
     <thead>
         <tr>
-            <th>#</th>
+            <th>STT</th>
             <th>Tên vai trò</th>
             <th>Danh sách quyền</th>
         </tr>

@@ -7,7 +7,7 @@ namespace API.ViewModel
         public Guid? Id { get; set; }
         [Required(ErrorMessage = "Tên đăng nhập là bắt buộc.")]
         public string? UserName { get; set; } = null!;
-        [Required(ErrorMessage = "Mật khẩu là bắt buộc.")]
+        //[Required(ErrorMessage = "Mật khẩu là bắt buộc.")]
         [MinLength(6, ErrorMessage = "Mật khẩu ít nhất 6 ký tự.")]
 
         public string? PassWordHash { get; set; } = null!;

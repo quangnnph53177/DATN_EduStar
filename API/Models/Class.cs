@@ -16,6 +16,8 @@ public partial class Class
     public int? YearSchool { get; set; }
 
     public bool? Status { get; set; }
+    public Guid? TeacherId { get; set; }
+    public virtual User? User { get; set; }
 
     public virtual ICollection<ClassChange> ClassChangeCurrentClasses { get; set; } = new List<ClassChange>();
 

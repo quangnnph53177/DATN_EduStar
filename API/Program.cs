@@ -13,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddDbContext<AduDbcontext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+Console.WriteLine("Connection String: " + builder.Configuration.GetConnectionString("Default"));
+
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -32,6 +34,7 @@ builder.Services.AddScoped<ISubject ,SubjectRepos > ();
 builder.Services.AddScoped<IRoleRepos, RoleRepos>();
 builder.Services.AddScoped<IPermissionRepos, PermissionRepos>();
 builder.Services.AddScoped<IAttendance , AttendanceRepos>();
+builder.Services.AddScoped<IComplaintRepos, ComplaintRepos>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
