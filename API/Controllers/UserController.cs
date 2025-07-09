@@ -244,46 +244,127 @@ namespace API.Controllers
             }
         }
         //[Authorize(Policy = "DetailUS")]
-        [HttpGet("user")]
-        public async Task<IActionResult> GetAllUsers()
+        //[HttpGet("user")]
+        //public async Task<IActionResult> GetAllUsers()
+        //{
+        //    // Thêm logic lọc theo vai trò vào trước khi trả về users trong GetAllUsers
+        //    try
+        //    {
+        //        var currentUserRoleIds = User.Claims
+        //            .Where(c => c.Type == ClaimTypes.Role)
+        //            .Select(c => int.Parse(c.Value))
+        //            .ToList();
+        //        var currentUserName = User.Identity?.Name;
+        //        if (string.IsNullOrEmpty(currentUserName))
+        //            return Unauthorized("Không tìm thấy thông tin người dùng");
+        //        var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+
+        //        // Lọc theo vai trò
+        //        IEnumerable<UserDTO> filteredUsers;
+        //        if (currentUserRoleIds.Contains(1)) // Admin
+        //        {
+        //            filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 1 || rid == 2 || rid == 3)/* && u.UserName != currentUserName*/);
+        //        }
+        //        else if (currentUserRoleIds.Contains(2)) // Giảng viên
+        //        {
+        //            filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 3)/* && u.UserName != currentUserName*/);
+        //        }
+        //        else
+        //        {
+        //            filteredUsers = users.Where(u => u.UserName == currentUserName); // Sinh viên chỉ xem thông tin của mình
+        //        }
+
+        //        if (!filteredUsers.Any())
+        //            return Forbid();
+
+        //        return Ok(filteredUsers);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(new { error = ex.Message });
+        //    }
+        //}
+
+        [HttpGet("admin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAdminView()
         {
-            // Thêm logic lọc theo vai trò vào trước khi trả về users trong GetAllUsers
-            try
-            {
-                var currentUserRoleIds = User.Claims
+            var currentUserRoleIds = User.Claims
                     .Where(c => c.Type == ClaimTypes.Role)
                     .Select(c => int.Parse(c.Value))
                     .ToList();
-                var currentUserName = User.Identity?.Name;
-                if (string.IsNullOrEmpty(currentUserName))
-                    return Unauthorized("Không tìm thấy thông tin người dùng");
-                var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
-
-                // Lọc theo vai trò
-                IEnumerable<UserDTO> filteredUsers;
-                if (currentUserRoleIds.Contains(1)) // Admin
-                {
-                    filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 1 || rid == 2 || rid == 3) && u.UserName != currentUserName);
-                }
-                else if (currentUserRoleIds.Contains(2)) // Giảng viên
-                {
-                    filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 3) && u.UserName != currentUserName);
-                }
-                else
-                {
-                    filteredUsers = users.Where(u => u.UserName == currentUserName); // Sinh viên chỉ xem thông tin của mình
-                }
-
-                if (!filteredUsers.Any())
-                    return Forbid();
-
-                return Ok(filteredUsers);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
+            var currentUserName = User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUserName))
+                return Unauthorized("Không tìm thấy thông tin người dùng");
+            var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+            var filtered = users.Where(u => u.RoleIds.Contains(1));
+            return Ok(filtered); // hoặc return View("AdminView", filtered);
         }
+
+        [HttpGet("lecturer")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> GetLecturerView()
+        {
+            var currentUserRoleIds = User.Claims
+                    .Where(c => c.Type == ClaimTypes.Role)
+                    .Select(c => int.Parse(c.Value))
+                    .ToList();
+            var currentUserName = User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUserName))
+                return Unauthorized("Không tìm thấy thông tin người dùng");
+            var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+
+            // Lọc theo vai trò
+            IEnumerable<UserDTO> filteredUsers;
+            if (currentUserRoleIds.Contains(1)) // Admin
+            {
+                filteredUsers = users.Where(u => u.RoleIds.Any(rid =>rid == 2 )/* && u.UserName != currentUserName*/);
+            }
+            else if(currentUserRoleIds.Contains(2)) // Giảng viên
+            {
+                filteredUsers = users.Where(u => u.UserName == currentUserName)/* && u.UserName != currentUserName*/;
+            }
+            else
+            {
+                return Forbid("Bạn không có quyền truy cập vào trang này.");
+            }
+                return Ok(filteredUsers); // hoặc return View("LecturerView", filtered);
+        }
+
+        //[HttpGet("student")]
+        //[Authorize(Roles = "Student")]
+        //public async Task<IActionResult> GetStudentView()
+        //{
+        //    var currentUserRoleIds = User.Claims
+        //           .Where(c => c.Type == ClaimTypes.Role)
+        //           .Select(c => int.Parse(c.Value))
+        //           .ToList();
+        //    var currentUserName = User.Identity?.Name;
+        //    if (string.IsNullOrEmpty(currentUserName))
+        //        return Unauthorized("Không tìm thấy thông tin người dùng");
+        //    var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+        //    // Lọc theo vai trò
+        //    IEnumerable<UserDTO> filteredUsers;
+        //    if (currentUserRoleIds.Contains(1)) // Admin
+        //    {
+        //        filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 3)/* && u.UserName != currentUserName*/);
+        //    }
+        //    else if (currentUserRoleIds.Contains(2)) // Giảng viên
+        //    {
+        //        // Lấy thông tin giảng viên hiện tại
+        //        var teacher = users.FirstOrDefault(u => u.UserName == currentUserName);
+        //        //if (teacher == null)
+        //        //    return Forbid();
+        //        //// Lấy danh sách sinh viên theo lớp của giảng viên
+        //        //var classList = await _context.
+        //    }
+        //    else
+        //    {
+        //        filteredUsers = users.Where(u => u.UserName == currentUserName);
+        //    }
+        //    return Ok(filteredUsers);
+        //}
+
         //[Authorize(Policy = "DetailUS")]
         //[HttpGet("me")]
         //public async Task<IActionResult> GetCurrentUser()
@@ -309,7 +390,7 @@ namespace API.Controllers
         //        return BadRequest(new { error = ex.Message });
         //    }
         //}
-       // [Authorize(Policy = "SearchUS")]
+        // [Authorize(Policy = "SearchUS")]
         [HttpGet("searchuser")]
         public async Task<IActionResult> SearchUser([FromQuery] string? keyword)
         {

@@ -186,12 +186,18 @@
                         }
                     </div>
 
-                    <hr />
-                    <li>
-                        <form method="post" asp-controller="Users" asp-action="Logout" class="dropdown-item p-0 m-0">
-                            <button type="submit" class="btn btn-link w-100 text-start px-3 py-2">🚪 Đăng xuất</button>
-                        </form>
-                    </li>
+                            <hr />
+                            <li>
+                                <form method="post" asp-controller="Users" asp-action="Logout" class="dropdown-item p-0 m-0">
+                                    <button type="submit" class="btn btn-link w-100 text-start px-3 py-2">🚪 Đăng xuất</button>
+                                </form>
+                            </li>
+                                }
+                                else
+                                {
+                            <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login"> 🔐 Đăng nhập</a>
+                                }
+                    </div>
                 </ul>
             </div>
 

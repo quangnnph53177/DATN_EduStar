@@ -224,6 +224,15 @@ public partial class AduDbcontext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__DayOfWeek__3214EC079A470A2D");
 
             entity.Property(e => e.Weekdays).HasMaxLength(10);
+            entity.HasData(
+                new DayOfWeekk { Id = 1, Weekdays = "Monday" },
+                new DayOfWeekk { Id = 2, Weekdays = "Tuesday" },
+                new DayOfWeekk { Id = 3, Weekdays = "Wednesday" },
+                new DayOfWeekk { Id = 4, Weekdays = "Thursday" },
+                new DayOfWeekk { Id = 5, Weekdays = "Friday" },
+                new DayOfWeekk { Id = 6, Weekdays = "Saturday" },
+                new DayOfWeekk { Id = 7, Weekdays = "Sunday" }
+            );
         });
 
         modelBuilder.Entity<Permission>(entity =>
@@ -295,6 +304,13 @@ public partial class AduDbcontext : DbContext
 
             entity.Property(e => e.Device).HasMaxLength(90);
             entity.Property(e => e.RoomCode).HasMaxLength(50);
+            entity.HasData(
+                new Room { Id = 1, RoomCode = "Room 101", Device = "Projector, Whiteboard" },
+                new Room { Id = 2, RoomCode = "Room 102", Device = "Projector, Whiteboard" },
+                new Room { Id = 3, RoomCode = "Room 103", Device = "Projector, Whiteboard" },
+                new Room { Id = 4, RoomCode = "Room 104", Device = "Projector, Whiteboard" },
+                new Room { Id = 5, RoomCode = "Room 105", Device = "Projector, Whiteboard" }
+            );
         });
 
         modelBuilder.Entity<Schedule>(entity =>
@@ -349,6 +365,14 @@ public partial class AduDbcontext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__StudyShi__3214EC07D946077D");
 
             entity.Property(e => e.StudyShiftName).HasMaxLength(90);
+            entity.HasData(
+                new StudyShift { Id = 1, StudyShiftName = "Ca 1", StartTime = TimeOnly.Parse("07:15"), EndTime = TimeOnly.Parse("09:15") },
+                new StudyShift { Id = 2, StudyShiftName = "Ca 2", StartTime = TimeOnly.Parse("09:25"), EndTime = TimeOnly.Parse("11:25") },
+                new StudyShift { Id = 3, StudyShiftName = "Ca 3", StartTime = TimeOnly.Parse("12:00"), EndTime = TimeOnly.Parse("14:00") },
+                new StudyShift { Id = 4, StudyShiftName = "Ca 4", StartTime = TimeOnly.Parse("14:10"), EndTime = TimeOnly.Parse("16:10") },
+                new StudyShift { Id = 5, StudyShiftName = "Ca 5", StartTime = TimeOnly.Parse("16:20"), EndTime = TimeOnly.Parse("18:20") },
+                new StudyShift { Id = 6, StudyShiftName = "Ca 6", StartTime = TimeOnly.Parse("18:30"), EndTime = TimeOnly.Parse("20:30") },
+                new StudyShift { Id = 7, StudyShiftName = "Ca 7", StartTime = TimeOnly.MinValue, EndTime = TimeOnly.MaxValue });
         });
 
         modelBuilder.Entity<Subject>(entity =>

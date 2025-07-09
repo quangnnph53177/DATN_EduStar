@@ -1,14 +1,13 @@
-﻿using API.ViewModel;
-using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Headers;
-using System.Text.Json;
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using API.Models;
+using API.ViewModel;
 using Microsoft.AspNetCore.Authentication;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text;
-using Azure;
-using API.Models;
+using System.Text.Json;
 
 namespace Web.Controllers
 {
@@ -45,87 +44,68 @@ namespace Web.Controllers
             {
                 return View(loginDto);
             }
-            try
-            {
-                var client = _httpClientFactory.CreateClient("EdustarAPI");
-                var content = new StringContent(JsonSerializer.Serialize(loginDto), System.Text.Encoding.UTF8, "application/json");
+            var client = _httpClientFactory.CreateClient("EdustarAPI");
 
-                var response = await client.PostAsync("https://localhost:7298/api/User/login", content);
-                if (response.IsSuccessStatusCode)
+            var content = new StringContent(JsonSerializer.Serialize(loginDto), Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync("api/User/login", content);
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseContent);
+
+                var token = doc.RootElement.GetProperty("token").GetString();
+                var userName = doc.RootElement.GetProperty("userName").GetString();
+
+                var claims = new List<Claim>
                 {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseContent);
-                    using var doc = JsonDocument.Parse(responseContent);
+                    new(ClaimTypes.Name, userName ?? "")
+                };
+                // Thêm các Role để sử dụng sau này 
+                //if (doc.RootElement.TryGetProperty("roleId", out var roleArray) && roleArray.ValueKind == JsonValueKind.Array)
+                //    {
+                //        foreach (var role in roleArray.EnumerateArray())
+                //        {
+                //            var roleValue = role.GetInt32().ToString();
+                //            claims.Add(new Claim(ClaimTypes.Role, roleValue));
+                //        }
+                //    }
 
-                    var token = doc.RootElement.GetProperty("token").GetString();
-                    //var userId = doc.RootElement.GetProperty("userId").GetInt32();
-                    var userName = doc.RootElement.GetProperty("userName").GetString();
-
-                    var claims = new List<Claim>
-                     {
-                         new(ClaimTypes.Name, userName ?? ""),
-                         //new(ClaimTypes.NameIdentifier, userId.ToString()),
-                         new("JWToken", token ?? "")
-                     };
-                    if (doc.RootElement.TryGetProperty("roleId", out var roleArray) && roleArray.ValueKind == JsonValueKind.Array)
+                //Thêm permission claims để sử dụng VD: if (User.HasClaim("Permission", "Create"))
+                if (doc.RootElement.TryGetProperty("permission", out var permissionElement) && permissionElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var perm in permissionElement.EnumerateArray())
                     {
-                        foreach (var role in roleArray.EnumerateArray())
+                        var permission = perm.GetString();
+                        if (!string.IsNullOrWhiteSpace(permission))
                         {
-                            var roleValue = role.GetInt32().ToString();
-                            claims.Add(new Claim(ClaimTypes.Role, roleValue));
+                            claims.Add(new Claim("Permission", permission));
                         }
                     }
-                    if (doc.RootElement.TryGetProperty("permission", out var permissionElement) && permissionElement.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var perm in permissionElement.EnumerateArray())
-                        {
-                            var permission = perm.GetString();
-                            if (!string.IsNullOrWhiteSpace(permission))
-                            {
-                                claims.Add(new Claim("Permission", permission));
-                            }
-                        }
-                    }
-                    var claimsIdentity = new ClaimsIdentity(
-                        claims,
-                        CookieAuthenticationDefaults.AuthenticationScheme,
-                        ClaimTypes.Name,
-                        ClaimTypes.Role // 👈 RẤT QUAN TRỌNG
-                    );
-                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
-
-                    Response.Cookies.Append("JWToken", token ?? "", new CookieOptions
-                    {
-                        HttpOnly = true,
-                        Secure = true,
-                        SameSite = SameSiteMode.Strict,
-                        Expires = DateTimeOffset.UtcNow.AddHours(1)
-                    });
-
-                    TempData["SuccessMessage"] = "Đăng nhập thành công!";
-                    return RedirectToAction("Index", "Users");
                 }
-                TempData["ErrorMessage"] = "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.";
-                return View(loginDto);
-            }
-            catch (HttpRequestException ex)
-            {
-                TempData["ErrorMessage"] = $"Không thể kết nối đến server API: {ex.Message}";
-                return View(loginDto);
-            }
-            catch (TaskCanceledException)
-            {
-                TempData["ErrorMessage"] = "Yêu cầu đăng nhập bị timeout. Vui lòng thử lại.";
-                return View(loginDto);
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return View(loginDto);
-            }
+                var claimsIdentity = new ClaimsIdentity(
+                    claims,
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    ClaimTypes.Name,
+                    ClaimTypes.Role
+                );
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
+                Response.Cookies.Append("JWToken", token ?? "", new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTimeOffset.UtcNow.AddHours(1)
+                });
+
+                TempData["SuccessMessage"] = "Đăng nhập thành công!";
+                return RedirectToAction("Index", "Users");
+            }
+            TempData["ErrorMessage"] = "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.";
+            return View(loginDto);
         }
-            [HttpPost]
+        [HttpPost]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -139,150 +119,116 @@ namespace Web.Controllers
             var client = GetClientWithToken();
             if (client == null)
             {
-                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                return RedirectToAction("Login");
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
+                return RedirectToAction("Login", "Users");
             }
-            try
-            {
-                var response = await client.GetAsync("https://localhost:7298/api/User/user");
 
-                if (response.IsSuccessStatusCode)
+            var response = await client.GetAsync("api/User/user");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var usersJson = await response.Content.ReadAsStringAsync();
+                var users = JsonSerializer.Deserialize<List<UserDTO>>(usersJson, new JsonSerializerOptions
                 {
-                    var usersJson = await response.Content.ReadAsStringAsync();
-                    var users = JsonSerializer.Deserialize<List<UserDTO>>(usersJson, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }) ?? new List<UserDTO>();
-                    var totalCount = users.Count;
-                    var pagedUsers = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                    PropertyNameCaseInsensitive = true
+                }) ?? new List<UserDTO>();
+                var totalCount = users.Count;
+                var pagedUsers = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-                    var result = new PagedResult<UserDTO>
-                    {
-                        Items = pagedUsers,
-                        TotalCount = totalCount,
-                        PageSize = pageSize,
-                        PageIndex = page
-                    };
-
-                    return View(result);
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                var result = new PagedResult<UserDTO>
                 {
-                    TempData["ErrorMessage"] = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.";
-                    return RedirectToAction("Login");
-                }
+                    Items = pagedUsers,
+                    TotalCount = totalCount,
+                    PageSize = pageSize,
+                    PageIndex = page
+                };
 
-                TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy danh sách người dùng.";
-                return View(new PagedResult<UserDTO>());
+                return View(result);
             }
-            catch (HttpRequestException ex)
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                TempData["ErrorMessage"] = $"Không thể kết nối đến server API: {ex.Message}";
+                TempData["ErrorMessage"] = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.";
                 return RedirectToAction("Login");
             }
-            catch (TaskCanceledException)
-            {
-                TempData["ErrorMessage"] = "Yêu cầu bị timeout khi kết nối API.";
-                return RedirectToAction("Login");
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return View(new PagedResult<UserDTO>());
-            }
+            TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy danh sách người dùng.";
+            return View(new PagedResult<UserDTO>());
         }
         [HttpGet]
-        public IActionResult Register()
+        public async Task<IActionResult> Register()
         {
             var client = GetClientWithToken();
             if (client == null)
             {
-                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                return RedirectToAction("Login");
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
+                return RedirectToAction("Login", "Users");
             }
-            var reponse = client.GetAsync("https://localhost:7298/api/Role/getroles").Result;
+            var reponse = await client.GetAsync("api/Role/getroles");
             if (!reponse.IsSuccessStatusCode)
             {
                 TempData["ErrorMessage"] = "Không thể lấy danh sách vai trò.";
                 return RedirectToAction("Index");
             }
-            var rolesJson = reponse.Content.ReadAsStringAsync().Result;
+            var rolesJson = await reponse.Content.ReadAsStringAsync();
             var roles = JsonSerializer.Deserialize<List<Role>>(rolesJson, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
-            var roleSelectList = roles?.Select(r => new SelectListItem
+            var model = new RegisterViewModel
             {
-                Value = r.Id.ToString(),
-                Text = r.RoleName,
-            }).ToList() ?? new List<SelectListItem>();
-            ViewBag.RoleSelectList = roleSelectList;
-            return View(new UserDTO());
+                User = new UserDTO(),
+                RoleLists = roles?.Select(r => new SelectListItem
+                {
+                    Value = r.Id.ToString(),
+                    Text = r.RoleName
+                }).ToList() ?? new List<SelectListItem>()
+            };
+            return View(model);
         }
         [HttpPost]
-        public async Task<IActionResult> Register(UserDTO model, IFormFile? imgFile)
+        public async Task<IActionResult> Register(RegisterViewModel model, IFormFile? imgFile)
         {
-            try
-                {
-                if (!ModelState.IsValid)
-                    return View(model);
+            if (!ModelState.IsValid)
+                return View(model);
 
-                var client = GetClientWithToken();
-                using var content = new MultipartFormDataContent();
+            var client = GetClientWithToken();
+            using var content = new MultipartFormDataContent();
 
-                content.Add(new StringContent(model.UserName ?? ""), "UserName");
-                content.Add(new StringContent(model.PassWordHash ?? ""), "PassWordHash");
-                content.Add(new StringContent(model.Email ?? ""), "Email");
-                content.Add(new StringContent(model.PhoneNumber ?? ""), "PhoneNumber");
-                content.Add(new StringContent(model.FullName ?? ""), "FullName");
-                content.Add(new StringContent(model.Address ?? ""), "Address");
-                content.Add(new StringContent(model.Statuss.ToString()), "Statuss");
+            content.Add(new StringContent(model.User.UserName ?? ""), "UserName");
+            content.Add(new StringContent(model.User.PassWordHash ?? ""), "PassWordHash");   
+            content.Add(new StringContent(model.User.Email ?? ""), "Email");
+            content.Add(new StringContent(model.User.PhoneNumber ?? ""), "PhoneNumber");
+            content.Add(new StringContent(model.User.FullName ?? ""), "FullName");
+            content.Add(new StringContent(model.User.Address ?? ""), "Address");
+            content.Add(new StringContent(model.User.Statuss.ToString()), "Statuss");
 
-                if (model.Dob.HasValue)
-                    content.Add(new StringContent(model.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
-                content.Add(new StringContent(model.Gender.HasValue ? model.Gender.Value.ToString() : ""), "Gender");
+            if (model.User.Dob.HasValue)
+                content.Add(new StringContent(model.User.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
+            content.Add(new StringContent(model.User.Gender.HasValue ? model.User.Gender.Value.ToString() : ""), "Gender");
 
-                if (model.RoleIds != null && model.RoleIds.Any())
-                {
-                    foreach (var roleId in model.RoleIds)
-                    {
-                        content.Add(new StringContent(roleId.ToString()), "RoleIds");
-                    }
-                }
-
-                if (imgFile != null && imgFile.Length > 0)
-                {
-                    var streamContent = new StreamContent(imgFile.OpenReadStream());
-                    streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
-                    content.Add(streamContent, "imgFile", imgFile.FileName);
-                }
-                var response = await client.PostAsync("https://localhost:7298/api/User/register", content);
-                if (response.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
-                    return RedirectToAction("Index", "Users");
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync(); // 🔥 Đọc lỗi chi tiết từ API
-                    TempData["ErrorMessage"] = $"Đăng ký không thành công: {errorContent}";
-                    return View(model);
-                }
-
-            }
-            catch (HttpRequestException ex)
+            if (model.User.RoleIds != null && model.User.RoleIds.Any())
             {
-                TempData["ErrorMessage"] = $"Không thể kết nối đến server API: {ex.Message}";
-                return RedirectToAction("Login");
+                foreach (var roleId in model.User.RoleIds)
+                {
+                    content.Add(new StringContent(roleId.ToString()), "RoleIds");
+                }
             }
-            catch (TaskCanceledException)
+
+            if (imgFile != null && imgFile.Length > 0)
             {
-                TempData["ErrorMessage"] = "Yêu cầu bị timeout khi kết nối API.";
-                return RedirectToAction("Login");
+                var streamContent = new StreamContent(imgFile.OpenReadStream());
+                streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
+                content.Add(streamContent, "imgFile", imgFile.FileName);
             }
-            catch (Exception ex)
+            var response = await client.PostAsync("api/User/register", content);
+            if (response.IsSuccessStatusCode)
             {
-                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
+                return RedirectToAction("Index", "Users");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(); // 🔥 Đọc lỗi chi tiết từ API
+                TempData["ErrorMessage"] = $"Đăng ký không thành công: {errorContent}";
                 return View(model);
             }
         }
@@ -290,54 +236,32 @@ namespace Web.Controllers
         public IActionResult Upload()
         {
             var client = GetClientWithToken();
-            if (client == null)
-            {
-                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                return RedirectToAction("Login");
-            }
             return View();
         }
 
         [HttpPost]
         public async Task<IActionResult> Upload(IFormFile file)
         {
-            try
+            if (file == null || file.Length == 0)
             {
-                if (file == null || file.Length == 0)
-                {
-                    TempData["ErrorMessage"] = "Vui lòng chọn tệp để tải lên.";
-                    return View();
-                }
-
-                var client = GetClientWithToken();
-
-                using var content = new MultipartFormDataContent();
-                using var fileStream = file.OpenReadStream();
-                content.Add(new StreamContent(fileStream), "file", file.FileName);
-
-                var response = await client.PostAsync("https://localhost:7298/api/User/upload", content);
-                if (response.IsSuccessStatusCode)
-                {
-                    return RedirectToAction("Index", "Users");
-                }
-                TempData["ErrorMessage"] = "Tải lên không thành công.";
+                TempData["ErrorMessage"] = "Vui lòng chọn tệp để tải lên.";
                 return View();
             }
-            catch (HttpRequestException ex)
+
+            var client = GetClientWithToken();
+
+            using var content = new MultipartFormDataContent();
+            using var fileStream = file.OpenReadStream();
+            content.Add(new StreamContent(fileStream), "file", file.FileName);
+
+            var response = await client.PostAsync("https://localhost:7298/api/User/upload", content);
+            if (response.IsSuccessStatusCode)
             {
-                TempData["ErrorMessage"] = $"Không thể kết nối đến server API: {ex.Message}";
-                return RedirectToAction("Login");
+                return RedirectToAction("Index", "Users");
             }
-            catch (TaskCanceledException)
-            {
-                TempData["ErrorMessage"] = "Yêu cầu bị timeout khi kết nối API.";
-                return RedirectToAction("Login");
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return View();
-            }
+            TempData["ErrorMessage"] = "Tải lên không thành công.";
+            return View();
+
         }
         public IActionResult Confirm()
         {
@@ -351,75 +275,54 @@ namespace Web.Controllers
                 TempData["ErrorMessage"] = "Vui lòng nhập token.";
                 return RedirectToAction("Confirm");
             }
+            var client = _httpClientFactory.CreateClient("EdustarAPI");
+            var response = await client.GetAsync($"api/User/confirm?token={token}");
 
-            try
+            if (response.IsSuccessStatusCode)
             {
-                var client = _httpClientFactory.CreateClient("EdustarAPI");
-                var response = await client.GetAsync($"https://localhost:7298/api/User/confirm?token={token}");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Xác nhận email thành công.";
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = "Xác nhận thất bại. Token không hợp lệ hoặc đã hết hạn.";
-                }
+                TempData["SuccessMessage"] = "Xác nhận email thành công.";
             }
-            catch (Exception ex)
+            else
             {
-                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                TempData["ErrorMessage"] = "Xác nhận thất bại. Token không hợp lệ hoặc đã hết hạn.";
             }
 
             return RedirectToAction("Confirm");
         }
         [HttpGet]
-        public async Task<IActionResult> SearchUS(string? keyword,int page = 1, int pageSize = 12)
+        public async Task<IActionResult> SearchUS(string? keyword, int page = 1, int pageSize = 12)
         {
-            try
+            var client = GetClientWithToken();
+
+            string url = "api/User/searchuser";
+            if (!string.IsNullOrWhiteSpace(keyword))
             {
-                var client = GetClientWithToken();
-                if (client == null)
-                {
-                    TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                    return RedirectToAction("Login");
-                }
-
-                string url = $"https://localhost:7298/api/User/searchuser";
-                if (!string.IsNullOrWhiteSpace(keyword))
-                {
-                    url += $"?keyword={Uri.EscapeDataString(keyword)}";
-                }
-
-                var response = await client.GetAsync(url);
-                var content = await response.Content.ReadAsStringAsync();
-                if (response.IsSuccessStatusCode)
-                {
-                    var users = JsonSerializer.Deserialize<List<UserDTO>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    var totalCount = users.Count;
-                    var pagedUsers = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-                    var result = new PagedResult<UserDTO>
-                    {
-                        Items = pagedUsers,
-                        TotalCount = totalCount,
-                        PageSize = pageSize,
-                        PageIndex = page
-                    };
-                    ViewBag.Keyword = keyword; // để giữ lại từ khoá khi hiển thị view
-                    return View("Index", result); // dùng lại view Index
-                }
-                else
-                {
-                    // Hiển thị thông báo lỗi chi tiết từ API (nếu có)
-                    TempData["ErrorMessage"] = !string.IsNullOrEmpty(content) ? content : "Không thể lấy danh sách người dùng.";
-                    return View("Index", new PagedResult<UserDTO>());
-                }
+                url += $"?keyword={Uri.EscapeDataString(keyword)}";
             }
-            catch (Exception ex)
+
+            var response = await client.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
             {
-                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return RedirectToAction("Index");
+                var users = JsonSerializer.Deserialize<List<UserDTO>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var totalCount = users.Count;
+                var pagedUsers = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+                var result = new PagedResult<UserDTO>
+                {
+                    Items = pagedUsers,
+                    TotalCount = totalCount,
+                    PageSize = pageSize,
+                    PageIndex = page
+                };
+                ViewBag.Keyword = keyword; // để giữ lại từ khoá khi hiển thị view
+                return View("Index", result); // dùng lại view Index
+            }
+            else
+            {
+                // Hiển thị thông báo lỗi chi tiết từ API (nếu có)
+                TempData["ErrorMessage"] = !string.IsNullOrEmpty(content) ? content : "Không thể lấy danh sách người dùng.";
+                return View("Index", new PagedResult<UserDTO>());
             }
         }
         [HttpGet]

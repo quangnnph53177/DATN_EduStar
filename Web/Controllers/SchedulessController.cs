@@ -1,4 +1,5 @@
 ﻿
+using API.Data;
 using API.Models;
 using API.ViewModel;
 using Microsoft.AspNetCore.Http;
@@ -12,8 +13,8 @@ namespace Web.Controllers
     public class SchedulessController : Controller
     {
         private readonly HttpClient _client;
-        private readonly API.Data.AduDbcontext _context;
-        public SchedulessController(HttpClient client, API.Data.AduDbcontext context)
+        private readonly AduDbcontext _context;
+        public SchedulessController(HttpClient client, AduDbcontext context)
         {
             _context = context;
             _client = client;
@@ -45,7 +46,7 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult>Create(SchedulesDTO dto)
         {
-            var response = await _client.PostAsJsonAsync("api/schedules",dto);
+            var response = await _client.PostAsJsonAsync("api/Schedules/create", dto);
             //var  result = response.Content.ReadAsStringAsync();
             await LoadSelectitem();
             return RedirectToAction("Index");

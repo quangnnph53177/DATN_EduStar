@@ -48,7 +48,7 @@ namespace API.Controllers
             await _services.AutogenerateSchedule();
             return Ok(new { success = true, message = "Tạo lịch học tự động thành công" } );
         }
-        [HttpPost]
+        [HttpPost("create")]
         public async Task<IActionResult> Create(SchedulesDTO model)
         {
             

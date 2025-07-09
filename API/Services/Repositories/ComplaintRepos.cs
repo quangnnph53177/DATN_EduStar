@@ -21,7 +21,7 @@ namespace API.Services.Repositories
                 .Include(c => c.ProcessedByNavigation)
                 .AsQueryable();
 
-            if (!currentUserRoleIds.Contains(1)) // Nếu không phải Admin
+            if (!currentUserRoleIds.Contains(1) && !currentUserRoleIds.Contains(2)) // Nếu không phải Admin
             {
                 // Chỉ xem khiếu nại của chính mình
                 query = query.Where(c => c.Student != null && c.Student.UserName == currentUsername);
@@ -45,20 +45,47 @@ namespace API.Services.Repositories
 
         public async Task<string> SubmitClassChangeComplaint(ClassChangeComplaintDTO dto,Guid studentId)
         {
-            var student = _context.Users
-                .Include(u => u.Roles) // Ensure Roles are loaded
-                .FirstOrDefault(s => s.Id == studentId && s.Roles.Any(r => r.RoleName == "Student"));
-
-            if (student == null)
-            {
-                throw new Exception("Sinh viên không tồn tại.");
-            }
-
             var currentClassExits = _context.Classes.FirstOrDefault(c => c.Id == dto.CurrentClassId);
             var DesiredClassExits = _context.Classes.FirstOrDefault(c => c.Id == dto.RequestedClassId);
+            var student = await GetStudentWithClasses(studentId);
+
+            bool isInCurrentClass = student.Classes.Any(c => c.Id == dto.CurrentClassId);
+            if (!isInCurrentClass)
+                throw new Exception("Sinh viên không thuộc lớp hiện tại.");
+
+            if (dto.CurrentClassId == dto.RequestedClassId)
+                throw new Exception("Lớp hiện tại và lớp yêu cầu không thể giống nhau.");
+
             if (currentClassExits == null || DesiredClassExits == null)
             {
                 throw new Exception("Lớp học không tồn tại.");
+            }
+            if(currentClassExits.SubjectId != DesiredClassExits.SubjectId)
+            {
+                throw new Exception("Không thể chuyển lớp khác môn học.");
+            }
+
+            //Tránh xung đột thời gian học
+
+            //Chỉ cho phép nếu lớp còn chỗ trống
+           
+            //Đang có đơn khiếu nại trước đó
+            int subjectid = currentClassExits.SubjectId ?? throw new Exception("SubjectId cannot be null.");
+            bool isPendingComplaint = await _context.Complaints
+                .Where(c =>
+                c.StudentId == studentId &&
+                c.ComplaintType == "ClassChange")
+                .Join(_context.ClassChanges, Complaint => Complaint.Id,
+                ClassChange => ClassChange.ComplaintId,
+                (Complaint, ClassChange) => new { Complaint, ClassChange })
+                .Join(_context.Classes,
+                cc => cc.ClassChange.RequestedClassId,
+                c => c.Id,
+                (cc, c) => new { cc.Complaint, Subjectid = c.SubjectId })
+                .AnyAsync(x => x.Subjectid == subjectid);
+            if (isPendingComplaint)
+            {
+                throw new Exception("Bạn đã đổi lớp trước đó.");
             }
             var complaint = new Complaint
             {
@@ -78,6 +105,55 @@ namespace API.Services.Repositories
             await _context.SaveChangesAsync();
             return complaint.Id.ToString();
         }
+        public async Task<StudentsInfor> GetStudentWithClasses(Guid studentId)
+        {
+            var student = await _context.StudentsInfors
+                .Include(s => s.Classes)
+                .FirstOrDefaultAsync(s => s.UserId == studentId);
+
+            if (student == null)
+            {
+                throw new Exception("Không tìm thấy sinh viên với mã này.");
+            }
+
+            //var classNames = student.Classes.Select(c => c.NameClass).ToList();
+            //Console.WriteLine($"Lớp của sinh viên {studentCode}: {string.Join(", ", classNames)}");
+            return student;
+        }
+        
+        public Task<List<Class>> GetClassesInSameSubject(int currentClassId)
+        {
+            var currentClass = _context.Classes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == currentClassId);
+            if (currentClass == null)
+            {
+                throw new Exception("Lớp học không tồn tại.");
+            }
+            return _context.Classes
+                .AsNoTracking()
+                .Where(c => c.SubjectId == currentClass.Result.SubjectId && c.Id != currentClassId)
+                .ToListAsync();
+
+        }
+        public async Task<List<ClassCreateViewModel>> GetClassesOfStudent(Guid studentId)
+        {
+            var student = await _context.StudentsInfors
+               .Include(s => s.Classes)
+               .FirstOrDefaultAsync(s => s.UserId == studentId);
+            if (student == null)
+            {
+                throw new Exception("Không tìm thấy sinh viên với mã này.");
+            }
+            return student.Classes.Select(c => new ClassCreateViewModel
+            {
+                ClassName = c.NameClass,
+                Semester = c.Semester,
+                SubjectId = c.SubjectId ?? 0,
+                YearSchool = (int)c.YearSchool
+            }).ToList();
+        }
+       
 
         public async Task<bool> ProcessClassChangeComplaint(int complaintId, ProcessComplaintDTO dto, Guid handlerId)
         {

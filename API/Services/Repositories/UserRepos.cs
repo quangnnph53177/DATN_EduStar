@@ -492,6 +492,11 @@ namespace API.Services.Repositories
             await _context.SaveChangesAsync();
             return "Đặt lại mật khẩu thành công.";
         }
+        //Lấy danh sách sinh viên có trong lớp của giảng viên
+        //public async Task<IEnumerable<UserDTO>> GetStudentByTeacher(Guid teacherId)
+        //{
+        //    var classList = await _context.Classes.Where(te => te.TeacherId)
+        //}
 
         public static class PasswordHasher
         {

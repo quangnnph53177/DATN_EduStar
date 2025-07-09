@@ -4,6 +4,7 @@ using API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Migrations
 {
     [DbContext(typeof(AduDbcontext))]
-    partial class AduDbcontextModelSnapshot : ModelSnapshot
+    [Migration("20250707073825_hia")]
+    partial class hia
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -167,9 +170,6 @@ namespace API.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<DateTime?>("StartTime")
-                        .HasColumnType("datetime2");
-
                     b.Property<bool?>("Status")
                         .HasColumnType("bit");
 
@@ -266,9 +266,9 @@ namespace API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Weekdays")
+                    b.Property<string>("Weekdays")
                         .HasMaxLength(10)
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id")
                         .HasName("PK__DayOfWeek__3214EC079A470A2D");
@@ -421,38 +421,6 @@ namespace API.Migrations
                         .HasName("PK__Rooms__3214EC073B8FA24F");
 
                     b.ToTable("Rooms");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Device = "Projector, Whiteboard",
-                            RoomCode = "Room 101"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Device = "Projector, Whiteboard",
-                            RoomCode = "Room 102"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Device = "Projector, Whiteboard",
-                            RoomCode = "Room 103"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Device = "Projector, Whiteboard",
-                            RoomCode = "Room 104"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Device = "Projector, Whiteboard",
-                            RoomCode = "Room 105"
-                        });
                 });
 
             modelBuilder.Entity("API.Models.Schedule", b =>
@@ -469,17 +437,8 @@ namespace API.Migrations
                     b.Property<int?>("DayId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<int?>("RoomId")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool?>("Status")
-                        .HasColumnType("bit");
 
                     b.Property<int?>("StudyShiftId")
                         .HasColumnType("int");

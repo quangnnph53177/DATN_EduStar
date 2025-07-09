@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Migrations
 {
     [DbContext(typeof(AduDbcontext))]
-    [Migration("20250624100901_hihahiha")]
-    partial class hihahiha
+    [Migration("20250707074926_hiaa")]
+    partial class hiaa
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,8 +38,17 @@ namespace API.Migrations
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
 
+                    b.Property<DateTime?>("Endtime")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("SchedulesId")
                         .HasColumnType("int");
+
+                    b.Property<string>("SessionCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("Starttime")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -65,12 +74,18 @@ namespace API.Migrations
                     b.Property<int?>("AttendanceId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("CheckinTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Statuss")
+                    b.Property<string>("ImagePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("int");
 
                     b.Property<Guid?>("StudentId")
                         .HasColumnType("uniqueidentifier");
@@ -256,9 +271,46 @@ namespace API.Migrations
                         .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id")
-                        .HasName("PK__DayOfWee__3214EC079A470A2D");
+                        .HasName("PK__DayOfWeek__3214EC079A470A2D");
 
                     b.ToTable("DayOfWeeks");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Weekdays = "Monday"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Weekdays = "Tuesday"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Weekdays = "Wednesday"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Weekdays = "Thursday"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Weekdays = "Friday"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Weekdays = "Saturday"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Weekdays = "Sunday"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Permission", b =>
@@ -276,6 +328,38 @@ namespace API.Migrations
                         .HasName("PK__Permissi__3214EC07B10A1991");
 
                     b.ToTable("Permission", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            PermissionName = "Create"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            PermissionName = "Detail"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            PermissionName = "Edit"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            PermissionName = "Search"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            PermissionName = "ProcessComplaint"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            PermissionName = "AddRole"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Role", b =>
@@ -295,6 +379,23 @@ namespace API.Migrations
                         .HasName("PK__Roles__3214EC0791E90BA9");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            RoleName = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            RoleName = "Teacher"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            RoleName = "Student"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Room", b =>
@@ -320,6 +421,38 @@ namespace API.Migrations
                         .HasName("PK__Rooms__3214EC073B8FA24F");
 
                     b.ToTable("Rooms");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 101"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 102"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 103"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 104"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 105"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Schedule", b =>
@@ -393,12 +526,66 @@ namespace API.Migrations
                         .HasName("PK__StudyShi__3214EC07D946077D");
 
                     b.ToTable("StudyShifts");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            EndTime = new TimeOnly(9, 15, 0),
+                            StartTime = new TimeOnly(7, 15, 0),
+                            StudyShiftName = "Ca 1"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            EndTime = new TimeOnly(11, 25, 0),
+                            StartTime = new TimeOnly(9, 25, 0),
+                            StudyShiftName = "Ca 2"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            EndTime = new TimeOnly(14, 0, 0),
+                            StartTime = new TimeOnly(12, 0, 0),
+                            StudyShiftName = "Ca 3"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            EndTime = new TimeOnly(16, 10, 0),
+                            StartTime = new TimeOnly(14, 10, 0),
+                            StudyShiftName = "Ca 4"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            EndTime = new TimeOnly(18, 20, 0),
+                            StartTime = new TimeOnly(16, 20, 0),
+                            StudyShiftName = "Ca 5"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            EndTime = new TimeOnly(20, 30, 0),
+                            StartTime = new TimeOnly(18, 30, 0),
+                            StudyShiftName = "Ca 6"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            EndTime = new TimeOnly(23, 59, 59, 999).Add(TimeSpan.FromTicks(9999)),
+                            StartTime = new TimeOnly(0, 0, 0),
+                            StudyShiftName = "Ca 7"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Subject", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -414,12 +601,11 @@ namespace API.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("subjectCode")
-                        .IsRequired()
+                    b.Property<string>("Subjectcode")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
-                        .HasName("PK__Subjects__3214EC0750D0CDEB");
+                        .HasName("PK__Subjects__3214EC0741AE97DC");
 
                     b.ToTable("Subjects");
                 });
@@ -511,6 +697,68 @@ namespace API.Migrations
                     b.HasIndex(new[] { "PermissionId" }, "IX_RolePermission_PermissionId");
 
                     b.ToTable("RolePermission", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 1
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 2
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 3
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 4
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 5
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 6
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 2
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 3
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 4
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 5
+                        },
+                        new
+                        {
+                            RoleId = 3,
+                            PermissionId = 2
+                        },
+                        new
+                        {
+                            RoleId = 3,
+                            PermissionId = 3
+                        });
                 });
 
             modelBuilder.Entity("StudentInClass", b =>
@@ -624,7 +872,7 @@ namespace API.Migrations
                     b.HasOne("API.Models.Subject", "Subject")
                         .WithMany("Classes")
                         .HasForeignKey("SubjectId")
-                        .HasConstraintName("FK__Classes__Subject__4F7CD00D");
+                        .HasConstraintName("FK_Classes_Subject");
 
                     b.Navigation("Subject");
                 });
