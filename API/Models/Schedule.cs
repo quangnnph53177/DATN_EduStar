@@ -14,6 +14,9 @@ public partial class Schedule
     public int? DayId { get; set; }
 
     public int? StudyShiftId { get; set; }
+    public bool? Status { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
 
     public virtual ICollection<AttendanceDetailsComplaint> AttendanceDetailsComplaints { get; set; } = new List<AttendanceDetailsComplaint>();
 

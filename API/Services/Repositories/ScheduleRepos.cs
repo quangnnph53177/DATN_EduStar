@@ -16,35 +16,35 @@ namespace API.Services.Repositories
 
         public async Task AutogenerateSchedule()
         {
-            var classes = _context.Classes
-                .Include(c => c.Schedules)
-                .ToList();
+            var classes = await _context.Classes
+                .Include(c => c.Schedules) 
+                .Include(c => c.Subject)
+                .ToListAsync();
 
-            var classnoschedules = classes
-                .Where(c => c.Schedules == null || !c.Schedules.Any())
-                .ToList();
-
-            var days = _context.DayOfWeeks.ToList();
-            var rooms = _context.Rooms.ToList();
-            var shifts = _context.StudyShifts.ToList();
+            var days = await _context.DayOfWeeks.ToListAsync();
+            var rooms = await _context.Rooms.ToListAsync();
+            var shifts = await _context.StudyShifts.ToListAsync();
 
             List<Schedule> newSchedules = new List<Schedule>();
 
-            foreach (var cls in classnoschedules)
+            foreach (var cls in classes)
             {
+                if (cls.Schedules != null && cls.Schedules.Any()) continue;
+
+                var startDate = cls.StartTime ?? DateTime.Today;
+                int durationWeeks = 4; 
+
                 bool scheduled = false;
 
                 foreach (var room in rooms)
                 {
                     foreach (var shift in shifts)
                     {
-                        // Danh sách các DayId đã bị chiếm (từ DB hoặc trong danh sách đang chuẩn bị lưu)
                         var usedDayIds = _context.Schedules
                             .Where(s => s.RoomId == room.Id && s.StudyShiftId == shift.Id)
                             .Select(s => s.DayId)
                             .ToList();
 
-                        // Cộng thêm các lịch mới đang chờ lưu (tránh trùng với lớp khác cùng lúc)
                         usedDayIds.AddRange(newSchedules
                             .Where(s => s.RoomId == room.Id && s.StudyShiftId == shift.Id)
                             .Select(s => s.DayId));
@@ -56,23 +56,30 @@ namespace API.Services.Repositories
 
                         if (availableDays.Count == 3)
                         {
-                            foreach (var day in availableDays)
+                            for (int i = 0; i < durationWeeks; i++)
                             {
-                                newSchedules.Add(new Schedule
+                                foreach (var day in availableDays)
                                 {
-                                    ClassId = cls.Id,
-                                    RoomId = room.Id,
-                                    DayId = day.Id,
-                                    StudyShiftId = shift.Id
-                                });
+                                    var studyDate = GetNextWeekday(startDate.AddDays(i * 7), (DayOfWeek)day.Weekdays);
+
+                                    newSchedules.Add(new Schedule
+                                    {
+                                        ClassId = cls.Id,
+                                        RoomId = room.Id,
+                                        DayId = day.Id,
+                                        StudyShiftId = shift.Id,
+                                        StartDate = studyDate.Date,
+                                        EndDate = studyDate.Date.AddHours(2)
+                                    });
+                                }
                             }
 
                             scheduled = true;
-                            break; // break shift
+                            break;
                         }
                     }
 
-                    if (scheduled) break; // break room
+                    if (scheduled) break;
                 }
 
                 if (!scheduled)
@@ -83,10 +90,17 @@ namespace API.Services.Repositories
 
             if (newSchedules.Any())
             {
-                _context.Schedules.AddRange(newSchedules);
+                await _context.Schedules.AddRangeAsync(newSchedules);
                 await _context.SaveChangesAsync();
             }
         }
+
+        private DateTime GetNextWeekday(DateTime start, DayOfWeek day)
+        {
+            int daysToAdd = ((int)day - (int)start.DayOfWeek + 7) % 7;
+            return start.AddDays(daysToAdd);
+        }
+
         public async Task<Schedule> CreateSchedules(SchedulesDTO model)
         {
 
@@ -168,7 +182,7 @@ namespace API.Services.Repositories
                 ClassName = schedule.Class.NameClass,
                 SubjectName = schedule.Class.Subject.SubjectName,
                 RoomCode = schedule.Room.RoomCode,
-                WeekDay = schedule.Day.Weekdays,
+                WeekDay = schedule.Day.Weekdays.ToString(),
                 StudyShift = schedule.StudyShift.StudyShiftName,
                 starttime =schedule.StudyShift.StartTime,
                 endtime =schedule.StudyShift.EndTime,
@@ -202,7 +216,7 @@ namespace API.Services.Repositories
                 {
                     Id = sc.Id,
                     ClassName = sc.Class.NameClass,
-                    WeekDay = sc.Day.Weekdays,
+                    WeekDay = sc.Day.Weekdays.ToString(),
                     StudyShift = sc.StudyShift.StudyShiftName,
                     RoomCode = sc.Room.RoomCode,
                 })
