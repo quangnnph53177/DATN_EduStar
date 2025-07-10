@@ -27,7 +27,7 @@
         }
         @if (User.HasClaim("Permission", "Create"))
         {
-            <a asp-controller="Users" asp-action="Register" class="btn btn-primary">
+            <a asp-controller="Teacher" asp-action="Register" class="btn btn-primary">
                 <i class="bi bi-plus-lg"></i>Thêm người dùng
             </a>
         }
@@ -88,12 +88,12 @@
                         </span>
                     </td>
                     <td class="text-center">
-                        <a asp-controller="Users" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔍</a>
+                        <a asp-controller="Teacher" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔍</a>
                         @if (User.HasClaim("Permission", "Create"))
                         {
-                            <a asp-controller="Users" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">✏️</a>
-                            <a asp-controller="Users" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔄</a>
-                            <form asp-controller="Users" asp-action="LockUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái?');" class="d-inline">
+                            <a asp-controller="Teacher" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">✏️</a>
+                            <a asp-controller="Teacher" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔄</a>
+                            <form asp-controller="Teacher" asp-action="LockUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái?');" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-sm mx-1 @(user.Statuss ? "btn-danger" : "btn-success")">
                                     @(user.Statuss ? "🔒" : "🔓")

@@ -9,6 +9,8 @@
         public string? Semester { get; set; }
         public int YearSchool { get; set; }
         public int NumberOfCredits { get; set; }
+        //Thêm 2 trường này
+        public string? TeacherName { get; set; }
         public List<StudentViewModels>? Students { get; set; }
     }
 }

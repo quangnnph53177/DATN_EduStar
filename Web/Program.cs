@@ -9,11 +9,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/Users/Login";
         options.ExpireTimeSpan = TimeSpan.FromHours(1);
         options.SlidingExpiration = true;
-        options.ClaimsIssuer = "local";
+        options.ClaimsIssuer = "localhost";
     });
 builder.Services.Configure<CookieAuthenticationOptions>(options =>
 {
-    options.ClaimsIssuer = "local"; // phải match với phần JWT nếu cần
+    options.ClaimsIssuer = "localhost"; // phải match với phần JWT nếu cần
 });
 
 // ❗ RẤT QUAN TRỌNG

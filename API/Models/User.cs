@@ -18,6 +18,7 @@ public partial class User
     public bool? Statuss { get; set; }
 
     public DateTime? CreateAt { get; set; }
+    public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
 
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
 

@@ -26,6 +26,84 @@ namespace API.Services.Repositories
             _configuration = configuration;
             _emailService = emailService;
         }
+        private IQueryable<User> FilterUsersByRole(IQueryable<User> query, List<int> currentUserRoleIds, string? currentUserName)
+        {
+            if (currentUserRoleIds.Contains(1)) // Admin
+            {
+                return query.Where(u => u.Roles.Any(r => r.Id == 1 || r.Id == 2 || r.Id == 3 || u.UserName == currentUserName));
+            }
+            else if (currentUserRoleIds.Contains(2)) // Giảng viên
+            {
+                return query.Where(u => u.Roles.Any(r => r.Id == 3 || u.UserName == currentUserName));
+            }
+            else
+            {
+                return query.Where(u => u.UserName == currentUserName);
+            }
+        }
+        private UserDTO MapToUserDTO(User u)
+        {
+            return new UserDTO
+            {
+                Id = u.Id,
+                UserName = u.UserName,
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                Statuss = u.Statuss ?? false,
+                CreateAt = u.CreateAt,
+                UserCode = u.UserProfile?.UserCode,
+                FullName = u.UserProfile?.FullName,
+                Gender = u.UserProfile?.Gender,
+                Avatar = u.UserProfile?.Avatar,
+                Address = u.UserProfile?.Address,
+                Dob = u.UserProfile.Dob.HasValue ? u.UserProfile.Dob.Value.ToDateTime(TimeOnly.MinValue) : null,
+                RoleIds = u.Roles.Select(r => r.Id).ToList()
+            };
+        }
+        private async Task<string> SaveAvatar(IFormFile imgFile, string? oldPath = null)
+        {
+            var validImageFormats = new[] { ".jpg", ".jpeg", ".png" };
+            var ext = Path.GetExtension(imgFile.FileName).ToLowerInvariant();
+            if (!validImageFormats.Contains(ext)) throw new ArgumentException("Định dạng ảnh không hợp lệ");
+
+            var avatarDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "avatars");
+            if (!Directory.Exists(avatarDir)) Directory.CreateDirectory(avatarDir);
+
+            if (!string.IsNullOrWhiteSpace(oldPath))
+            {
+                var fullOldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldPath.TrimStart('/'));
+                if (File.Exists(fullOldPath))
+                    File.Delete(fullOldPath);
+            }
+
+            var uniqueName = $"{Guid.NewGuid()}{ext}";
+            var savePath = Path.Combine(avatarDir, uniqueName);
+            await using var stream = new FileStream(savePath, FileMode.Create);
+            await imgFile.CopyToAsync(stream);
+
+            return $"/images/avatars/{uniqueName}";
+
+        }
+        private async Task<string> GenerateUserCode(List<Role> roles)
+        {
+            if (roles.Any(r => r.Id == 1)) // Admin
+            {
+                int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 1));
+                return $"AD{(count + 1):D5}";
+            }
+            if (roles.Any(r => r.Id == 2)) // Giảng viên
+            {
+                int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 2));
+                return $"GV{(count + 1):D5}";
+            }
+            if (roles.Any(r => r.Id == 3)) // Sinh viên
+            {
+                int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 3));
+                return $"SV{(count + 1):D5}";
+            }
+            return $"US{Guid.NewGuid().ToString()[..5].ToUpper()}";
+        }
+
         public async Task<User> Register(UserDTO usd, IFormFile? imgFile)
         {
             // Kiểm tra thông tin đầu vào  
@@ -48,52 +126,16 @@ namespace API.Services.Repositories
             if (!roles.Any())
                 throw new Exception("Không tìm thấy role hợp lệ để gán.");
 
-            string userCode = "";
-            if (roles.Any(r => r.Id == 1)) // Admin  
-            {
-                int adminCount = await _context.Users.Where(u => u.Roles.Any(r => r.Id == 1)).CountAsync();
-                userCode = $"AD{(adminCount + 1).ToString("D5")}";
-            }
-            else if (roles.Any(r => r.Id == 2)) // Giảng viên  
-            {
-                int gvCount = await _context.Users.Where(u => u.Roles.Any(r => r.Id == 2)).CountAsync();
-                userCode = $"GV{(gvCount + 1).ToString("D5")}";
-            }
-            else if (roles.Any(r => r.Id == 3)) // Sinh viên  
-            {
-                int svCount = await _context.Users.Where(u => u.Roles.Any(r => r.Id == 3)).CountAsync();
-                userCode = $"SV{(svCount + 1).ToString("D5")}";
-            }
-            else // Mặc định (ví dụ sinh viên chưa có role), vẫn tạo userCode tạm  
-            {
-                userCode = $"US{Guid.NewGuid().ToString().Substring(0, 5).ToUpper()}";
-            }
-
             if (imgFile != null && imgFile.Length > 0)
             {
-                // Kiểm tra định dạng file ảnh  
-                var validImageFormats = new[] { ".jpg", ".jpeg", ".png" };
-                var fileExtension = Path.GetExtension(imgFile.FileName).ToLowerInvariant();
-                if (!validImageFormats.Contains(fileExtension))
-                    throw new ArgumentException("Định dạng ảnh không hợp lệ (chỉ chấp nhận .jpg, .jpeg, .png)");
-                // Tạo đường dẫn lưu ảnh
-                var imageFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","avatars");
-                if (!Directory.Exists(imageFolder))
-                    Directory.CreateDirectory(imageFolder);
-                var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-                var savePath = Path.Combine(imageFolder, uniqueFileName);
-
-                using (var stream = new FileStream(savePath, FileMode.Create))
-                {
-                    await imgFile.CopyToAsync(stream);
-                }
-                // Gán đường dẫn ảo vào DTO
-                usd.Avatar = $"/images/avatars/{uniqueFileName}";
+                usd.Avatar = await SaveAvatar(imgFile);
             }
             if (usd.Dob.HasValue && usd.Dob.Value.Date >= DateTime.Now.Date)
             {
                 throw new Exception("Ngày sinh không hợp lệ. Hãy nhập lại ngày sinh.");
             }
+            string userCode = await GenerateUserCode(roles);
+
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -113,7 +155,7 @@ namespace API.Services.Repositories
                 UserCode = userCode,
                 Gender = usd.Gender,
                 Dob = usd.Dob.HasValue ? DateOnly.FromDateTime(usd.Dob.Value) : null,
-                Avatar = usd.Avatar ?? "/images/avatars/defaults.png",
+                Avatar = usd.Avatar,
                 Address = usd.Address
             });
 
@@ -187,7 +229,6 @@ namespace API.Services.Repositories
                 .Include(u => u.Roles)
                 .ThenInclude(r => r.Permissions)
                 .FirstOrDefaultAsync(u => u.UserName == userName);
-       
 
             if (user == null)
                 throw new Exception("Tên đăng nhập không tồn tại.");
@@ -195,26 +236,31 @@ namespace API.Services.Repositories
             // Kiểm tra trạng thái tài khoản
             if (user.Statuss != true)
                 throw new Exception("Tài khoản đang bị khóa hoặc không hoạt động.");
+
             bool isPasswordValid = PasswordHasher.Verify(password, user.PassWordHash);
             if (!isPasswordValid)
                 throw new Exception("Mật khẩu không chính xác.");
+
             var permissions = user.Roles?
                 .SelectMany(r => r.Permissions)
                 .Where(p => p != null)
                 .Select(p => p.PermissionName)
                 .Distinct()
                 .ToList() ?? new List<string>();
+
             string token = GenerateJwtToken(user, permissions);
-            // Trả về roleId đầu tiên (trường hợp nhiều role thì chọn role đầu tiên)
-            int roleId = user.Roles.Select(r => r.Id).FirstOrDefault();
+
+            // Fix for CS0029: Convert RoleName to a List<string>
+            var roleNames = user.Roles.Select(r => r.RoleName).ToList();
+
             return new LoginResult
             {
                 Token = token,
                 RoleId = user.Roles.Select(r => r.Id).ToList(),
+                RoleName = roleNames, // Updated to return a List<string>
                 UserName = user.UserName,
                 Permission = permissions
             };
-
         }
         private string GenerateJwtToken(User user, List<string> permissions)
         {
@@ -249,91 +295,27 @@ namespace API.Services.Repositories
             return tokenHandler.WriteToken(token);
         }
 
-
-        public async Task<IEnumerable<UserDTO>> GetAllUsers(List<int> currentUserRoleIds, string? currentUserName)
+        public async Task<IEnumerable<UserDTO>> GetAllUsers(List<int> currentUserRoleIds, string? currentUserName, bool excludeTeacher = false)
         {
-            IQueryable<User> query = _context.Users
-                .Include(u => u.UserProfile)
-                .Include(u => u.Roles)
-                .AsSplitQuery();
+            var query = _context.Users
+         .Include(u => u.UserProfile)
+         .Include(u => u.Roles)
+         .AsSplitQuery();
 
-            if (currentUserRoleIds.Contains(1)) // Admin
+            query = FilterUsersByRole(query, currentUserRoleIds, currentUserName);
+
+            if (excludeTeacher)
             {
-                query = query.Where(u => u.Roles.Any(r => r.Id == 1 || r.Id == 2 || r.Id == 3 || u.UserName == currentUserName));
-            }
-            else if (currentUserRoleIds.Contains(2)) // Giảng viên
-            {
-                query = query.Where(u => u.Roles.Any(r => r.Id == 3 || u.UserName == currentUserName));
-            }
-            else
-            {
-                query = query.Where(u => u.UserName == currentUserName);
+                query = query.Where(u => !u.Roles.Any(r => r.Id == 2)); // loại giảng viên
             }
 
             var users = await query.OrderByDescending(u => u.Statuss).ToListAsync();
 
-            return users.Select(x => new
-            {
-                User = x,
-                MainRole = x.Roles.Min(r => r.Id) // hoặc viết logic riêng nếu cần xác định ưu tiên
-            })
-            .OrderByDescending(u => u.User.Statuss ?? false) // Hoạt động trước
-            .ThenBy(u => u.MainRole) // Vai trò ưu tiên: Admin (1) → Giảng viên (2) → Sinh viên (3)
-            .Select(u => new UserDTO
-            {
-                UserName = u.User.UserName, // Fixed: Accessing User property of the anonymous type
-                Email = u.User.Email,
-                PhoneNumber = u.User.PhoneNumber,
-                Statuss = u.User.Statuss ?? false,
-                CreateAt = u.User.CreateAt,
-                UserCode = u.User.UserProfile?.UserCode,
-                FullName = u.User.UserProfile?.FullName,
-                Gender = u.User.UserProfile?.Gender,
-                Avatar = u.User.UserProfile?.Avatar,
-                Address = u.User.UserProfile?.Address,
-                Dob = u.User.UserProfile?.Dob?.ToDateTime(TimeOnly.MinValue),
-                RoleIds = u.User.Roles.Select(r => r.Id).ToList()
-            });
-        }
-
-        public async Task<IEnumerable<UserDTO>> GetAllUsersNoTeacher(List<int> currentUserRoleIds, string? currentUserName)
-        {
-            IQueryable<User> query = _context.Users
-            .Include(u => u.UserProfile)
-            .Include(u => u.Roles)
-            .AsSplitQuery();
-
-            if (currentUserRoleIds.Contains(1)) // Admin
-            {
-                query = query.Where(u => u.Roles.Any(r => r.Id == 1 || r.Id == 2 || r.Id == 3 || u.UserName == currentUserName));
-            }
-            else if (currentUserRoleIds.Contains(2)) // Giảng viên
-            {
-                query = query.Where(u => u.UserName == currentUserName);
-            }
-            else
-            {
-                query = query.Where(u => u.UserName == currentUserName);
-            }
-
-            var users = await query.ToListAsync();
-
-            return users.Select(u => new UserDTO
-            {
-                Id = u.Id,
-                UserName = u.UserName,
-                Email = u.Email,
-                PhoneNumber = u.PhoneNumber,
-                Statuss = u.Statuss ?? false,
-                CreateAt = u.CreateAt,
-                UserCode = u.UserProfile?.UserCode,
-                FullName = u.UserProfile?.FullName,
-                Gender = u.UserProfile?.Gender,
-                Avatar = u.UserProfile?.Avatar,
-                Address = u.UserProfile?.Address,
-                Dob = u.UserProfile?.Dob?.ToDateTime(TimeOnly.MinValue),
-                RoleIds = u.Roles.Select(r => r.Id).ToList()
-            });
+            return users
+                .Select(u => new { User = u, MainRole = u.Roles.Min(r => r.Id) })
+                .OrderByDescending(u => u.User.Statuss ?? false)
+                .ThenBy(u => u.MainRole)
+                .Select(u => MapToUserDTO(u.User));
         }
         public async Task<string> LockUser(string userName)
         {
@@ -369,72 +351,31 @@ namespace API.Services.Repositories
                 if (userCodeExists)
                     throw new Exception("UserCode đã tồn tại.");
             }
-
-            // Email
             if (!string.IsNullOrWhiteSpace(userd.Email))
                 upuser.Email = userd.Email;
-
             // Kiểm tra UserProfile có null không, nếu null thì khởi tạo
             if (upuser.UserProfile == null)
             {
                 upuser.UserProfile = new UserProfile
                 {
-                    UserId = upuser.Id  // 👈 Bắt buộc gán nếu chưa có
+                    UserId = upuser.Id
                 };
             }
-            // FullName
             if (!string.IsNullOrWhiteSpace(userd.FullName))
                 upuser.UserProfile.FullName = userd.FullName;
-
             if (!string.IsNullOrWhiteSpace(userd.UserCode))
                 upuser.UserProfile.UserCode = userd.UserCode;
-
-            // Gender
             if (userd.Gender.HasValue)
                 upuser.UserProfile.Gender = userd.Gender;
-
-            // PhoneNumber
             if (!string.IsNullOrWhiteSpace(userd.PhoneNumber))
                 upuser.PhoneNumber = userd.PhoneNumber;
 
             if (imgFile != null && imgFile.Length > 0)
             {
-                // 1. Kiểm tra định dạng hợp lệ
-                var validImageFormats = new[] { ".jpg", ".jpeg", ".png" };
-                var fileExtension = Path.GetExtension(imgFile.FileName).ToLowerInvariant();
-                if (!validImageFormats.Contains(fileExtension))
-                    throw new ArgumentException("Định dạng ảnh không hợp lệ (chỉ chấp nhận .jpg, .jpeg, .png)");
-
-                // 2. Xác định thư mục lưu ảnh
-                var imageFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "avatars");
-                if (!Directory.Exists(imageFolder))
-                    Directory.CreateDirectory(imageFolder);
-
-                // 3. Xóa ảnh cũ nếu có
-                if (!string.IsNullOrWhiteSpace(upuser.UserProfile.Avatar))
-                {
-                    var oldAvatarPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", upuser.UserProfile.Avatar.TrimStart('/'));
-                    if (File.Exists(oldAvatarPath))
-                        File.Delete(oldAvatarPath);
-                }
-
-                // 4. Lưu ảnh mới
-                var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-                var savePath = Path.Combine(imageFolder, uniqueFileName);
-                using (var stream = new FileStream(savePath, FileMode.Create))
-                {
-                    await imgFile.CopyToAsync(stream);
-                }
-
-                // 5. Cập nhật đường dẫn tương đối vào DB (dùng khi hiển thị ảnh)
-                upuser.UserProfile.Avatar = $"/images/avatars/{uniqueFileName}";
+                upuser.UserProfile.Avatar = await SaveAvatar(imgFile, upuser.UserProfile.Avatar);
             }
-
-            // Address
             if (!string.IsNullOrWhiteSpace(userd.Address))
                 upuser.UserProfile.Address = userd.Address;
-
-            // Dob
             if (userd.Dob.HasValue)
                 upuser.UserProfile.Dob = DateOnly.FromDateTime(userd.Dob.Value);
 
@@ -493,11 +434,44 @@ namespace API.Services.Repositories
             return "Đặt lại mật khẩu thành công.";
         }
         //Lấy danh sách sinh viên có trong lớp của giảng viên
-        //public async Task<IEnumerable<UserDTO>> GetStudentByTeacher(Guid teacherId)
-        //{
-        //    var classList = await _context.Classes.Where(te => te.TeacherId)
-        //}
+        public async Task<TeacherWithClassesViewModel> GetStudentByTeacher(Guid? teacherId)
+        {
+            // 🔎 Truy vấn tên giảng viên
+            var teacher = await _context.Users
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.Id == teacherId);
 
+            if (teacher == null)
+                throw new Exception("Không tìm thấy giảng viên.");
+            var teacherName = teacher.UserProfile?.FullName ?? "Không rõ";
+            // Lấy các lớp của giảng viên  
+            var classList = await _context.Classes
+                .Where(c => c.UsersId == teacherId)
+                .Include(c => c.Students)
+                    .ThenInclude(s => s.User)
+                        .ThenInclude(u => u.UserProfile)
+                .Include(c => c.Students)
+                    .ThenInclude(s => s.User)
+                        .ThenInclude(u => u.Roles)
+                .ToListAsync();
+
+            var result = new TeacherWithClassesViewModel
+            {
+                TeacherId = teacher.Id,
+                TeacherName = teacher.UserProfile?.FullName ?? "Không rõ",
+                Classes = classList.Select(c => new ClassWithStudentsViewModel
+                {
+                    ClassId = c.Id,
+                    ClassName = c.NameClass,
+                    StudentsInfor = c.Students
+                        .Where(s => s.UserId != null && s.User != null)
+                        .Select(s => MapToUserDTO(s.User))
+                        .ToList()
+                }).ToList()
+            };
+
+            return result;
+        }
         public static class PasswordHasher
         {
             private const int SaltSize = 16; // 128-bit salt

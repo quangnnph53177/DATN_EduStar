@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@* <h4>📜 Danh sách Claims:</h4>
+<ul>
+    @foreach (var c in User.Claims)
+    {
+        <li><strong>@c.Type</strong> : @c.Value</li>
+    }
+</ul> *@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -8,21 +15,31 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/StyleSheet.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Web.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <style>
+        body {
+        background-color: #f0f2f5;
+        }
 
         .sidebar {
         min-height: 100vh;
-        background-color: #f8f9fa;
-        border-right: 1px solid #ddd;
+        background-color: #004085;
+        color: #fff;
         }
 
         .sidebar .nav-link {
-        color: #333;
+        color: #fff;
         }
 
-        .sidebar .nav-link:hover {
-        background-color: #e9ecef;
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active-flame {
+        background-color: #0d6efd;
+        border-radius: 0.375rem;
+        }
+
+        .dropdown .dropdown-menu {
+        min-width: 200px;
         }
 
         .loader {
@@ -51,9 +68,10 @@
         filter: blur(8px);
         transform: scaleY(0.4) translate(-13px, 0px);
         }
-
         @@keyframes l20 {
-        30%, 70% {
+        30%, 70%
+
+        {
         transform: rotate(0deg);
         }
 
@@ -64,6 +82,7 @@
         50% {
         transform: rotate(-0.2deg);
         }
+
         }
     </style>
 </head>
@@ -72,125 +91,89 @@
         <div class="row">
             <!-- Sidebar -->
             <div class="col-md-2 sidebar p-3">
-                @{
-                    var role = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
-                }
-                @if (role == "1")
-                {
-                    <h5 class="mb-4">Quản trị</h5>
-                }
-                else if (role == "2")
-                {
-                    <h5 class="mb-4">Giảng viên</h5>
-                }
-                else if (role == "3")
-                {
-                    <h5 class="mb-4">Sinh viên</h5>
-                }
+                <h5 class="mb-4">
+                    @{
+                        var roleNames = User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(r => r.Value);
+                        var displayRoles = string.Join(", ", roleNames);
+                    }
+                    Người dùng: @displayRoles
+                </h5>
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active-flame" : "")"
-                        asp-controller="Home" asp-action="Index">🏠 Home</a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active-flame" : "")" asp-controller="Home" asp-action="Index">🏠 Dashboard</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Users" ? "active-flame" : "")"
-                        asp-controller="Users" asp-action="Index">👤 Danh sách người dùng</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Statistical" ? "active-flame" : "")"
-                        asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Student" ? "active-flame" : "")"
-                        asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Scheduless" ? "active-flame" : "")"
-                        asp-controller="Scheduless" asp-action="Index">📅 Lịch học</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "SubjectW" ? "active-flame" : "")"
-                        asp-controller="SubjectW" asp-action="Index">📘 Khoai môn</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active-flame" : "")"
-                           asp-controller="Attendance" asp-action="IndexSession">📘 Điểm danh</a>
-
-                    @if (User.HasClaim("Permission", "AddRole"))
-
-                    {
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Roles" ? "active-flame" : "")"
-                           asp-controller="Roles" asp-action="Index">👤 Phân quyền người dùng</a>
-                    </li>                        
+                    @if (User.IsInRole("Admin"))
+                    {                                      
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Users" ? "active-flame" : "")" asp-controller="Users" asp-action="Index">👤 Quản lý người dùng</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Teacher" ? "active-flame" : "")" asp-controller="Teacher" asp-action="Index">👤 Danh sách giảng viên</a>
+                        </li>
                     }
-
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClassMvc" ? "active-flame" : "")"
-                           asp-controller="ClassMvc" asp-action="Index">🏫 Class</a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Student" ? "active-flame" : "")" asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Complaint" ? "active-flame" : "")"
-                           asp-controller="Complaint" asp-action="Index"> ⚠️ Khiếu nại</a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Statistical" ? "active-flame" : "")" asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Scheduless" ? "active-flame" : "")" asp-controller="Scheduless" asp-action="Index">📅 Lịch học</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "SubjectW" ? "active-flame" : "")" asp-controller="SubjectW" asp-action="Index">📘 Môn học</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active-flame" : "")" asp-controller="Attendance" asp-action="IndexSession">📘 Điểm danh</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClassMvc" ? "active-flame" : "")" asp-controller="ClassMvc" asp-action="Index">🏫 Lớp học</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Complaint" ? "active-flame" : "")" asp-controller="Complaint" asp-action="Index">⚠️ Khiếu nại</a>
                     </li>
                     @if (User.HasClaim("Permission", "Create"))
                     {
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Roles" ? "active-flame" : "")"
-                               asp-controller="Roles" asp-action="Index">🛡️ Phân quyền người dùng</a>
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Roles" ? "active-flame" : "")" asp-controller="Roles" asp-action="Index">🛡️ Phân quyền</a>
                         </li>
                     }
-
-                    <hr />
-
-                    <div class="dropdown me-3">
-                                @if (User.Identity.IsAuthenticated)
-                                {
-                            <button class="btn btn-light dropdown-toggle" type="button" id="userDropdown"
-                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                👋 Xin chào, @User.Identity?.Name
-                            </button>
-
-                            <ul class="dropdown-menu" aria-labelledby="userDropdown">
-                                <li>
-                                    <a class="dropdown-item @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexUser" ? "active-flame" : "")"
-                                       asp-controller="Users" asp-action="IndexUser">
-                                        👤 Hồ sơ cá nhân
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexLog" ? "active-flame" : "")"
-                                       asp-controller="Users" asp-action="IndexLog">
-                                        🕓 Lịch sử hoạt động
-                                    </a>
-                                </li>
-                            </ul>
-
-                            <hr />
-                            <li>
-                                <form method="post" asp-controller="Users" asp-action="Logout" class="dropdown-item p-0 m-0">
-                                    <button type="submit" class="btn btn-link w-100 text-start px-3 py-2">🚪 Đăng xuất</button>
-                                </form>
-                            </li>
-                                }
-                                else
-                                {
-                            <a class="btn btn-outline-primary btn-sm" asp-controller="Users" asp-action="Login"> 🔐 Đăng nhập</a>
-                                }
-                    </div>
                 </ul>
 
+                <hr />
+
+                <div class="dropdown">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <button class="btn btn-light text-dark w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            👋 Xin chào, @User.Identity?.Name
+                        </button>
+                        <ul class="dropdown-menu w-100">
+                            <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a></li>
+                            <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexLog">🕓 Lịch sử hoạt động</a></li>
+                            <li>
+                                <form method="post" asp-controller="Users" asp-action="Logout">
+                                    <button type="submit" class="dropdown-item">🚪 Đăng xuất</button>
+                                </form>
+                            </li>
+                        </ul>
+                    }
+                    else
+                    {
+                        <a class="btn btn-outline-light w-100" asp-controller="Users" asp-action="Login">🔐 Đăng nhập</a>
+                    }
+                </div>
             </div>
 
-            <!-- Content -->
-            <div class="col-md-10 pt-3">
+            <!-- Main Content -->
+            <div class="col-md-10 pt-3 bg-light">
                 @RenderBody()
             </div>
         </div>
     </div>
 
     <!-- Loader -->
-    <div id="page-loader" class="loader my-4 position-fixed top-50 start-50 translate-middle" style="z-index: 1050;"></div>
+    <div id="page-loader" class="loader position-fixed top-50 start-50 translate-middle" style="z-index: 1050;"></div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

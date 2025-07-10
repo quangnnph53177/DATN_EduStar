@@ -26,6 +26,7 @@
             <th>Học kỳ</th>
             <th>Năm học</th>
             <th>Số tín chỉ</th>
+            <th>Giảng viên phụ trách</th>
             <th>Chức năng</th>
         </tr>
     </thead>
@@ -41,6 +42,7 @@
                     <td>@Html.DisplayFor(modelItem => item.Semester)</td>
                     <td>@Html.DisplayFor(modelItem => item.YearSchool)</td>
                     <td>@Html.DisplayFor(modelItem => item.NumberOfCredits)</td>
+                    <td>@Html.DisplayFor(modelItem => item.TeacherName)</td>
                     <td>
                         <a asp-action="Edit" asp-route-id="@item.ClassId" class="btn btn-sm btn-info">Sửa</a> |
                         <a asp-action="Details" asp-route-id="@item.ClassId" class="btn btn-sm btn-secondary">Chi tiết</a> |

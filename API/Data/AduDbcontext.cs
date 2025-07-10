@@ -151,6 +151,11 @@ public partial class AduDbcontext : DbContext
             entity.HasOne(d => d.Subject).WithMany(p => p.Classes)
                 .HasForeignKey(d => d.SubjectId)
                 .HasConstraintName("FK_Classes_Subject");
+            // ✅ Quan hệ UsersId → User
+            entity.HasOne(c => c.User)
+                .WithMany(u => u.Classes)
+                .HasForeignKey(c => c.UsersId)
+                .HasConstraintName("FK_Classes_Users");
 
             entity.HasMany(d => d.Students).WithMany(p => p.Classes)
                 .UsingEntity<Dictionary<string, object>>(
@@ -224,15 +229,15 @@ public partial class AduDbcontext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__DayOfWeek__3214EC079A470A2D");
 
             entity.Property(e => e.Weekdays).HasMaxLength(10);
-            entity.HasData(
-                new DayOfWeekk { Id = 1, Weekdays = "Monday" },
-                new DayOfWeekk { Id = 2, Weekdays = "Tuesday" },
-                new DayOfWeekk { Id = 3, Weekdays = "Wednesday" },
-                new DayOfWeekk { Id = 4, Weekdays = "Thursday" },
-                new DayOfWeekk { Id = 5, Weekdays = "Friday" },
-                new DayOfWeekk { Id = 6, Weekdays = "Saturday" },
-                new DayOfWeekk { Id = 7, Weekdays = "Sunday" }
-            );
+            //entity.HasData(
+            //    new DayOfWeekk { Id = 1, Weekdays = "Monday" },
+            //    new DayOfWeekk { Id = 2, Weekdays = "Tuesday" },
+            //    new DayOfWeekk { Id = 3, Weekdays = "Wednesday" },
+            //    new DayOfWeekk { Id = 4, Weekdays = "Thursday" },
+            //    new DayOfWeekk { Id = 5, Weekdays = "Friday" },
+            //    new DayOfWeekk { Id = 6, Weekdays = "Saturday" },
+            //    new DayOfWeekk { Id = 7, Weekdays = "Sunday" }
+            //);
         });
 
         modelBuilder.Entity<Permission>(entity =>

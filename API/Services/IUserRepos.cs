@@ -6,9 +6,7 @@ namespace API.Services
 {
     public interface IUserRepos
     {
-        //Task<UserDTO> SearchUser(string? username, string? usercode, string? fullname, string? email);
-        Task<IEnumerable<UserDTO>> GetAllUsers(List<int> currentUserRoleIds, string? currentUserName);
-        Task<IEnumerable<UserDTO>> GetAllUsersNoTeacher(List<int> currentUserRoleIds, string? currentUserName);
+        Task<IEnumerable<UserDTO>> GetAllUsers(List<int> currentUserRoleIds, string? currentUserName, bool excludeTeacher = false);
         Task<User> Register(UserDTO user, IFormFile? imgFile);
         Task CleanupUnconfirmedUsers();
         Task<LoginResult> Login(string userName, string password);
@@ -16,7 +14,7 @@ namespace API.Services
         Task<bool> ConfirmEmail(string token);
         Task<string> LockUser(string userName);
         Task<string> ChangeRole(string userName, int newRoleId);
-        //Task<IEnumerable<UserDTO>> GetStudentByTeacher(Guid teacherId);
+        Task<TeacherWithClassesViewModel> GetStudentByTeacher(Guid? teacherId);
         Task ForgetPassword(string email);
         Task<string> ResetPassword(string token, string newPassword);
 
@@ -25,6 +23,7 @@ namespace API.Services
     {
         public string Token { get; set; }
         public List<int> RoleId { get; set; }
+        public List<string> RoleName { get; set; }
         public string UserName { get; set; }
         public List<string> Permission { get; set; }
     }

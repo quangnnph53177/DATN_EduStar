@@ -1,0 +1,89 @@
+﻿@model API.ViewModel.UserDTO
+
+@{
+    ViewData["Title"] = "Cập nhật người dùng";
+}
+
+<h2>Cập nhật người dùng</h2>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<form asp-action="UpdateUser" method="post" enctype="multipart/form-data">
+    <!-- Username: hidden vì không cho sửa -->
+    <input type="hidden" name="UserName" value="@Model.UserName" />
+
+    <!-- PassWordHash: hidden vì không cho sửa -->
+    <input type="hidden" name="PassWordHash" value="@Model.PassWordHash" />
+
+    <!-- Email -->
+    <div class="mb-3">
+        <label>Email</label>
+        <input type="text" name="Email" class="form-control" value="@Model.Email" />
+    </div>
+
+    <!-- PhoneNumber -->
+    <div class="mb-3">
+        <label>Số điện thoại</label>
+        <input type="text" name="PhoneNumber" class="form-control" value="@Model.PhoneNumber" />
+    </div>
+
+    @if (User.IsInRole("1"))
+    {
+        <div class="form-group">
+            <label>Mã người dùng</label>
+            <input type="text" name="UserCode" value="@Model.UserCode" class="form-control" />
+        </div>
+    }
+
+    <div class="form-group">
+        <label>Họ và tên</label>
+        <input type="text" name="FullName" value="@Model.FullName" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Giới tính</label>
+        <select name="Gender" class="form-control">
+            <option value="true" selected="@(Model.Gender == true ? "selected" : null)">Nam</option>
+            <option value="false" selected="@(Model.Gender == false ? "selected" : null)">Nữ</option>
+        </select>
+    </div>
+@* 
+    <div class="form-group">
+        <label>Avatar</label>
+        <input type="text" name="Avatar" value="https://localhost:7298/@Model.Avatar" class="form-control" />
+    </div>
+ *@
+    <div class="form-group">
+        <label>Địa chỉ</label>
+        <input type="text" name="Address" value="@Model.Address" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="imgFile">Ảnh đại diện</label>
+        <input type="file" name="imgFile" id="imgFile" value="https://localhost:7298/@Model.Avatar" class="form-control" accept=".jpg,.jpeg,.png" />
+        <small class="text-muted">Chỉ chấp nhận định dạng: .jpg, .jpeg, .png</small>
+        <span asp-validation-for="Address" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label>Ngày sinh</label>
+        <input type="date" name="Dob" value="@(Model.Dob?.ToString("yyyy-MM-dd"))" class="form-control" />
+    </div>
+    @* 
+    <div class="form-group">
+        <label>Trạng thái</label>
+        <select name="Statuss" class="form-control">
+            <option value="true" selected="@(Model.Statuss.ToString().ToLower())">Hoạt động</option>
+            <option value="false" selected="@((!Model.Statuss).ToString().ToLower())">Đã khóa</option>
+        </select>
+    </div> *@
+
+    <button type="submit" class="btn btn-primary mt-3">Cập nhật</button>
+    <a asp-action="Index" class="btn btn-secondary mt-3">Quay lại</a>
+</form>

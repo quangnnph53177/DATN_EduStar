@@ -36,5 +36,24 @@ namespace API.ViewModel
         [DataType(DataType.Date)]
         [Display(Name = "Ngày sinh")]
         public DateTime? Dob { get; set; }
+
+
+        // 👉 Tạo Initials để hiển thị viết tắt tên người dùng
+        public string Initials
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(FullName))
+                    return "NA";
+
+                var parts = FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 1)
+                    return parts[0].Substring(0, 1).ToUpper();
+
+                // Lấy chữ cái đầu của từ đầu tiên và từ cuối cùng (VD: Nguyễn Văn A -> NA)
+                return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
+            }
+        }
+
     }
 }

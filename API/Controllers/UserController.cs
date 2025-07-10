@@ -29,7 +29,7 @@ namespace API.Controllers
             _logRepos = auditLogRepos;
             _context = aduDbcontext;
         }
-       // [Authorize(Policy = "CreateUS")]
+        // [Authorize(Policy = "CreateUS")]
         [HttpPost("register")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Register([FromForm] UserDTO userDto, IFormFile? imgFile)
@@ -39,7 +39,7 @@ namespace API.Controllers
 
             try
             {
-                var createdUser = await _userRepos.Register(userDto,imgFile);
+                var createdUser = await _userRepos.Register(userDto, imgFile);
                 var newData = JsonSerializer.Serialize(new
                 {
                     createdUser.Email,
@@ -96,7 +96,7 @@ namespace API.Controllers
                 return Unauthorized(new { success = false, error = ex.Message });
             }
         }
-       // [Authorize(Policy = "CreateUS")]
+        // [Authorize(Policy = "CreateUS")]
         [HttpPost("upload")]
         public async Task<IActionResult> Upload(IFormFile file)
         {
@@ -169,7 +169,7 @@ namespace API.Controllers
                             Statuss = true,
                             CreateAt = DateTime.Now
                         };
-                        var createdUser = await _userRepos.Register(userDto,null);
+                        var createdUser = await _userRepos.Register(userDto, null);
                         usersCreated.Add(userName);
                         var newData = JsonSerializer.Serialize(new
                         {
@@ -204,7 +204,7 @@ namespace API.Controllers
                 return BadRequest(new { error = "Lỗi khi xử lý file Excel: " + ex.Message });
             }
         }
-       // [Authorize(Policy = "CreateUS")]
+        // [Authorize(Policy = "CreateUS")]
         [HttpDelete("cleanup-unconfirmed")]
         public async Task<IActionResult> CleanupUnconfirmed()
         {
@@ -286,7 +286,7 @@ namespace API.Controllers
         //}
 
         [HttpGet("admin")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> GetAdminView()
         {
             var currentUserRoleIds = User.Claims
@@ -301,8 +301,8 @@ namespace API.Controllers
             return Ok(filtered); // hoặc return View("AdminView", filtered);
         }
 
-        [HttpGet("lecturer")]
-        [Authorize(Roles = "Teacher,Admin")]
+        [HttpGet("teacher")]
+        [Authorize(Roles = "1,2")]
         public async Task<IActionResult> GetLecturerView()
         {
             var currentUserRoleIds = User.Claims
@@ -318,9 +318,9 @@ namespace API.Controllers
             IEnumerable<UserDTO> filteredUsers;
             if (currentUserRoleIds.Contains(1)) // Admin
             {
-                filteredUsers = users.Where(u => u.RoleIds.Any(rid =>rid == 2 )/* && u.UserName != currentUserName*/);
+                filteredUsers = users.Where(u => u.RoleIds.Contains(2)/* && u.UserName != currentUserName*/);
             }
-            else if(currentUserRoleIds.Contains(2)) // Giảng viên
+            else if (currentUserRoleIds.Contains(2)) // Giảng viên
             {
                 filteredUsers = users.Where(u => u.UserName == currentUserName)/* && u.UserName != currentUserName*/;
             }
@@ -328,69 +328,79 @@ namespace API.Controllers
             {
                 return Forbid("Bạn không có quyền truy cập vào trang này.");
             }
-                return Ok(filteredUsers); // hoặc return View("LecturerView", filtered);
+            return Ok(filteredUsers); // hoặc return View("LecturerView", filtered);
         }
 
-        //[HttpGet("student")]
-        //[Authorize(Roles = "Student")]
-        //public async Task<IActionResult> GetStudentView()
-        //{
-        //    var currentUserRoleIds = User.Claims
-        //           .Where(c => c.Type == ClaimTypes.Role)
-        //           .Select(c => int.Parse(c.Value))
-        //           .ToList();
-        //    var currentUserName = User.Identity?.Name;
-        //    if (string.IsNullOrEmpty(currentUserName))
-        //        return Unauthorized("Không tìm thấy thông tin người dùng");
-        //    var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
-        //    // Lọc theo vai trò
-        //    IEnumerable<UserDTO> filteredUsers;
-        //    if (currentUserRoleIds.Contains(1)) // Admin
-        //    {
-        //        filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 3)/* && u.UserName != currentUserName*/);
-        //    }
-        //    else if (currentUserRoleIds.Contains(2)) // Giảng viên
-        //    {
-        //        // Lấy thông tin giảng viên hiện tại
-        //        var teacher = users.FirstOrDefault(u => u.UserName == currentUserName);
-        //        //if (teacher == null)
-        //        //    return Forbid();
-        //        //// Lấy danh sách sinh viên theo lớp của giảng viên
-        //        //var classList = await _context.
-        //    }
-        //    else
-        //    {
-        //        filteredUsers = users.Where(u => u.UserName == currentUserName);
-        //    }
-        //    return Ok(filteredUsers);
-        //}
+        [HttpGet("student")]
+        [Authorize(Roles = "1,2,3")]
+        public async Task<IActionResult> GetStudentView()
+        {
+            try
+            {
+                var currentUserRoleIds = User.Claims
+                       .Where(c => c.Type == ClaimTypes.Role)
+                       .Select(c => int.Parse(c.Value))
+                       .ToList();
+                var currentUserName = User.Identity?.Name;
+                if (string.IsNullOrEmpty(currentUserName))
+                    return Unauthorized("Không tìm thấy thông tin người dùng");
+                var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+                // Lọc theo vai trò
+                IEnumerable<UserDTO> filteredUsers;
+                if (currentUserRoleIds.Contains(1)) // Admin
+                {
+                    filteredUsers = users.Where(u => u.RoleIds.Contains(3)/* && u.UserName != currentUserName*/);
+                }
+                else if (currentUserRoleIds.Contains(2)) // Giảng viên
+                {
+                    // Lấy thông tin giảng viên hiện tại
+                    var teacher = users.FirstOrDefault(u => u.UserName == currentUserName);
+                    if (teacher == null)
+                        return Forbid("Không tìm thấy giảng viên.");
+                    // Lấy danh sách sinh viên theo lớp của giảng viên
+                    var classList = await _userRepos.GetStudentByTeacher(teacher.Id);
+                    filteredUsers = classList.Classes.SelectMany(c => c.StudentsInfor).ToList(); 
+                }
+                else
+                {
+                    filteredUsers = users.Where(u => u.UserName == currentUserName);
+                }
+                return Ok(filteredUsers);
 
-        //[Authorize(Policy = "DetailUS")]
-        //[HttpGet("me")]
-        //public async Task<IActionResult> GetCurrentUser()
-        //{
-        //    var currentUserRoleIds = User.Claims
-        //           .Where(c => c.Type == ClaimTypes.Role)
-        //           .Select(c => int.Parse(c.Value))
-        //           .ToList();
-        //    var currentUserName = User.Identity?.Name;
-        //    if (string.IsNullOrEmpty(currentUserName))
-        //        return Unauthorized("Không tìm thấy thông tin người dùng");
-        //    try
-        //    {
-        //        // Lấy tất cả user, sau đó chỉ lấy user có UserName trùng với user hiện tại
-        //        var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
-        //        var user = users.FirstOrDefault(u => u.UserName == currentUserName);
-        //        if (user == null)
-        //            return NotFound("Không tìm thấy người dùng hiện tại.");
-        //        return Ok(user);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(new { error = ex.Message });
-        //    }
-        //}
-        // [Authorize(Policy = "SearchUS")]
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"❌ Exception: {ex.GetType().Name} - {ex.Message}\nStackTrace:\n{ex.StackTrace}");
+            }
+
+        }
+
+        [Authorize(Policy = "DetailUS")]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var currentUserRoleIds = User.Claims
+                   .Where(c => c.Type == ClaimTypes.Role)
+                   .Select(c => int.Parse(c.Value))
+                   .ToList();
+            var currentUserName = User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUserName))
+                return Unauthorized("Không tìm thấy thông tin người dùng");
+            try
+            {
+                // Lấy tất cả user, sau đó chỉ lấy user có UserName trùng với user hiện tại
+                var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+                var user = users.FirstOrDefault(u => u.UserName == currentUserName);
+                if (user == null)
+                    return NotFound("Không tìm thấy người dùng hiện tại.");
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+        [Authorize(Policy = "SearchUS")]
         [HttpGet("searchuser")]
         public async Task<IActionResult> SearchUser([FromQuery] string? keyword)
         {
@@ -426,9 +436,9 @@ namespace API.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-       // [Authorize(Policy = "EditUS")]
+        // [Authorize(Policy = "EditUS")]
         [HttpPut("updateuser/{username}")]
-        public async Task<IActionResult> UpdateUser(string username, [FromForm] UserDTO userDto,IFormFile? imgFile)
+        public async Task<IActionResult> UpdateUser(string username, [FromForm] UserDTO userDto, IFormFile? imgFile)
         {
             var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
             var currentUserName = User.Identity?.Name;
@@ -440,7 +450,7 @@ namespace API.Controllers
             try
             {
                 // Lấy danh sách user được phép truy cập
-                var allowedUsers = await _userRepos.GetAllUsersNoTeacher(currentUserRoleIds, currentUserName);
+                var allowedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName, true);
 
                 // Kiểm tra người cần sửa có nằm trong danh sách được phép không
                 var targetUser = allowedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
@@ -499,7 +509,7 @@ namespace API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-       // [Authorize(Policy = "CreateUS")]
+        // [Authorize(Policy = "CreateUS")]
         [HttpPost("lock/{username}")]
         public async Task<IActionResult> LockUser(string username)
         {

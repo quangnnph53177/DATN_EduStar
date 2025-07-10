@@ -1,0 +1,44 @@
+﻿@model API.ViewModel.UserDTO
+
+@{
+    ViewData["Title"] = "Thông tin người dùng";
+}
+
+<h2>Thông tin người dùng</h2>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<div class="card mt-4">
+    <div class="card-body">
+        <h4 class="card-title">@Model.FullName (@Model.UserName)</h4>
+
+        <p><strong>Email:</strong> @Model.Email</p>
+        <p><strong>Số điện thoại:</strong> @Model.PhoneNumber</p>
+        <p><strong>Mã người dùng:</strong> @Model.UserCode</p>
+        <p><strong>Giới tính:</strong> @(Model.Gender == true ? "Nam" : "Nữ")</p>
+        <p><strong>Ngày sinh:</strong> @Model.Dob?.ToString("dd/MM/yyyy")</p>
+        <p><strong>Địa chỉ:</strong> @Model.Address</p>
+        <p><strong>Trạng thái:</strong> @(Model.Statuss == true ? "Hoạt động" : "Đã khóa")</p>
+
+        @if (!string.IsNullOrEmpty(Model.Avatar))
+        {
+            <strong>Ảnh đại diện:</strong>
+            <div class="mt-3"> 
+                <img src="https://localhost:7298/@Model.Avatar" alt="Avatar" style="max-width: 150px; border-radius: 10px;" />
+            </div>
+        }
+        @if (User.Identity.Name == Model.UserName || User.IsInRole("1"))
+         {
+            <a asp-action="UpdateUser" asp-route-username="@Model.UserName" class="btn btn-primary mt-3">Chỉnh sửa</a>
+         }
+        <a asp-action="Index" class="btn btn-secondary mt-3">Quay lại danh sách</a>
+    </div>
+</div>

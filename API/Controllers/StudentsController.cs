@@ -1,8 +1,10 @@
 ﻿using API.Services;
+using API.Services.Repositories;
 using API.ViewModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace API.Controllers
 {
@@ -11,11 +13,14 @@ namespace API.Controllers
     public class StudentsController : ControllerBase
     {
         private readonly IStudent _service;
+        private readonly IUserRepos _userRepos;
 
-        public StudentsController(IStudent service)
+        public StudentsController(IStudent service, IUserRepos userRepos)
         {
             _service = service;
+            _userRepos = userRepos;
         }
+
         [HttpGet]
         public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status)
         {
@@ -23,12 +28,62 @@ namespace API.Controllers
                     string.IsNullOrEmpty(fullName) &&
                     string.IsNullOrEmpty(username) &&
                     string.IsNullOrEmpty(email) &&
-                        gender == null&&
-                        status ==null)
+                        gender == null &&
+                        status == null)
             {
                 var itemindex = await _service.GetAllStudents();
 
                 return Ok(itemindex);
+            }
+            var result = await _service.Search(StudentCode, fullName, username, email, gender, status);
+
+            if (result == null || !result.Any())
+            {
+                return NotFound(new { message = "Không tìm thấy sinh viên phù hợp." });
+            }
+
+            return Ok(result);
+        }
+        [HttpGet("student")]
+        // [Authorize(Roles = "1,2,3")]
+        public async Task<IActionResult> GetStudentView(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status)
+        {
+            var currentUserRoleIds = User.Claims
+                   .Where(c => c.Type == ClaimTypes.Role)
+                   .Select(c => int.Parse(c.Value))
+                   .ToList();
+            var currentUserName = User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUserName))
+                return Unauthorized("Không tìm thấy thông tin người dùng");
+            if (string.IsNullOrEmpty(StudentCode) &&
+                   string.IsNullOrEmpty(fullName) &&
+                   string.IsNullOrEmpty(username) &&
+                   string.IsNullOrEmpty(email) &&
+                       gender == null &&
+                       status == null)
+            {
+                var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+                // Lọc theo vai trò
+                IEnumerable<UserDTO> filteredUsers;
+                if (currentUserRoleIds.Contains(1)) // Admin
+                {
+                    filteredUsers = users.Where(u => u.RoleIds.Contains(3)/* && u.UserName != currentUserName*/);
+                }
+                else if (currentUserRoleIds.Contains(2)) // Giảng viên
+                {
+                    // Lấy thông tin giảng viên hiện tại
+                    var teacher = users.FirstOrDefault(u => u.UserName == currentUserName);
+                    if (teacher == null)
+                        return Forbid("Không tìm thấy giảng viên.");
+                    // Lấy danh sách sinh viên theo lớp của giảng viên
+                    var classList = await _userRepos.GetStudentByTeacher(teacher.Id);
+                    filteredUsers = classList.Classes.SelectMany(c => c.StudentsInfor).ToList();
+                }
+                else
+                {
+                    filteredUsers = users.Where(u => u.UserName == currentUserName);
+                }
+                return Ok(filteredUsers);
             }
             var result = await _service.Search(StudentCode, fullName, username, email, gender, status);
 
@@ -89,7 +144,7 @@ namespace API.Controllers
             }
         }
         [HttpPut("beast/{id}")]
-        public async Task<IActionResult> UpdateWithbeast(Guid Id, StudentViewModels model )
+        public async Task<IActionResult> UpdateWithbeast(Guid Id, StudentViewModels model)
         {
             if (Id != model.id)
             {
@@ -117,7 +172,7 @@ namespace API.Controllers
         {
             // Kiểm tra lại thông tin sinh viên để xác định lý do
             var sv = await _service.GetById(id);
-               
+
             var result = await _service.DeleteStudent(id);
 
             if (!result)
@@ -128,7 +183,7 @@ namespace API.Controllers
                 if (sv.Status == true)
                     return BadRequest(new { message = "Không thể xóa vì sinh viên đang hoạt động." });
 
-                if (sv.id != null )
+                if (sv.id != null)
                     return BadRequest(new { message = "Không thể xóa vì sinh viên đã được phân lớp." });
 
                 return BadRequest(new { message = "Không thể xóa sinh viên vì lý do không xác định." });
@@ -173,7 +228,7 @@ namespace API.Controllers
         [HttpPost("SendEmail")]
         public async Task<IActionResult> SendtoClass(int classId, string subject)
         {
-            await _service.SendNotificationtoClass(classId, subject );
+            await _service.SendNotificationtoClass(classId, subject);
             return Ok();
         }
         [HttpPost("gui")]

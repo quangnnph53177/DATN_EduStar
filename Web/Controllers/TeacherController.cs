@@ -1,20 +1,16 @@
 ﻿using API.Models;
 using API.ViewModel;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Text;
 using System.Text.Json;
 
 namespace Web.Controllers
 {
-    public class UsersController : Controller
+    public class TeacherController : Controller
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        public UsersController(IHttpClientFactory httpClientFactory)
+        public TeacherController(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
         }
@@ -33,99 +29,9 @@ namespace Web.Controllers
             return client;
         }
         [HttpGet]
-        public IActionResult Login()
-        {
-            return View();
-        }
-        [HttpPost]
-        public async Task<IActionResult> Login(LoginDTO loginDto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(loginDto);
-            }
-            var client = _httpClientFactory.CreateClient("EdustarAPI");
-
-            var content = new StringContent(JsonSerializer.Serialize(loginDto), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync("api/User/login", content);
-            if (response.IsSuccessStatusCode)
-            {
-                var responseContent = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(responseContent);
-
-                var token = doc.RootElement.GetProperty("token").GetString();
-                var userName = doc.RootElement.GetProperty("userName").GetString();
-
-                var claims = new List<Claim>
-                {
-                    new(ClaimTypes.Name, userName ?? "")
-                };
-                //Thêm các Role để sử dụng sau này
-                if (doc.RootElement.TryGetProperty("roleId", out var roleArray) && roleArray.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var role in roleArray.EnumerateArray())
-                    {
-                        var roleValue = role.GetInt32().ToString();
-                        claims.Add(new Claim("RoleId", roleValue));
-                    }
-                }
-                if (doc.RootElement.TryGetProperty("roleName", out var roleNameArray) && roleNameArray.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var roleName in roleNameArray.EnumerateArray())
-                    {
-                        var name = roleName.GetString();
-                        if (!string.IsNullOrWhiteSpace(name))
-                        {
-                            claims.Add(new Claim(ClaimTypes.Role, name)); // 👈 sử dụng cho IsInRole()
-                        }
-                    }
-                }
-                //Thêm permission claims để sử dụng VD: if (User.HasClaim("Permission", "Create"))
-                if (doc.RootElement.TryGetProperty("permission", out var permissionElement) && permissionElement.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var perm in permissionElement.EnumerateArray())
-                    {
-                        var permission = perm.GetString();
-                        if (!string.IsNullOrWhiteSpace(permission))
-                        {
-                            claims.Add(new Claim("Permission", permission));
-                        }
-                    }
-                }
-                var claimsIdentity = new ClaimsIdentity(
-                    claims,
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    ClaimTypes.Name,
-                    ClaimTypes.Role
-                );
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
-
-                Response.Cookies.Append("JWToken", token ?? "", new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = DateTimeOffset.UtcNow.AddHours(1)
-                });
-
-                TempData["SuccessMessage"] = "Đăng nhập thành công!";
-                return RedirectToAction("Index", "Home");
-            }
-            TempData["ErrorMessage"] = "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.";
-            return View(loginDto);
-        }
-        [HttpPost]
-        public async Task<IActionResult> Logout()
-        {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            Response.Cookies.Delete("JWToken");
-            return RedirectToAction("Login", "Users");
-        }
-
-        [HttpGet]
         public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
+
             var client = GetClientWithToken();
             if (client == null)
             {
@@ -133,7 +39,7 @@ namespace Web.Controllers
                 return RedirectToAction("Login", "Users");
             }
 
-            var response = await client.GetAsync("api/User/admin");
+            var response = await client.GetAsync("api/User/teacher");
 
             if (response.IsSuccessStatusCode)
             {
@@ -163,7 +69,6 @@ namespace Web.Controllers
             TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy danh sách người dùng.";
             return View(new PagedResult<UserDTO>());
         }
-        
         [HttpGet]
         public async Task<IActionResult> Register()
         {
@@ -205,7 +110,7 @@ namespace Web.Controllers
             using var content = new MultipartFormDataContent();
 
             content.Add(new StringContent(model.User.UserName ?? ""), "UserName");
-            content.Add(new StringContent(model.User.PassWordHash ?? ""), "PassWordHash");   
+            content.Add(new StringContent(model.User.PassWordHash ?? ""), "PassWordHash");
             content.Add(new StringContent(model.User.Email ?? ""), "Email");
             content.Add(new StringContent(model.User.PhoneNumber ?? ""), "PhoneNumber");
             content.Add(new StringContent(model.User.FullName ?? ""), "FullName");
@@ -273,32 +178,6 @@ namespace Web.Controllers
             TempData["ErrorMessage"] = "Tải lên không thành công.";
             return View();
 
-        }
-        public IActionResult Confirm()
-        {
-            return View(); // Trả về form nhập token
-        }
-        [HttpPost]
-        public async Task<IActionResult> Confirm(string token)
-        {
-            if (string.IsNullOrEmpty(token))
-            {
-                TempData["ErrorMessage"] = "Vui lòng nhập token.";
-                return RedirectToAction("Confirm");
-            }
-            var client = _httpClientFactory.CreateClient("EdustarAPI");
-            var response = await client.GetAsync($"api/User/confirm?token={token}");
-
-            if (response.IsSuccessStatusCode)
-            {
-                TempData["SuccessMessage"] = "Xác nhận email thành công.";
-            }
-            else
-            {
-                TempData["ErrorMessage"] = "Xác nhận thất bại. Token không hợp lệ hoặc đã hết hạn.";
-            }
-
-            return RedirectToAction("Confirm");
         }
         [HttpGet]
         public async Task<IActionResult> SearchUS(string? keyword, int page = 1, int pageSize = 10)
@@ -554,117 +433,6 @@ namespace Web.Controllers
             {
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
                 return RedirectToAction("Index");
-            }
-        }
-        [HttpGet]
-        public IActionResult ForgetPassword()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> ForgetPassword(string email)
-        {
-            try
-            {
-                var client = _httpClientFactory.CreateClient("EdustarAPI");
-                var content = new StringContent(JsonSerializer.Serialize(email), Encoding.UTF8, "application/json");
-
-                var response = await client.PostAsync("https://localhost:7298/api/User/forgetpassword", content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Vui lòng kiểm tra email để đặt lại mật khẩu.";
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    TempData["ErrorMessage"] = !string.IsNullOrEmpty(errorContent) ? errorContent : "Gửi email thất bại.";
-                }
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-            }
-
-            return RedirectToAction("ForgetPassword");
-        }
-        [HttpGet]
-        public IActionResult ResetPassword(string token)
-        {
-            return View(model: token);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> ResetPassword(string token, string newPassword)
-        {
-            try
-            {
-                var client = _httpClientFactory.CreateClient("EdustarAPI");
-
-                var resetDto = new
-                {
-                    Token = token,
-                    NewPassword = newPassword
-                };
-
-                var content = new StringContent(JsonSerializer.Serialize(resetDto), Encoding.UTF8, "application/json");
-
-                var response = await client.PutAsync("https://localhost:7298/api/User/resetpassword", content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Đặt lại mật khẩu thành công.";
-                    return RedirectToAction("Login");
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    TempData["ErrorMessage"] = !string.IsNullOrEmpty(errorContent) ? errorContent : "Đặt lại mật khẩu thất bại.";
-                    return RedirectToAction("ResetPassword", new { token });
-                }
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return RedirectToAction("ResetPassword", new { token });
-            }
-        }
-        [HttpGet]
-        public async Task<IActionResult> IndexLog()
-        {
-            try
-            {
-                var client = GetClientWithToken();
-                var response = await client.GetAsync("https://localhost:7298/api/User/log");
-                if (response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var logs = JsonSerializer.Deserialize<List<AuditLogViewModel>>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-
-                    return View(logs);
-                }
-                TempData["ErrorMessage"] = "Không thể tải nhật ký hoạt động.";
-                return View(new List<AuditLogViewModel>());
-
-            }
-            catch (HttpRequestException ex)
-            {
-                TempData["ErrorMessage"] = $"Không thể kết nối đến server API: {ex.Message}";
-                return RedirectToAction("Login");
-            }
-            catch (TaskCanceledException)
-            {
-                TempData["ErrorMessage"] = "Yêu cầu bị timeout khi kết nối API.";
-                return RedirectToAction("Login");
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return View();
             }
         }
     }

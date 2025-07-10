@@ -141,6 +141,7 @@ namespace Web.Controllers
                         ClassName = classViewModel.ClassName,
                         Semester = classViewModel.Semester,
                         YearSchool = classViewModel.YearSchool,
+                        TeacherName = classViewModel.TeacherName,
                     };
                 }
                 else

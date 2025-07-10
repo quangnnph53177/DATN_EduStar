@@ -22,7 +22,9 @@ namespace API.Services
         // Đã loại bỏ mapping cho Description và NumberOfCredits vì chúng không có trong Model
         private ClassViewModel MapToClassViewModel(Class classEntity)
         {
+                
             if (classEntity == null) return null;
+            var isTeacher = classEntity.User?.Roles?.Any(r => r.Id == 2) == true;
 
             return new ClassViewModel
             {
@@ -32,6 +34,7 @@ namespace API.Services
 
                 // Thuộc tính SubjectName có trong Model Subject
                 SubjectName = classEntity.Subject?.SubjectName,
+                TeacherName = isTeacher? classEntity.User?.UserProfile?.FullName : null,
 
                 // Thuộc tính YearSchool có trong Model Class
                 YearSchool = classEntity.YearSchool ?? 0, // Dùng ?? để xử lý giá trị null
@@ -62,9 +65,13 @@ namespace API.Services
         {
             var classes = await _context.Classes
                                         .Include(c => c.Subject)
+                                        .Include(s => s.User)
+                                                .ThenInclude(u => u.UserProfile)
+                                        .Include(c => c.User) // Bao gồm thông tin giảng viên
+                                            .ThenInclude(u=>u.Roles)
                                         .Include(c => c.Students)
                                             .ThenInclude(s => s.User)
-                                                .ThenInclude(u => u.UserProfile)
+                                                .ThenInclude(u => u.UserProfile)                                        
                                         .ToListAsync();
 
             return classes.Select(c => MapToClassViewModel(c));
@@ -77,6 +84,10 @@ namespace API.Services
                                             .Include(c => c.Students)
                                                 .ThenInclude(s => s.User)
                                                     .ThenInclude(u => u.UserProfile)
+                                            .Include(c => c.User)
+                                                .ThenInclude(u => u.Roles)
+                                            .Include(c => c.User) // Bao gồm thông tin giảng viên
+                                                .ThenInclude(u => u.UserProfile)
                                             .FirstOrDefaultAsync(c => c.Id == id);
 
             return MapToClassViewModel(classEntity);
@@ -84,13 +95,25 @@ namespace API.Services
 
         public async Task AddClassAsync(ClassCreateViewModel classViewModel)
         {
+            // Tìm giảng viên theo tên
+            var teacher = await _context.Users
+                .Include(u => u.Roles)
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u =>
+                    u.UserProfile.FullName == classViewModel.TeacherName &&
+                    u.Roles.Any(r => r.Id == 2)
+                );
+
+            if (teacher == null)
+                throw new Exception("Không tìm thấy giảng viên phù hợp.");
+
             var newClass = new Class
             {
                 NameClass = classViewModel.ClassName,
                 SubjectId = classViewModel.SubjectId,
                 Semester = classViewModel.Semester,
                 YearSchool = classViewModel.YearSchool,
-                // Không map MaxStudents và InstructorId vì Model không có
+                UsersId = teacher.Id,
             };
 
             await _context.Classes.AddAsync(newClass);
@@ -122,6 +145,23 @@ namespace API.Services
                 classToUpdate.YearSchool = classViewModel.YearSchool;
             }
 
+            if (!string.IsNullOrWhiteSpace(classViewModel.TeacherName))
+            {
+                var teacher = await _context.Users
+                    .Include(u => u.Roles)
+                    .Include(u => u.UserProfile)
+                    .FirstOrDefaultAsync(u =>
+                        u.UserProfile.FullName == classViewModel.TeacherName &&
+                        u.Roles.Any(r => r.Id == 2 )
+                    );
+
+                if (teacher == null)
+                {
+                    throw new Exception($"Không tìm thấy giảng viên có tên '{classViewModel.TeacherName}'.");
+                }
+
+                classToUpdate.UsersId = teacher.Id;
+            }
             await _context.SaveChangesAsync();
         }
 

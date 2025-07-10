@@ -5,7 +5,7 @@
 }
 <div class="container mt-4">
 
-    <h2>Danh sách Quản trị viên</h2>
+    <h2>Danh sách Giảng viên</h2>
 
     @if (TempData["SuccessMessage"] != null)
     {
@@ -17,14 +17,6 @@
         <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
     }
     <div class="d-flex justify-content-between align-items-center mb-3">
-        @if (User.HasClaim("Permission", "Search"))
-        {
-            <form method="get" asp-action="SearchUS" class="mb-3 d-flex">
-                <input type="text" name="keyword" class="form-control w-50" placeholder="Tìm kiếm người dùng..." />
-                <button type="submit" class="btn btn-primary">Tìm kiếm</button>
-                <a asp-action="Index" class="btn btn-secondary ms-2">Làm mới</a>
-            </form>
-        }
         @if (User.HasClaim("Permission", "Create"))
         {
             <a asp-controller="Users" asp-action="Register" class="btn btn-primary">
@@ -32,13 +24,57 @@
             </a>
         }
     </div>
+    <div class="mb-3 text-end">
+        <form asp-action="Export" method="post">
+            <button type="submit" class="btn btn-success">
+                📥 Xuất danh sách sinh viên
+            </button>
 
+        </form>
+    </div>
+    <a asp-action="Auditlog">Log</a>
+    <form asp-action="Index" method="get" class="row g-3 mb-4">
+        <div class="col-md-2">
+            <input class="form-control" name="studentCode" placeholder="Mã SV" value="@Context.Request.Query["studentCode"]" />
+        </div>
+        <div class="col-md-2">
+            <input class="form-control" name="fullName" placeholder="Họ tên" value="@Context.Request.Query["fullName"]" />
+        </div>
+        <div class="col-md-2">
+            <input class="form-control" name="username" placeholder="Username" value="@Context.Request.Query["username"]" />
+        </div>
+        <div class="col-md-2">
+            <input class="form-control" name="email" placeholder="Email" value="@Context.Request.Query["email"]" />
+        </div>
+        <div class="col-md-2">
+            @{
+                var selectedGender = Context.Request.Query["gender"].ToString();
+            }
+            <select name="gender" class="form-select">
+                <option value="" selected="@(string.IsNullOrEmpty(selectedGender) ? "selected" : null)">-- Giới tính --</option>
+                <option value="true" selected="@(selectedGender == "true" ? "selected" : null)">Nam</option>
+                <option value="false" selected="@(selectedGender == "false" ? "selected" : null)">Nữ</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            @{
+                var selectedStatus = Context.Request.Query["status"].ToString();
+            }
+            <select name="status" class="form-select">
+                <option selected="@(string.IsNullOrEmpty(selectedStatus)?"selected":null)">-- Trạng thái --</option>
+                <option value="true" selected="@(selectedStatus == "true" ? "selected" : "")">Hoạt động</option>
+                <option value="false" selected=" @(selectedStatus == "false" ? "selected" : "")">Không hoạt động</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
+        </div>
+    </form>
     <table class="table table-bordered table-hover">
         <thead class="table-light">
             <tr>
                 <th scope="col">STT</th>
                 <th scope="col">Người dùng</th>
-                <th scope="col">Vai trò</th>
                 <th scope="col">Trạng thái</th>
                 <th scope="col" class="text-center">Thao tác</th>
             </tr>
@@ -81,19 +117,18 @@
                             </div>
                         </div>
                     </td>
-                    <td><span class="badge bg-danger">@string.Join(", ", user.RoleIds ?? new List<int>())</span></td>
                     <td>
                         <span class="badge bg-@(user.Statuss ? "success" : "secondary")">
-                            @(user.Statuss ? "Hoạt động" : "Đã khóa")
+                            @(user.Statuss ? (user.Statuss ? "Hoạt động" : "Không hoạt động") : "Unknown")
                         </span>
                     </td>
                     <td class="text-center">
-                        <a asp-controller="Users" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔍</a>
+                        <a asp-controller="Student" asp-action="Details" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔍</a>
                         @if (User.HasClaim("Permission", "Create"))
                         {
-                            <a asp-controller="Users" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">✏️</a>
-                            <a asp-controller="Users" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔄</a>
-                            <form asp-controller="Users" asp-action="LockUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái?');" class="d-inline">
+                            <a asp-controller="Student" asp-action="EditBoss" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">✏️</a>
+                            <a asp-controller="Student" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔄</a>
+                            <form asp-controller="Student" asp-action="Lock" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái?');" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-sm mx-1 @(user.Statuss ? "btn-danger" : "btn-success")">
                                     @(user.Statuss ? "🔒" : "🔓")

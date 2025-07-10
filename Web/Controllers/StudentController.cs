@@ -9,12 +9,75 @@ namespace Web.Controllers
     {
         private readonly HttpClient _client;
         private readonly IWebHostEnvironment _env;
-        public StudentController(HttpClient client, IWebHostEnvironment env)
+        private readonly IHttpClientFactory _httpClientFactory;
+        public StudentController(HttpClient client, IWebHostEnvironment env, IHttpClientFactory httpClientFactory)
         {
             _client = client;
             _client.BaseAddress = new Uri("https://localhost:7298/");
             _env = env;
+            _httpClientFactory = httpClientFactory;
         }
+        // Hàm helper lấy HttpClient có set Authorization header từ cookie token
+        private HttpClient? GetClientWithToken()
+        {
+            var client = _httpClientFactory.CreateClient("EdustarAPI");
+            if (!Request.Cookies.TryGetValue("JWToken", out var token) || string.IsNullOrEmpty(token))
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return null;
+            }
+            Console.WriteLine("Token từ Cookie: " + token);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            return client;
+        }
+        [HttpGet]
+        public async Task<IActionResult> IndexST(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status,int page = 1, int pageSize = 10)
+        {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
+                return RedirectToAction("Login", "Users");
+            }
+            var queryParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(StudentCode)) queryParams.Add($"studentCode={StudentCode}");
+            if (!string.IsNullOrWhiteSpace(fullName)) queryParams.Add($"fullName={fullName}");
+            if (!string.IsNullOrWhiteSpace(username)) queryParams.Add($"username={username}");
+            if (!string.IsNullOrWhiteSpace(email)) queryParams.Add($"email={email}");
+            if (gender.HasValue) queryParams.Add($"gender={gender.Value}");
+            if (status.HasValue) queryParams.Add($"status={status.Value}");
+
+            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : string.Empty;
+            var url = $"api/students/student{queryString}";
+
+            var response = await client.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var usersJson = await response.Content.ReadAsStringAsync();
+                var users = JsonConvert.DeserializeObject<List<UserDTO>>(usersJson);
+                var totalCount = users.Count;
+                var pagedUsers = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+                var result = new PagedResult<UserDTO>
+                {
+                    Items = pagedUsers,
+                    TotalCount = totalCount,
+                    PageSize = pageSize,
+                    PageIndex = page
+                };
+
+                return View(result);
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.";
+                return RedirectToAction("Login");
+            }
+            TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy danh sách người dùng.";
+            return View(new PagedResult<UserDTO>());
+        }
+
         public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status)
         {             
             var queryParams = new List<string>();
