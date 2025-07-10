@@ -30,6 +30,12 @@ namespace API.Controllers
             });
             return Ok(check);
         }
+        [HttpGet("codinh")]
+        public async Task<IActionResult> getcodinh()
+        {
+            var result = await _services.GetAllCoDinh();
+            return Ok(result);
+        } 
         [HttpGet("Id")]
         public async Task<IActionResult> GetByStudent(Guid id)
         {

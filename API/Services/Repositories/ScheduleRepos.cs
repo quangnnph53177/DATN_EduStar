@@ -248,6 +248,31 @@ namespace API.Services.Repositories
 
             _context.Schedules.Update(schedule);
             await _context.SaveChangesAsync();
-        }         
+        }
+
+        public async Task<List<Lichcodinh>> GetAllCoDinh()
+        {
+            var grouped = await _context.Schedules
+             .Include(s => s.Class)
+             .Include(s => s.Class.Subject)
+             .Include(s => s.Room)
+             .Include(s => s.Day)
+             .Include(s => s.StudyShift)
+             .GroupBy(s => new {
+                 s.Class.NameClass,
+                 s.Class.Subject.SubjectName,
+                 s.Room.RoomCode,
+                 s.StudyShift.StudyShiftName
+             })
+             .Select(g => new Lichcodinh
+             {
+                 ClassName = g.Key.NameClass,
+                 SubjectName = g.Key.SubjectName,
+                 RoomCode = g.Key.RoomCode,
+                 StudyShift = g.Key.StudyShiftName,
+                 weekdays = g.Select(x => x.Day.Weekdays).Distinct().ToList()
+             }).ToListAsync();
+            return grouped;
+        }
     }
 }

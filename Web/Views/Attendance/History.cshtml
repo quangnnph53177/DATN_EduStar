@@ -1,12 +1,10 @@
 ﻿@using API.ViewModel
 @model List<StudentAttendanceHistory>
 
-<h3>Lịch sử điểm danh</h3>
-
-<table class="table table-striped table-bordered">
-    <thead class="table-light">
+<h3>Lịch sử điểm danh của bạn</h3>
+<table class="table table-bordered">
+    <thead>
         <tr>
-            <th>Ngày học</th>
             <th>Môn học</th>
             <th>Lớp</th>
             <th>Ca học</th>
@@ -20,12 +18,11 @@
         @foreach (var item in Model)
         {
             <tr>
-                <td>@item.AttendanceDate.ToString("dd/MM/yyyy")</td>
                 <td>@item.SubjectName</td>
                 <td>@item.ClassName</td>
                 <td>@item.Shift</td>
                 <td>@item.WeekDay</td>
-                <td>@(item.CheckInTime?.ToString("HH:mm:ss") ?? "-")</td>
+                <td>@item.CheckInTime?.ToString("HH:mm dd/MM/yyyy")</td>
                 <td>@item.Status</td>
                 <td>@item.Description</td>
             </tr>

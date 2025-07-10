@@ -2,7 +2,39 @@
 @model List<IndexAttendanceViewModel>
 
 <h2>Danh sách phiên điểm danh</h2>
+<p>
+    <a asp-action="Create" class="btn btn-success">Tạo phiên điểm danh</a>
+</p>
+<form asp-action="IndexSession" method="post" class="row mb-3">
+    <div class="col-md-2">
+        <select asp-items=" ViewBag.ClassList" name="classId" class="form-control">
+            <option value="">-- Lớp học --</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select asp-items="ViewBag.ShiftList" name="studyShiftid" class="form-control">
+            <option value="">-- Ca học --</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select asp-items="ViewBag.RoomList" name="roomid" class="form-control">
+            <option value="">-- Phòng học --</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select asp-items="ViewBag.SubjectList" name="subjectid" class="form-control">
+            <option value="">-- Môn học --</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">🔍 Tìm kiếm</button>
+    </div>
+</form>
 
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger">@ViewBag.Error</div>
+}
 <table class="table table-bordered">
     <thead>
         <tr>

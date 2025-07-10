@@ -56,7 +56,7 @@ else
                         <td>@log.Id</td>
                         <td>@log.UserName</td>
                         <td>@log.Active</td>
-                        <td>
+                        @* <td>
                             <details>
                                 <summary style="cursor: pointer; color: #007bff;">Xem chi tiết</summary>
                                 <pre style="white-space: pre-wrap; word-wrap: break-word; background-color: #f8f9fa; padding: 8px; border-radius: 5px; font-size: 13px; font-family: Consolas, monospace; max-height: 250px; overflow: auto;">@fmt(log.OldData)</pre>
@@ -67,6 +67,15 @@ else
                                 <summary style="cursor: pointer; color: #007bff;">Xem chi tiết</summary>
                                 <pre style="white-space: pre-wrap; word-wrap: break-word; background-color: #f8f9fa; padding: 8px; border-radius: 5px; font-size: 13px; font-family: Consolas, monospace; max-height: 250px; overflow: auto;">@fmt(log.NewData)</pre>
                             </details>
+                        </td> *@
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-info" onclick="toggleJson('oldData_@log.Id')">Xem</button>
+                            <div id="oldData_@log.Id" class="formatted-json-table mt-2 d-none" data-json="@Html.Raw(Html.Encode(log.OldData))"></div>
+                        </td>
+
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-success" onclick="toggleJson('newData_@log.Id')">Xem</button>
+                            <div id="newData_@log.Id" class="formatted-json-table mt-2 d-none" data-json="@Html.Raw(Html.Encode(log.NewData))"></div>
                         </td>
                         <td>@log.PerformeByName</td>
                         <td>@(log.Timestamp?.ToString("dd/MM/yyyy HH:mm:ss") ?? "N/A")</td>
@@ -76,3 +85,50 @@ else
         </table>
     </div>
 }
+@section Scripts {
+    <script>
+        function toggleJson(id) {
+            const container = document.getElementById(id);
+
+            if (!container) return;
+
+            if (container.classList.contains('d-none')) {
+                // Lần đầu hiển thị thì render JSON
+                if (!container.innerHTML.trim()) {
+                    try {
+                        const jsonString = container.getAttribute("data-json");
+                        const json = JSON.parse(jsonString);
+
+                        let html = '<table class="table table-bordered table-sm">';
+                        html += '<thead class="table-light"><tr><th>Trường</th><th>Giá trị</th></tr></thead><tbody>';
+
+                        for (const key in json) {
+                            if (!json.hasOwnProperty(key)) continue;
+
+                            let value = json[key];
+                            const lowerKey = key.toLowerCase();
+
+                            if ((lowerKey.includes("image") || lowerKey.includes("avatar") || lowerKey.includes("photo")) &&
+                                typeof value === "string" &&
+                                (value.startsWith("http") || value.startsWith("/"))) {
+                                value = `<img src="${value}" alt="${key}" style="max-height: 150px;">`;
+                            }
+
+                            html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+                        }
+
+                        html += '</tbody></table>';
+                        container.innerHTML = html;
+                    } catch (err) {
+                        container.innerHTML = '<p class="text-danger">Không thể hiển thị dữ liệu (không phải JSON hợp lệ).</p>';
+                    }
+                }
+
+                container.classList.remove('d-none');
+            } else {
+                container.classList.add('d-none');
+            }
+        }
+    </script>
+}
+
