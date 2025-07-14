@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Migrations
 {
     [DbContext(typeof(AduDbcontext))]
-    [Migration("20250707064440_wwek")]
-    partial class wwek
+    [Migration("20250714074240_trang1")]
+    partial class trang1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -176,14 +176,22 @@ namespace API.Migrations
                     b.Property<bool?>("Status")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("StudentCount")
+                        .HasColumnType("int");
+
                     b.Property<int?>("SubjectId")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("UsersId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int?>("YearSchool")
                         .HasColumnType("int");
 
                     b.HasKey("Id")
                         .HasName("PK__Classes__3214EC07EDA37A0C");
+
+                    b.HasIndex("UsersId");
 
                     b.HasIndex(new[] { "SubjectId" }, "IX_Classes_SubjectId");
 
@@ -387,6 +395,38 @@ namespace API.Migrations
                         .HasName("PK__Rooms__3214EC073B8FA24F");
 
                     b.ToTable("Rooms");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 101"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 102"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 103"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 104"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 105"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Schedule", b =>
@@ -469,6 +509,57 @@ namespace API.Migrations
                         .HasName("PK__StudyShi__3214EC07D946077D");
 
                     b.ToTable("StudyShifts");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            EndTime = new TimeOnly(9, 15, 0),
+                            StartTime = new TimeOnly(7, 15, 0),
+                            StudyShiftName = "Ca 1"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            EndTime = new TimeOnly(11, 25, 0),
+                            StartTime = new TimeOnly(9, 25, 0),
+                            StudyShiftName = "Ca 2"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            EndTime = new TimeOnly(14, 0, 0),
+                            StartTime = new TimeOnly(12, 0, 0),
+                            StudyShiftName = "Ca 3"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            EndTime = new TimeOnly(16, 10, 0),
+                            StartTime = new TimeOnly(14, 10, 0),
+                            StudyShiftName = "Ca 4"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            EndTime = new TimeOnly(18, 20, 0),
+                            StartTime = new TimeOnly(16, 20, 0),
+                            StudyShiftName = "Ca 5"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            EndTime = new TimeOnly(20, 30, 0),
+                            StartTime = new TimeOnly(18, 30, 0),
+                            StudyShiftName = "Ca 6"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            EndTime = new TimeOnly(23, 59, 59, 999).Add(TimeSpan.FromTicks(9999)),
+                            StartTime = new TimeOnly(0, 0, 0),
+                            StudyShiftName = "Ca 7"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Subject", b =>
@@ -517,6 +608,12 @@ namespace API.Migrations
                     b.Property<string>("Email")
                         .HasMaxLength(90)
                         .HasColumnType("nvarchar(90)");
+
+                    b.Property<bool?>("IsConfirm")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("PassWordHash")
                         .IsRequired()
@@ -766,7 +863,14 @@ namespace API.Migrations
                         .HasForeignKey("SubjectId")
                         .HasConstraintName("FK_Classes_Subject");
 
+                    b.HasOne("API.Models.User", "User")
+                        .WithMany("Classes")
+                        .HasForeignKey("UsersId")
+                        .HasConstraintName("FK_Classes_Users");
+
                     b.Navigation("Subject");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("API.Models.ClassChange", b =>
@@ -981,6 +1085,8 @@ namespace API.Migrations
                     b.Navigation("AuditlogPerformeByNavigations");
 
                     b.Navigation("AuditlogUsers");
+
+                    b.Navigation("Classes");
 
                     b.Navigation("ComplaintProcessedByNavigations");
 

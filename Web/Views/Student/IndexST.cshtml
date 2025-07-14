@@ -1,11 +1,23 @@
-﻿@model API.ViewModel.PagedResult<API.ViewModel.UserDTO>
+﻿@model List<API.ViewModel.ClassWithStudentsViewModel>
+>
 
 @{
-    ViewData["Title"] = "Danh sách người dùng";
+    ViewData["Title"] = "Danh sách sinh viên";
+    var selectedGender = Context.Request.Query["gender"].ToString();
+    var selectedStatus = Context.Request.Query["status"].ToString();
+    var queryParams = Context.Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString());
+
+    // string BuildQuery(int newPage)
+    // {
+    //     var dict = new Dictionary<string, string>(queryParams);
+    //     dict["page"] = newPage.ToString();
+    //     return "?" + string.Join("&", dict.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+    // }
 }
+
 <div class="container mt-4">
 
-    <h2>Danh sách Giảng viên</h2>
+    <h2>@ViewData["Title"]</h2>
 
     @if (TempData["SuccessMessage"] != null)
     {
@@ -16,152 +28,184 @@
     {
         <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
     }
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         @if (User.HasClaim("Permission", "Create"))
         {
             <a asp-controller="Users" asp-action="Register" class="btn btn-primary">
-                <i class="bi bi-plus-lg"></i>Thêm người dùng
+                <i class="bi bi-plus-lg"></i> Thêm người dùng
             </a>
         }
     </div>
+
+    <!-- 🔍 Form tìm kiếm -->
+    <form asp-action="Index" method="get" class="row g-3 mb-4">
+        <div class="row">
+            <div class="col-12 text-end">
+                <div class="d-inline-flex flex-wrap gap-2 justify-content-end align-items-end">
+                    <input class="form-control form-control-sm" name="studentCode" placeholder="Mã SV"
+                    value="@Context.Request.Query["studentCode"]" style="width: 150px;" />
+
+                    <button type="submit" class="btn btn-sm btn-primary">Tìm kiếm</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleAdvancedSearch">Nâng cao</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔽 Tìm kiếm nâng cao -->
+        <div id="advancedSearch" class="card card-body mt-2" style="display: none;">
+            <div class="row g-2">
+                <div class="col-md-2">
+                    <input class="form-control form-control-sm" name="fullName" placeholder="Họ tên"
+                    value="@Context.Request.Query["fullName"]" />
+                </div>
+                <div class="col-md-2">
+                    <input class="form-control form-control-sm" name="username" placeholder="Username"
+                    value="@Context.Request.Query["username"]" />
+                </div>
+                <div class="col-md-2">
+                    <input class="form-control form-control-sm" name="email" placeholder="Email"
+                    value="@Context.Request.Query["email"]" />
+                </div>
+                <div class="col-md-2">
+                    <select name="gender" class="form-select form-select-sm">
+                        <option value="">-- Giới tính --</option>
+                        <option value="true" selected="@(selectedGender == "true")">Nam</option>
+                        <option value="false" selected="@(selectedGender == "false")">Nữ</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">-- Trạng thái --</option>
+                        <option value="true" selected="@(selectedStatus == "true")">Hoạt động</option>
+                        <option value="false" selected="@(selectedStatus == "false")">Không hoạt động</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-grid">
+                    <button type="submit" class="btn btn-sm btn-success">Áp dụng</button>
+                </div>
+                <div class="col-md-1 d-grid">
+                    <a href="@Url.Action("Index")" class="btn btn-sm btn-secondary">Xóa lọc</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
     <div class="mb-3 text-end">
         <form asp-action="Export" method="post">
             <button type="submit" class="btn btn-success">
                 📥 Xuất danh sách sinh viên
             </button>
-
         </form>
     </div>
+
     <a asp-action="Auditlog">Log</a>
-    <form asp-action="Index" method="get" class="row g-3 mb-4">
-        <div class="col-md-2">
-            <input class="form-control" name="studentCode" placeholder="Mã SV" value="@Context.Request.Query["studentCode"]" />
-        </div>
-        <div class="col-md-2">
-            <input class="form-control" name="fullName" placeholder="Họ tên" value="@Context.Request.Query["fullName"]" />
-        </div>
-        <div class="col-md-2">
-            <input class="form-control" name="username" placeholder="Username" value="@Context.Request.Query["username"]" />
-        </div>
-        <div class="col-md-2">
-            <input class="form-control" name="email" placeholder="Email" value="@Context.Request.Query["email"]" />
-        </div>
-        <div class="col-md-2">
-            @{
-                var selectedGender = Context.Request.Query["gender"].ToString();
-            }
-            <select name="gender" class="form-select">
-                <option value="" selected="@(string.IsNullOrEmpty(selectedGender) ? "selected" : null)">-- Giới tính --</option>
-                <option value="true" selected="@(selectedGender == "true" ? "selected" : null)">Nam</option>
-                <option value="false" selected="@(selectedGender == "false" ? "selected" : null)">Nữ</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            @{
-                var selectedStatus = Context.Request.Query["status"].ToString();
-            }
-            <select name="status" class="form-select">
-                <option selected="@(string.IsNullOrEmpty(selectedStatus)?"selected":null)">-- Trạng thái --</option>
-                <option value="true" selected="@(selectedStatus == "true" ? "selected" : "")">Hoạt động</option>
-                <option value="false" selected=" @(selectedStatus == "false" ? "selected" : "")">Không hoạt động</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
-        </div>
-    </form>
-    <table class="table table-bordered table-hover">
-        <thead class="table-light">
-            <tr>
-                <th scope="col">STT</th>
-                <th scope="col">Người dùng</th>
-                <th scope="col">Trạng thái</th>
-                <th scope="col" class="text-center">Thao tác</th>
-            </tr>
-        </thead>
-        <tbody>
-            @for (int i = 0; i < Model.Items.Count(); i++)
+
+    <!-- 📋 Bảng dữ liệu -->
+
+    @foreach (var cls in Model)
+    {
+        <div class="card mb-4">
+            @if (User.IsInRole("Teacher"))
             {
-                var user = Model.Items[i];
-                <tr>
-                    <td>@(i + 1)</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="d-flex flex-column align-items-center me-2" style="width: 60px;">
-                                <!-- Ảnh avatar (ẩn mặc định) -->
-                                <img id="avatar-img-@i"
-                                     src="@(string.IsNullOrEmpty(user.Avatar) ? "#" : $"https://localhost:7298/{user.Avatar}")"
-                                     alt="No Avatar"
-                                     class="d-none"
-                                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%;" />
-
-                                <!-- Nút 👁 hoặc 👁‍🗨 -->
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-primary mt-1"
-                                        onclick="toggleAvatar(@i, '@user.Avatar')"
-                                        id="toggle-btn-@i">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </div>
-
-                            <div>
-                                <div>
-                                    <strong>@user.FullName</strong>
-                                </div>
-                                <div class="text-muted small">
-                                    @user.Email
-                                </div>
-                                <div class="text-muted small">
-                                    @user.UserCode
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge bg-@(user.Statuss ? "success" : "secondary")">
-                            @(user.Statuss ? (user.Statuss ? "Hoạt động" : "Không hoạt động") : "Unknown")
-                        </span>
-                    </td>
-                    <td class="text-center">
-                        <a asp-controller="Student" asp-action="Details" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔍</a>
-                        @if (User.HasClaim("Permission", "Create"))
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">@cls.ClassName</h5>
+            </div>
+                
+            }
+            <div class="card-body p-0">
+                <table class="table mb-0 table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>STT</th>
+                            <th>Người dùng</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < cls.StudentsInfor.Count; i++)
                         {
-                            <a asp-controller="Student" asp-action="EditBoss" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">✏️</a>
-                            <a asp-controller="Student" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔄</a>
-                            <form asp-controller="Student" asp-action="Lock" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái?');" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm mx-1 @(user.Statuss ? "btn-danger" : "btn-success")">
-                                    @(user.Statuss ? "🔒" : "🔓")
-                                </button>
-                            </form>
+                            var user = cls.StudentsInfor[i];
+                            <tr>
+                                <td>@(i + 1)</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="d-flex flex-column align-items-center me-2" style="width: 60px;">
+                                            <img id="avatar-img-@i"
+                                                 src="@(string.IsNullOrEmpty(user.Avatar) ? "#" : $"https://localhost:7298/{user.Avatar}")"
+                                                 alt="No Avatar"
+                                                 class="d-none"
+                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%;" />
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary mt-1"
+                                                    onclick="toggleAvatar(@i, '@user.Avatar')"
+                                                    id="toggle-btn-@i">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div>
+                                            <div><strong>@user.FullName</strong></div>
+                                            <div class="text-muted small">@user.Email</div>
+                                            <div class="text-muted small">@user.UserCode</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(user.Statuss ? "success" : "secondary")">
+                                        @(user.Statuss ? "Hoạt động" : "Không hoạt động")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a asp-controller="Student" asp-action="Details" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔍</a>
+                                    @if (User.HasClaim("Permission", "Create"))
+                                    {
+                                        <a asp-controller="Student" asp-action="EditBoss" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">✏️</a>
+                                        <a asp-controller="Student" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔄</a>
+                                        <form asp-controller="Student" asp-action="Lock" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái?');" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm mx-1 @(user.Statuss ? "btn-danger" : "btn-success")">
+                                                @(user.Statuss ? "🔒" : "🔓")
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
                         }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- 📌 Phân trang -->
+        <div class="card-footer text-end">
+            @if (ViewData.ContainsKey($"TotalPages_{cls.ClassId}"))
+            {
+                int totalPages = (int)ViewData[$"TotalPages_{cls.ClassId}"];
+                int currentPage = (int)ViewData[$"CurrentPage_{cls.ClassId}"];
 
-    <div class="d-flex justify-content-between">
-        <span>Trang @Model.PageIndex / @Model.TotalPages</span>
-        <div>
-            @if (Model.HasPreviousPage)
-            {
-                <a class="btn btn-outline-primary btn-sm" href="?page=@(Model.PageIndex - 1)">« Trước</a>
-            }
-            @if (Model.HasNextPage)
-            {
-                <a class="btn btn-outline-primary btn-sm" href="?page=@(Model.PageIndex + 1)">Sau »</a>
+                for (int i = 1; i <= totalPages; i++)
+                {
+                    <form method="get" class="d-inline">
+                        <input type="hidden" name="classId" value="@cls.ClassId" />
+                        <input type="hidden" name="page" value="@i" />
+                        <button type="submit" class="btn btn-sm @(i == currentPage ? "btn-primary" : "btn-outline-primary")">
+                            @i
+                        </button>
+                    </form>
+                }
             }
         </div>
-    </div>
+    }
+
+   
 </div>
+
 @section Scripts {
     <script>
         function toggleAvatar(i, avatarUrl) {
             const avatarImg = document.getElementById(`avatar-img-${i}`);
             const button = document.getElementById(`toggle-btn-${i}`);
             const icon = button.querySelector('i');
-
             const hasAvatar = avatarUrl && avatarUrl.trim() !== '';
 
             if (hasAvatar) {
@@ -172,8 +216,20 @@
             icon.classList.toggle("bi-eye");
             icon.classList.toggle("bi-eye-slash");
         }
+
+        document.getElementById('toggleAdvancedSearch')?.addEventListener('click', function () {
+            const advanced = document.getElementById('advancedSearch');
+            advanced.style.display = (advanced.style.display === 'none' || advanced.style.display === '') ? 'block' : 'none';
+        });
+
+        // Mở nâng cao nếu có filter
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const fields = ['fullName', 'username', 'email', 'gender', 'status'];
+            const isUsed = fields.some(field => params.get(field));
+            if (isUsed) {
+                document.getElementById('advancedSearch').style.display = 'block';
+            }
+        });
     </script>
-
 }
-
-

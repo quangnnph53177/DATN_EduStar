@@ -606,6 +606,12 @@ namespace API.Migrations
                         .HasMaxLength(90)
                         .HasColumnType("nvarchar(90)");
 
+                    b.Property<bool?>("IsConfirm")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PassWordHash")
                         .IsRequired()
                         .HasMaxLength(90)

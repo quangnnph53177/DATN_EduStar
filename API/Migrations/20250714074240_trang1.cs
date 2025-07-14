@@ -5,25 +5,24 @@
 namespace API.Migrations
 {
     /// <inheritdoc />
-    public partial class ac : Migration
+    public partial class trang1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "SessionCode",
-                table: "Attendance",
-                type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "");
+            migrationBuilder.AddColumn<bool>(
+                name: "IsConfirm",
+                table: "User",
+                type: "bit",
+                nullable: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "SessionCode",
-                table: "Attendance");
+                name: "IsConfirm",
+                table: "User");
         }
     }
 }

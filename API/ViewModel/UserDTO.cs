@@ -22,6 +22,7 @@ namespace API.ViewModel
         public List<int> RoleIds { get; set; } = new List<int>();
 
         public bool Statuss { get; set; } = true;
+        public bool? IsConfirm { get; set; } = true;
 
         public DateTime? CreateAt { get; set; }
 
@@ -36,6 +37,7 @@ namespace API.ViewModel
         [DataType(DataType.Date)]
         [Display(Name = "Ngày sinh")]
         public DateTime? Dob { get; set; }
+        public List<string>? ClassName { get; set; }
 
 
         // 👉 Tạo Initials để hiển thị viết tắt tên người dùng
@@ -55,5 +57,10 @@ namespace API.ViewModel
             }
         }
 
+    }
+    public class PreviewUserResult
+    {
+        public string Message { get; set; }
+        public List<UserDTO> Users { get; set; }
     }
 }

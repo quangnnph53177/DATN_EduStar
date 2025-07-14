@@ -1,29 +1,77 @@
-﻿@{
-    ViewData["Title"] = "Tải lên tệp";
+﻿@model List<API.ViewModel.UserDTO>
+@{
+    ViewData["Title"] = "Tải lên tệp Excel";
 }
 
-<h2>Tải lên tệp</h2>
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
 @if (TempData["ErrorMessage"] != null)
 {
-    <div class="alert alert-success">@TempData["ErrorMessage"]</div>
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 }
 
+<!-- Form tải file Excel -->
 <form asp-action="Upload" method="post" enctype="multipart/form-data">
-    <div class="form-group">
-        <label for="file">Chọn tệp:</label>
-        <input type="file" name="file" class="form-control" />
+    <div class="mb-3">
+        <label for="file" class="form-label">Chọn tệp Excel:</label>
+        <input type="file" name="file" class="form-control" required />
     </div>
-    <div class="form-group">
-        <button type="submit" class="btn btn-primary">Tải lên</button>
-        <div class="form-group">
-            <a asp-action="Index" class="btn btn-secondary mt-3">Quay lại danh sách</a>
-        </div>
-    </div>
+    <button type="submit" class="btn btn-primary">Xem trước danh sách</button>
 </form>
 
-@if (!ViewData.ModelState.IsValid)
+@if (Model != null && Model.Any())
 {
-    <div class="text-danger">
-        @Html.ValidationSummary()
-    </div>
+    <hr />
+    <h4>Dữ liệu xem trước</h4>
+
+    <!-- Form gửi toàn bộ danh sách tạo tài khoản -->
+    <form asp-action="CreateFromPreview" method="post">
+        <input type="hidden" name="usersJson" id="usersJson" />
+
+        <table class="table table-bordered table-hover mt-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Họ tên</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Email</th>
+                    <th>SĐT</th>
+                    <th>Ngày sinh</th>
+                    <th>Giới tính</th>
+                    <th>Địa chỉ</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    <tr>
+                        <td>@Model[i].FullName</td>
+                        <td>@Model[i].UserName</td>
+                        <td>@Model[i].Email</td>
+                        <td>@Model[i].PhoneNumber</td>
+                        <td>@Model[i].Dob?.ToString("dd/MM/yyyy")</td>
+                        <td>@(Model[i].Gender == true ? "Nam" : Model[i].Gender == false ? "Nữ" : "Không rõ")</td>
+                        <td>@Model[i].Address</td>
+
+                        <!-- Truyền dữ liệu về server bằng input hidden -->
+                        <input type="hidden" name="users[@i].FullName" value="@Model[i].FullName" />
+                        <input type="hidden" name="users[@i].UserName" value="@Model[i].UserName" />
+                        <input type="hidden" name="users[@i].PassWordHash" value="@Model[i].PassWordHash" />
+                        <input type="hidden" name="users[@i].Email" value="@Model[i].Email" />
+                        <input type="hidden" name="users[@i].PhoneNumber" value="@Model[i].PhoneNumber" />
+                        <input type="hidden" name="users[@i].Dob" value="@Model[i].Dob?.ToString("yyyy-MM-dd")" />
+                        <input type="hidden" name="users[@i].Gender" value="@(Model[i].Gender?.ToString())" />
+                        <input type="hidden" name="users[@i].Address" value="@Model[i].Address" />
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Tạo tất cả tài khoản</button>
+        </div>
+    </form>
 }

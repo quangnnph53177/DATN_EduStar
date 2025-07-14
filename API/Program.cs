@@ -136,6 +136,7 @@ using (var scope = app.Services.CreateScope())
             UserName = "string",
             Email = "string@gmail.com",
             Statuss = true,
+            IsConfirm = true,
             CreateAt = DateTime.Now,
             Roles = new List<Role> { defaultRole }
         };

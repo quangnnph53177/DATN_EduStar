@@ -1,6 +1,7 @@
 ﻿using API.Services;
 using API.Services.Repositories;
 using API.ViewModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -45,55 +46,62 @@ namespace API.Controllers
             return Ok(result);
         }
         [HttpGet("student")]
-        // [Authorize(Roles = "1,2,3")]
-        public async Task<IActionResult> GetStudentView(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status)
+        [Authorize(Roles = "1,2,3")]
+        public async Task<IActionResult> GetStudentView()
         {
-            var currentUserRoleIds = User.Claims
-                   .Where(c => c.Type == ClaimTypes.Role)
-                   .Select(c => int.Parse(c.Value))
-                   .ToList();
-            var currentUserName = User.Identity?.Name;
-            if (string.IsNullOrEmpty(currentUserName))
-                return Unauthorized("Không tìm thấy thông tin người dùng");
-            if (string.IsNullOrEmpty(StudentCode) &&
-                   string.IsNullOrEmpty(fullName) &&
-                   string.IsNullOrEmpty(username) &&
-                   string.IsNullOrEmpty(email) &&
-                       gender == null &&
-                       status == null)
+            try
             {
+                var currentUserRoleIds = User.Claims
+                       .Where(c => c.Type == ClaimTypes.Role)
+                       .Select(c => int.Parse(c.Value))
+                       .ToList();
+                var currentUserName = User.Identity?.Name;
+                if (string.IsNullOrEmpty(currentUserName))
+                    return Unauthorized("Không tìm thấy thông tin người dùng");
                 var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
                 // Lọc theo vai trò
-                IEnumerable<UserDTO> filteredUsers;
-                if (currentUserRoleIds.Contains(1)) // Admin
-                {
-                    filteredUsers = users.Where(u => u.RoleIds.Contains(3)/* && u.UserName != currentUserName*/);
-                }
-                else if (currentUserRoleIds.Contains(2)) // Giảng viên
-                {
-                    // Lấy thông tin giảng viên hiện tại
-                    var teacher = users.FirstOrDefault(u => u.UserName == currentUserName);
-                    if (teacher == null)
-                        return Forbid("Không tìm thấy giảng viên.");
-                    // Lấy danh sách sinh viên theo lớp của giảng viên
-                    var classList = await _userRepos.GetStudentByTeacher(teacher.Id);
-                    filteredUsers = classList.Classes.SelectMany(c => c.StudentsInfor).ToList();
-                }
-                else
-                {
-                    filteredUsers = users.Where(u => u.UserName == currentUserName);
-                }
-                return Ok(filteredUsers);
-            }
-            var result = await _service.Search(StudentCode, fullName, username, email, gender, status);
 
-            if (result == null || !result.Any())
+                Dictionary<string, List<UserDTO>> resultDict;
+
+                if (currentUserRoleIds.Contains(1) || currentUserRoleIds.Contains(2)) // 👑 Admin
+                {
+                    var filtered = users.Where(u => u.RoleIds.Contains(3)) // Chỉ sinh viên
+                         .ToList();
+
+                    return Ok(filtered);
+                }
+                //else if () // 👨‍🏫 Giảng viên
+                //{
+                //    var teacher = users.FirstOrDefault(u => u.UserName == currentUserName);
+                //    if (teacher == null)
+                //        return Forbid("Không tìm thấy giảng viên.");
+
+                //    var classList = await _userRepos.GetStudentByTeacher(teacher.Id);
+
+                //    var uniqueStudents = classList.Classes
+                //         .SelectMany(c => c.StudentsInfor)
+                //         .Where(s => s.UserName != currentUserName && s.UserName != null)
+                //         .GroupBy(s => s.UserName) // hoặc s.Id nếu muốn chắc chắn hơn
+                //         .Select(g => g.First())   // chỉ lấy 1 bản ghi duy nhất
+                //         .ToList();
+
+                //    return Ok(uniqueStudents);
+                //}
+                else // 👩‍🎓 Sinh viên -> chỉ trả về lớp của họ
+                {
+                    var filtered = users.Where(u => u.UserName == currentUserName);
+
+                    return Ok(filtered);
+                }
+                //return Ok(resultDict);
+            }
+            catch (Exception ex)
             {
-                return NotFound(new { message = "Không tìm thấy sinh viên phù hợp." });
+                return StatusCode(500, $"❌ Exception: {ex.GetType().Name} - {ex.Message}\nStackTrace:\n{ex.StackTrace}");
             }
 
-            return Ok(result);
         }
+
         [HttpGet("auditlog")]
         public async Task<IActionResult> Log()
         {
