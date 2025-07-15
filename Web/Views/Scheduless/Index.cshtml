@@ -1,20 +1,17 @@
-﻿@model IEnumerable<API.ViewModel.SchedulesViewModel>
+﻿
+@model IEnumerable<API.ViewModel.Lichcodinh>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Lịch học cố định";
 }
 
-<h1>Index</h1>
-
-<p>
-    <a asp-action="Create">Create New</a>
-    <a asp-action="Auto">Auto</a>
-</p>
+<h2 class="mb-4"> Danh sách lịch học cố định</h2>
+<a asp-action="Auto">Auto</a>
 <table class="table">
     <thead>
         <tr>
-          @*   <th>
-                @Html.DisplayNameFor(model => model.Id)
+             @* <th>
+            @Html.DisplayNameFor(model => model.Id)
             </th> *@
             <th>
                 @Html.DisplayNameFor(model => model.ClassName)
@@ -26,7 +23,7 @@
                 @Html.DisplayNameFor(model => model.RoomCode)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.WeekDay)
+                @Html.DisplayNameFor(model => model.weekdays)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.StudyShift)
@@ -35,32 +32,33 @@
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-           @*  <td>
-                @Html.DisplayFor(modelItem => item.Id)
-            </td> *@
-            <td>
-                @Html.DisplayFor(modelItem => item.ClassName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.SubjectName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.RoomCode)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.WeekDay)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.StudyShift)
-            </td>
-            <td>
-                @Html.ActionLink("Edit", "Edit", new { id=item.Id }) |
-                @Html.ActionLink("Details", "Details", new { id=item.Id }) |
-                @Html.ActionLink("Delete", "Delete", new { id=item.Id })
-            </td>
-        </tr>
-}
+        @foreach (var item in Model)
+        {
+            <tr>
+               @*  <td>
+                    @Html.DisplayFor(modelItem => item.Id)
+                </td> *@
+                <td>
+                    @Html.DisplayFor(modelItem => item.ClassName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.SubjectName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.RoomCode)
+                </td>
+                <td>
+                    @string.Join(", ", item.weekdays.Select(d => d.ToString()))
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.StudyShift)
+                </td>
+                <td>
+                    @Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
+                    @Html.ActionLink("Details", "Details", new { id = item.Id }) |
+                    @Html.ActionLink("Delete", "Delete", new { id = item.Id })
+                </td>
+            </tr>
+        }
     </tbody>
 </table>

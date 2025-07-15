@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Migrations
 {
     [DbContext(typeof(AduDbcontext))]
-    [Migration("20250704043715_cc")]
-    partial class cc
+    [Migration("20250714030514_nkhon")]
+    partial class nkhon
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -170,17 +170,28 @@ namespace API.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
+                    b.Property<DateTime?>("StartTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool?>("Status")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("StudentCount")
+                        .HasColumnType("int");
+
                     b.Property<int?>("SubjectId")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("UsersId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int?>("YearSchool")
                         .HasColumnType("int");
 
                     b.HasKey("Id")
                         .HasName("PK__Classes__3214EC07EDA37A0C");
+
+                    b.HasIndex("UsersId");
 
                     b.HasIndex(new[] { "SubjectId" }, "IX_Classes_SubjectId");
 
@@ -266,9 +277,9 @@ namespace API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Weekdays")
+                    b.Property<int>("Weekdays")
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("int");
 
                     b.HasKey("Id")
                         .HasName("PK__DayOfWeek__3214EC079A470A2D");
@@ -291,6 +302,38 @@ namespace API.Migrations
                         .HasName("PK__Permissi__3214EC07B10A1991");
 
                     b.ToTable("Permission", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            PermissionName = "Create"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            PermissionName = "Detail"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            PermissionName = "Edit"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            PermissionName = "Search"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            PermissionName = "ProcessComplaint"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            PermissionName = "AddRole"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Role", b =>
@@ -310,6 +353,23 @@ namespace API.Migrations
                         .HasName("PK__Roles__3214EC0791E90BA9");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            RoleName = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            RoleName = "Teacher"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            RoleName = "Student"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Room", b =>
@@ -335,6 +395,38 @@ namespace API.Migrations
                         .HasName("PK__Rooms__3214EC073B8FA24F");
 
                     b.ToTable("Rooms");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 101"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 102"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 103"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 104"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Device = "Projector, Whiteboard",
+                            RoomCode = "Room 105"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Schedule", b =>
@@ -351,8 +443,17 @@ namespace API.Migrations
                     b.Property<int?>("DayId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("RoomId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool?>("Status")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("StudyShiftId")
                         .HasColumnType("int");
@@ -408,6 +509,57 @@ namespace API.Migrations
                         .HasName("PK__StudyShi__3214EC07D946077D");
 
                     b.ToTable("StudyShifts");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            EndTime = new TimeOnly(9, 15, 0),
+                            StartTime = new TimeOnly(7, 15, 0),
+                            StudyShiftName = "Ca 1"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            EndTime = new TimeOnly(11, 25, 0),
+                            StartTime = new TimeOnly(9, 25, 0),
+                            StudyShiftName = "Ca 2"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            EndTime = new TimeOnly(14, 0, 0),
+                            StartTime = new TimeOnly(12, 0, 0),
+                            StudyShiftName = "Ca 3"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            EndTime = new TimeOnly(16, 10, 0),
+                            StartTime = new TimeOnly(14, 10, 0),
+                            StudyShiftName = "Ca 4"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            EndTime = new TimeOnly(18, 20, 0),
+                            StartTime = new TimeOnly(16, 20, 0),
+                            StudyShiftName = "Ca 5"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            EndTime = new TimeOnly(20, 30, 0),
+                            StartTime = new TimeOnly(18, 30, 0),
+                            StudyShiftName = "Ca 6"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            EndTime = new TimeOnly(23, 59, 59, 999).Add(TimeSpan.FromTicks(9999)),
+                            StartTime = new TimeOnly(0, 0, 0),
+                            StudyShiftName = "Ca 7"
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Subject", b =>
@@ -528,6 +680,68 @@ namespace API.Migrations
                     b.HasIndex(new[] { "PermissionId" }, "IX_RolePermission_PermissionId");
 
                     b.ToTable("RolePermission", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 1
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 2
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 3
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 4
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 5
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            PermissionId = 6
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 2
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 3
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 4
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            PermissionId = 5
+                        },
+                        new
+                        {
+                            RoleId = 3,
+                            PermissionId = 2
+                        },
+                        new
+                        {
+                            RoleId = 3,
+                            PermissionId = 3
+                        });
                 });
 
             modelBuilder.Entity("StudentInClass", b =>
@@ -643,7 +857,14 @@ namespace API.Migrations
                         .HasForeignKey("SubjectId")
                         .HasConstraintName("FK_Classes_Subject");
 
+                    b.HasOne("API.Models.User", "User")
+                        .WithMany("Classes")
+                        .HasForeignKey("UsersId")
+                        .HasConstraintName("FK_Classes_Users");
+
                     b.Navigation("Subject");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("API.Models.ClassChange", b =>
@@ -858,6 +1079,8 @@ namespace API.Migrations
                     b.Navigation("AuditlogPerformeByNavigations");
 
                     b.Navigation("AuditlogUsers");
+
+                    b.Navigation("Classes");
 
                     b.Navigation("ComplaintProcessedByNavigations");
 

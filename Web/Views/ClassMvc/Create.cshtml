@@ -24,8 +24,8 @@
                 <span asp-validation-for="ClassName" class="text-danger"></span>
             </div>
             <div class="form-group mb-3">
-                <label asp-for="SubjectId" class="control-label">Mã môn học</label>
-                <input asp-for="SubjectId" class="form-control" />
+                <label asp-for="SubjectId" class="form-label">Môn học</label>
+                <select asp-for="SubjectId" asp-items=" ViewBag.SubjectList" class="form-select"></select>
                 <span asp-validation-for="SubjectId" class="text-danger"></span>
             </div>
             <div class="form-group mb-3">

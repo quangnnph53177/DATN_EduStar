@@ -1,6 +1,9 @@
-﻿using API.ViewModel;
+﻿using API.Data;
+using API.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Text;
 
@@ -10,9 +13,10 @@ namespace Web.Controllers
     public class ClassMvcController : Controller
     {
         private readonly HttpClient _httpClient;
-
-        public ClassMvcController()
+        private readonly AduDbcontext _context;
+        public ClassMvcController(AduDbcontext context)
         {
+            _context = context;
             _httpClient = new HttpClient();
             _httpClient.BaseAddress = new Uri("https://localhost:7298/api/Class/");
         }
@@ -83,8 +87,14 @@ namespace Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            var SubjectList =  await _context.Subjects.ToListAsync();
+            ViewBag.SubjectList = SubjectList.Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = c.SubjectName,
+            }).ToList();
             return View();
         }
 
@@ -121,6 +131,12 @@ namespace Web.Controllers
                     ViewBag.ErrorMessage = "An unexpected error occurred during creation: " + ex.Message;
                 }
             }
+            var SubjectList = await _context.Subjects.ToListAsync();
+            ViewBag.SubjectList = SubjectList.Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = c.SubjectName,
+            }).ToList();
             return View(classCreateViewModel);
         }
 

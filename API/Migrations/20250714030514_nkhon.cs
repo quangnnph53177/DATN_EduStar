@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace API.Migrations
 {
     /// <inheritdoc />
-    public partial class dat : Migration
+    public partial class nkhon : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -17,7 +19,7 @@ namespace API.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Weekdays = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true)
+                    Weekdays = table.Column<int>(type: "int", maxLength: 10, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -98,23 +100,6 @@ namespace API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Subjects_New",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    SubjectName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    NumberOfCredits = table.Column<int>(type: "int", nullable: true),
-                    Subjectcode = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Status = table.Column<bool>(type: "bit", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Subjects__3214EC07BAD5CEE7", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "User",
                 columns: table => new
                 {
@@ -156,28 +141,6 @@ namespace API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Classes",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    NameClass = table.Column<string>(type: "nvarchar(90)", maxLength: 90, nullable: true),
-                    SubjectId = table.Column<int>(type: "int", nullable: true),
-                    Semester = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    YearSchool = table.Column<int>(type: "int", nullable: true),
-                    Status = table.Column<bool>(type: "bit", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Classes__3214EC07EDA37A0C", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Classes_Subject",
-                        column: x => x.SubjectId,
-                        principalTable: "Subjects",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "auditlog",
                 columns: table => new
                 {
@@ -202,6 +165,36 @@ namespace API.Migrations
                     table.ForeignKey(
                         name: "FK_auditlog_User_Userid",
                         column: x => x.Userid,
+                        principalTable: "User",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Classes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    NameClass = table.Column<string>(type: "nvarchar(90)", maxLength: 90, nullable: true),
+                    SubjectId = table.Column<int>(type: "int", nullable: true),
+                    Semester = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    YearSchool = table.Column<int>(type: "int", nullable: true),
+                    StartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<bool>(type: "bit", nullable: true),
+                    UsersId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    StudentCount = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__Classes__3214EC07EDA37A0C", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Classes_Subject",
+                        column: x => x.SubjectId,
+                        principalTable: "Subjects",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Classes_Users",
+                        column: x => x.UsersId,
                         principalTable: "User",
                         principalColumn: "Id");
                 });
@@ -310,7 +303,10 @@ namespace API.Migrations
                     ClassId = table.Column<int>(type: "int", nullable: true),
                     RoomId = table.Column<int>(type: "int", nullable: true),
                     DayId = table.Column<int>(type: "int", nullable: true),
-                    StudyShiftId = table.Column<int>(type: "int", nullable: true)
+                    StudyShiftId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<bool>(type: "bit", nullable: true),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -402,7 +398,10 @@ namespace API.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     SchedulesId = table.Column<int>(type: "int", nullable: true),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreateAt = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())")
+                    SessionCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreateAt = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
+                    Starttime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Endtime = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -453,7 +452,9 @@ namespace API.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     StudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     AttendanceId = table.Column<int>(type: "int", nullable: true),
-                    Statuss = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    Status = table.Column<int>(type: "int", maxLength: 20, nullable: false),
+                    CheckinTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -470,6 +471,74 @@ namespace API.Migrations
                         column: x => x.StudentId,
                         principalTable: "StudentsInfor",
                         principalColumn: "UserId");
+                });
+
+            migrationBuilder.InsertData(
+                table: "Permission",
+                columns: new[] { "Id", "PermissionName" },
+                values: new object[,]
+                {
+                    { 1, "Create" },
+                    { 2, "Detail" },
+                    { 3, "Edit" },
+                    { 4, "Search" },
+                    { 5, "ProcessComplaint" },
+                    { 6, "AddRole" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Roles",
+                columns: new[] { "Id", "RoleName" },
+                values: new object[,]
+                {
+                    { 1, "Admin" },
+                    { 2, "Teacher" },
+                    { 3, "Student" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Rooms",
+                columns: new[] { "Id", "Capacity", "Device", "RoomCode" },
+                values: new object[,]
+                {
+                    { 1, null, "Projector, Whiteboard", "Room 101" },
+                    { 2, null, "Projector, Whiteboard", "Room 102" },
+                    { 3, null, "Projector, Whiteboard", "Room 103" },
+                    { 4, null, "Projector, Whiteboard", "Room 104" },
+                    { 5, null, "Projector, Whiteboard", "Room 105" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "StudyShifts",
+                columns: new[] { "Id", "EndTime", "StartTime", "StudyShiftName" },
+                values: new object[,]
+                {
+                    { 1, new TimeOnly(9, 15, 0), new TimeOnly(7, 15, 0), "Ca 1" },
+                    { 2, new TimeOnly(11, 25, 0), new TimeOnly(9, 25, 0), "Ca 2" },
+                    { 3, new TimeOnly(14, 0, 0), new TimeOnly(12, 0, 0), "Ca 3" },
+                    { 4, new TimeOnly(16, 10, 0), new TimeOnly(14, 10, 0), "Ca 4" },
+                    { 5, new TimeOnly(18, 20, 0), new TimeOnly(16, 20, 0), "Ca 5" },
+                    { 6, new TimeOnly(20, 30, 0), new TimeOnly(18, 30, 0), "Ca 6" },
+                    { 7, new TimeOnly(23, 59, 59, 999).Add(TimeSpan.FromTicks(9999)), new TimeOnly(0, 0, 0), "Ca 7" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "RolePermission",
+                columns: new[] { "PermissionId", "RoleId" },
+                values: new object[,]
+                {
+                    { 1, 1 },
+                    { 2, 1 },
+                    { 3, 1 },
+                    { 4, 1 },
+                    { 5, 1 },
+                    { 6, 1 },
+                    { 2, 2 },
+                    { 3, 2 },
+                    { 4, 2 },
+                    { 5, 2 },
+                    { 2, 3 },
+                    { 3, 3 }
                 });
 
             migrationBuilder.CreateIndex(
@@ -521,6 +590,11 @@ namespace API.Migrations
                 name: "IX_Classes_SubjectId",
                 table: "Classes",
                 column: "SubjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Classes_UsersId",
+                table: "Classes",
+                column: "UsersId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Complaints_ProcessedBy",
@@ -590,9 +664,6 @@ namespace API.Migrations
                 name: "StudentInClass");
 
             migrationBuilder.DropTable(
-                name: "Subjects_New");
-
-            migrationBuilder.DropTable(
                 name: "UserProfiles");
 
             migrationBuilder.DropTable(
@@ -617,9 +688,6 @@ namespace API.Migrations
                 name: "Schedules");
 
             migrationBuilder.DropTable(
-                name: "User");
-
-            migrationBuilder.DropTable(
                 name: "Classes");
 
             migrationBuilder.DropTable(
@@ -633,6 +701,9 @@ namespace API.Migrations
 
             migrationBuilder.DropTable(
                 name: "Subjects");
+
+            migrationBuilder.DropTable(
+                name: "User");
         }
     }
 }

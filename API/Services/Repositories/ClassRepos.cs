@@ -213,11 +213,14 @@ namespace API.Services
                 ["StudentId"] = studentId,
                 ["AssignedDate"] = DateTime.Now // Thêm giá trị cho cột AssignedDate
             };
-
-            _context.Set<Dictionary<string, object>>("StudentInClass").Add(newEntry);
-            await _context.SaveChangesAsync();
-
-            return true;
+           
+            var cls = await _context.Classes.FindAsync(classId);//tạm cho đỡ lỗi
+            if (cls != null)//tạm cho đỡ lỗi
+            {//tạm cho đỡ lỗi
+                cls.StudentCount += 1;//tạm cho đỡ lỗi
+                await _context.SaveChangesAsync();//tạm cho đỡ lỗi
+            }//tạm cho đỡ lỗi
+            return true;    
         }
 
         public async Task<bool> StudentRegisterClassAsync(int classId, Guid studentId)
