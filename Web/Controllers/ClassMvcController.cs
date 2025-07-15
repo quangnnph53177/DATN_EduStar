@@ -150,7 +150,7 @@ namespace Web.Controllers
             ViewBag.TeacherList = TeacherList.Select(t => new SelectListItem
             {
                 Value = t.Id.ToString(),
-                Text = t.UserName,
+                Text = t.UserProfile.FullName,
             });
             return View(classCreateViewModel);
         }
