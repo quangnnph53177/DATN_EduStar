@@ -309,7 +309,7 @@ namespace Web.Controllers
 
             var result = await response.Content.ReadAsStringAsync();
             TempData["SuccessMessage"] = "Tạo tài khoản thành công!";
-            return RedirectToAction("Index","Student");
+            return RedirectToAction("Index", "Student");
         }
 
         public IActionResult Confirm()
@@ -354,8 +354,13 @@ namespace Web.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var users = JsonSerializer.Deserialize<List<UserDTO>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                var totalCount = users.Count;
-                var pagedUsers = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                // 🔍 Chỉ giữ lại các user có RoleIds chứa 1 (admin)
+                var filteredUsers = users
+                    .Where(u => u.RoleIds != null && u.RoleIds.Contains(1))
+                    .ToList();
+
+                var totalCount = filteredUsers.Count;
+                var pagedUsers = filteredUsers.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
                 var result = new PagedResult<UserDTO>
                 {
@@ -427,85 +432,89 @@ namespace Web.Controllers
                 TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login");
             }
-            // Gọi API để lấy dữ liệu user cũ
             var response = await client.GetAsync($"https://localhost:7298/api/User/searchuser?keyword={username}");
-            if (response.IsSuccessStatusCode)
-            {
-                var jsonData = await response.Content.ReadAsStringAsync();
-                var users = JsonSerializer.Deserialize<List<UserDTO>>(jsonData, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                var user = users.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
-
-                if (user == null)
-                {
-                    TempData["ErrorMessage"] = "Không tìm thấy người dùng.";
-                    return RedirectToAction("Index");
-                }
-
-                return View(user);
-            }
-            else
+            if (!response.IsSuccessStatusCode)
             {
                 TempData["ErrorMessage"] = "Không thể tải dữ liệu người dùng.";
                 return RedirectToAction("Index");
             }
+
+            var jsonData = await response.Content.ReadAsStringAsync();
+            var users = JsonSerializer.Deserialize<List<UserDTO>>(jsonData, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            var user = users?.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy người dùng.";
+                return RedirectToAction("Index");
+            }
+
+            return View(user);
         }
+
         [HttpPost]
-        public async Task<IActionResult> UpdateUser(string username, UserDTO userDto, IFormFile imgFile)
+        public async Task<IActionResult> UpdateUser(string username, UserDTO userDto, IFormFile? imgFile)
         {
             try
             {
                 var client = GetClientWithToken();
+                if (client == null)
+                {
+                    TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                    return RedirectToAction("Login");
+                }
 
-                // Serialize object
                 var formData = new MultipartFormDataContent
-               {
-                   { new StringContent(userDto.UserName ?? ""), "UserName" },
-                   { new StringContent(userDto.FullName ?? ""), "FullName" },
-                   { new StringContent(userDto.UserCode ?? ""), "UserCode" },
-                   { new StringContent(userDto.Email ?? ""), "Email" },
-                   { new StringContent(userDto.PhoneNumber ?? ""), "PhoneNumber" },
-                   { new StringContent(string.Join(",", userDto.RoleIds ?? new List<int>())), "RoleId" },
-                   { new StringContent(userDto.Address ?? ""), "Address" },
-                   { new StringContent(userDto.Gender.HasValue ? userDto.Gender.Value.ToString() : ""), "Gender" }
-               };
+                    {
+                        { new StringContent(userDto.UserName ?? ""), "UserName" },
+                        { new StringContent(userDto.FullName ?? ""), "FullName" },
+                        { new StringContent(userDto.UserCode ?? ""), "UserCode" },
+                        { new StringContent(userDto.Email ?? ""), "Email" },
+                        { new StringContent(userDto.PhoneNumber ?? ""), "PhoneNumber" },
+                        { new StringContent(userDto.Address ?? ""), "Address" },
+                        { new StringContent(userDto.Gender.HasValue ? userDto.Gender.Value.ToString().ToLower() : ""), "Gender" },
+                        { new StringContent(userDto.Statuss ? "true" : "false"), "Statuss" }
+                    };
 
-                // Fix for CS1503: Convert DateTime? to string using ToString with a format
+                // Thêm ngày sinh (nếu có)
                 if (userDto.Dob.HasValue)
                 {
                     formData.Add(new StringContent(userDto.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
                 }
 
+                // Thêm file ảnh
                 if (imgFile != null && imgFile.Length > 0)
                 {
-                    var streamContent = new StreamContent(imgFile.OpenReadStream());
-                    streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
-                    formData.Add(streamContent, "imgFile", imgFile.FileName);
+                    var fileStream = new StreamContent(imgFile.OpenReadStream());
+                    fileStream.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
+                    formData.Add(fileStream, "imgFile", imgFile.FileName);
                 }
 
-                var response = await client.PutAsync($"https://localhost:7298/api/User/updateuser/{userDto.UserName}", formData);
+                var apiUrl = $"https://localhost:7298/api/User/updateuser/{userDto.UserName}";
+                var response = await client.PutAsync(apiUrl, formData);
 
                 if (response.IsSuccessStatusCode)
                 {
                     TempData["SuccessMessage"] = "Cập nhật người dùng thành công.";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("IndexUser", new { username = userDto.UserName });
                 }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    TempData["ErrorMessage"] = !string.IsNullOrEmpty(errorContent) ? errorContent : "Cập nhật thất bại.";
-                    return RedirectToAction("Index");
-                }
+
+                var errorContent = await response.Content.ReadAsStringAsync();
+                TempData["ErrorMessage"] = !string.IsNullOrEmpty(errorContent)
+                    ? errorContent
+                    : "Cập nhật thất bại.";
+                return RedirectToAction("IndexUser", new { username = userDto.UserName });
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return RedirectToAction("Index");
+                return RedirectToAction("IndexUser", new { username = userDto.UserName });
             }
         }
+
         [HttpPost]
         public async Task<IActionResult> LockUser(string username)
         {

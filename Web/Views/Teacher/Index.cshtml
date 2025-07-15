@@ -1,125 +1,157 @@
 ﻿@model API.ViewModel.PagedResult<API.ViewModel.UserDTO>
 
 @{
-    ViewData["Title"] = "Danh sách người dùng";
+    ViewData["Title"] = "Danh sách giảng viên";
 }
-<div class="container mt-4">
 
-    <h2>Danh sách Quản trị viên</h2>
+<div class="container mt-5">
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="card-header bg-white text-white py-3">
+            <h2 class="text-primary mb-4">
+                <i class="bi bi-people-fill me-2"></i> @ViewData["Title"]
+            </h2>
+        </div>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-    }
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-    }
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        @if (User.HasClaim("Permission", "Search"))
-        {
-            <form method="get" asp-action="SearchUS" class="mb-3 d-flex">
-                <input type="text" name="keyword" class="form-control w-50" placeholder="Tìm kiếm người dùng..." />
-                <button type="submit" class="btn btn-primary">Tìm kiếm</button>
-                <a asp-action="Index" class="btn btn-secondary ms-2">Làm mới</a>
-            </form>
-        }
-        @if (User.HasClaim("Permission", "Create"))
-        {
-            <a asp-controller="Teacher" asp-action="Register" class="btn btn-primary">
-                <i class="bi bi-plus-lg"></i>Thêm người dùng
-            </a>
-        }
-    </div>
-
-    <table class="table table-bordered table-hover">
-        <thead class="table-light">
-            <tr>
-                <th scope="col">STT</th>
-                <th scope="col">Người dùng</th>
-                <th scope="col">Vai trò</th>
-                <th scope="col">Trạng thái</th>
-                <th scope="col" class="text-center">Thao tác</th>
-            </tr>
-        </thead>
-        <tbody>
-            @for (int i = 0; i < Model.Items.Count(); i++)
+        <div class="card-body px-4 py-4">
+            <!-- Thông báo -->
+            @if (TempData["SuccessMessage"] != null)
             {
-                var user = Model.Items[i];
-                <tr>
-                    <td>@(i + 1)</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="d-flex flex-column align-items-center me-2" style="width: 60px;">
-                                <!-- Ảnh avatar (ẩn mặc định) -->
-                                <img id="avatar-img-@i"
-                                     src="@(string.IsNullOrEmpty(user.Avatar) ? "#" : $"https://localhost:7298/{user.Avatar}")"
-                                     alt="No Avatar"
-                                     class="d-none"
-                                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%;" />
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
 
-                                <!-- Nút 👁 hoặc 👁‍🗨 -->
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-primary mt-1"
-                                        onclick="toggleAvatar(@i, '@user.Avatar')"
-                                        id="toggle-btn-@i">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </div>
+            <!-- Tìm kiếm + Tạo -->
+            <div class="d-flex justify-content-between flex-wrap mb-4 gap-2">
+                @if (User.HasClaim("Permission", "Search"))
+                {
+                    <form method="get" asp-action="SearchUS" class="d-flex flex-grow-1 gap-2">
+                        <input type="text" name="keyword" class="form-control" placeholder="🔍 Tìm kiếm người dùng..." />
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Làm mới</a>
+                    </form>
+                }
+                @if (User.HasClaim("Permission", "Create"))
+                {
+                    <a asp-controller="Users" asp-action="Register" class="btn btn-success">
+                        <i class="bi bi-plus-lg"></i> Thêm người dùng
+                    </a>
+                }
+            </div>
 
-                            <div>
-                                <div>
-                                    <strong>@user.FullName</strong>
-                                </div>
-                                <div class="text-muted small">
-                                    @user.Email
-                                </div>
-                                <div class="text-muted small">
-                                    @user.UserCode
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="badge bg-danger">@string.Join(", ", user.RoleIds ?? new List<int>())</span></td>
-                    <td>
-                        <span class="badge bg-@(user.Statuss ? "success" : "secondary")">
-                            @(user.Statuss ? "Hoạt động" : "Đã khóa")
-                        </span>
-                    </td>
-                    <td class="text-center">
-                        <a asp-controller="Teacher" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔍</a>
-                        @if (User.HasClaim("Permission", "Create"))
+            <!-- Bảng -->
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle table-hover">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th style="width: 60px;">#</th>
+                            <th>Người dùng</th>
+                            <th>Vai trò</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Items.Count(); i++)
                         {
-                            <a asp-controller="Teacher" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">✏️</a>
-                            <a asp-controller="Teacher" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1">🔄</a>
-                            <form asp-controller="Teacher" asp-action="LockUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái?');" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm mx-1 @(user.Statuss ? "btn-danger" : "btn-success")">
-                                    @(user.Statuss ? "🔒" : "🔓")
-                                </button>
-                            </form>
+                            var user = Model.Items[i];
+                            <tr>
+                                <td class="text-center">@((Model.PageIndex - 1) * Model.PageSize + i + 1)</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="d-flex flex-column align-items-center me-3" style="width: 60px;">
+                                            <!-- Ảnh avatar -->
+                                            <img id="avatar-img-@i"
+                                                 src="@(string.IsNullOrEmpty(user.Avatar) ? "#" : $"https://localhost:7298/{user.Avatar}")"
+                                                 alt="No Avatar"
+                                                 class="d-none"
+                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 1px solid #ccc;" />
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary mt-1"
+                                                    onclick="toggleAvatar(@i, '@user.Avatar')"
+                                                    id="toggle-btn-@i">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div>
+                                            <strong>@user.FullName</strong><br />
+                                            <span class="text-muted small">@user.Email</span><br />
+                                            <span class="text-muted small">Mã: @user.UserCode</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (user.RoleIds != null && user.RoleIds.Any())
+                                    {
+                                        @foreach (var rid in user.RoleIds)
+                                        {
+                                            <span class="badge bg-info text-dark me-1">#@rid</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Không có</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(user.Statuss ? "success" : "secondary")">
+                                        @(user.Statuss ? "Hoạt động" : "Đã khóa")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a asp-controller="Users" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-outline-info btn-sm mx-1" title="Xem">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </a>
+                                    @if (User.HasClaim("Permission", "Create"))
+                                    {
+                                        <a asp-controller="Users" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1" title="Sửa">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                        <a asp-controller="Users" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-warning btn-sm mx-1" title="Đổi vai trò">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </a>
+                                        <form asp-controller="Users" asp-action="LockUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc muốn thay đổi trạng thái?');" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm mx-1 @(user.Statuss ? "btn-danger" : "btn-success")" title="Khóa / Mở khóa">
+                                                <i class="bi bi-@(user.Statuss ? "lock-fill" : "unlock-fill")"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
                         }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    </tbody>
+                </table>
+            </div>
 
-    <div class="d-flex justify-content-between">
-        <span>Trang @Model.PageIndex / @Model.TotalPages</span>
-        <div>
-            @if (Model.HasPreviousPage)
-            {
-                <a class="btn btn-outline-primary btn-sm" href="?page=@(Model.PageIndex - 1)">« Trước</a>
-            }
-            @if (Model.HasNextPage)
-            {
-                <a class="btn btn-outline-primary btn-sm" href="?page=@(Model.PageIndex + 1)">Sau »</a>
-            }
+            <!-- Phân trang -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <span class="text-muted small">Trang <strong>@Model.PageIndex</strong> / @Model.TotalPages</span>
+                <div class="btn-group">
+                    @if (Model.HasPreviousPage)
+                    {
+                        <a class="btn btn-outline-primary btn-sm" href="?page=@(Model.PageIndex - 1)">« Trước</a>
+                    }
+                    @if (Model.HasNextPage)
+                    {
+                        <a class="btn btn-outline-primary btn-sm" href="?page=@(Model.PageIndex + 1)">Sau »</a>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
 @section Scripts {
     <script>
         function toggleAvatar(i, avatarUrl) {
@@ -128,17 +160,12 @@
             const icon = button.querySelector('i');
 
             const hasAvatar = avatarUrl && avatarUrl.trim() !== '';
-
             if (hasAvatar) {
                 const isVisible = !avatarImg.classList.contains("d-none");
                 avatarImg.classList.toggle("d-none", isVisible);
+                icon.classList.toggle("bi-eye", isVisible);
+                icon.classList.toggle("bi-eye-slash", !isVisible);
             }
-
-            icon.classList.toggle("bi-eye");
-            icon.classList.toggle("bi-eye-slash");
         }
     </script>
-
 }
-
-
