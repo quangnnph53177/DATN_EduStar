@@ -303,46 +303,46 @@ namespace API.Controllers
             }
         }
         //[Authorize(Policy = "DetailUS")]
-        //[HttpGet("user")]
-        //public async Task<IActionResult> GetAllUsers()
-        //{
-        //    // Thêm logic lọc theo vai trò vào trước khi trả về users trong GetAllUsers
-        //    try
-        //    {
-        //        var currentUserRoleIds = User.Claims
-        //            .Where(c => c.Type == ClaimTypes.Role)
-        //            .Select(c => int.Parse(c.Value))
-        //            .ToList();
-        //        var currentUserName = User.Identity?.Name;
-        //        if (string.IsNullOrEmpty(currentUserName))
-        //            return Unauthorized("Không tìm thấy thông tin người dùng");
-        //        var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+        [HttpGet("user")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            // Thêm logic lọc theo vai trò vào trước khi trả về users trong GetAllUsers
+            try
+            {
+                var currentUserRoleIds = User.Claims
+                    .Where(c => c.Type == ClaimTypes.Role)
+                    .Select(c => int.Parse(c.Value))
+                    .ToList();
+                var currentUserName = User.Identity?.Name;
+                if (string.IsNullOrEmpty(currentUserName))
+                    return Unauthorized("Không tìm thấy thông tin người dùng");
+                var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
 
-        //        // Lọc theo vai trò
-        //        IEnumerable<UserDTO> filteredUsers;
-        //        if (currentUserRoleIds.Contains(1)) // Admin
-        //        {
-        //            filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 1 || rid == 2 || rid == 3)/* && u.UserName != currentUserName*/);
-        //        }
-        //        else if (currentUserRoleIds.Contains(2)) // Giảng viên
-        //        {
-        //            filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 3)/* && u.UserName != currentUserName*/);
-        //        }
-        //        else
-        //        {
-        //            filteredUsers = users.Where(u => u.UserName == currentUserName); // Sinh viên chỉ xem thông tin của mình
-        //        }
+                // Lọc theo vai trò
+                IEnumerable<UserDTO> filteredUsers;
+                if (currentUserRoleIds.Contains(1)) // Admin
+                {
+                    filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 1 || rid == 2 || rid == 3)/* && u.UserName != currentUserName*/);
+                }
+                else if (currentUserRoleIds.Contains(2)) // Giảng viên
+                {
+                    filteredUsers = users.Where(u => u.RoleIds.Any(rid => rid == 3)/* && u.UserName != currentUserName*/);
+                }
+                else
+                {
+                    filteredUsers = users.Where(u => u.UserName == currentUserName); // Sinh viên chỉ xem thông tin của mình
+                }
 
-        //        if (!filteredUsers.Any())
-        //            return Forbid();
+                if (!filteredUsers.Any())
+                    return Forbid();
 
-        //        return Ok(filteredUsers);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(new { error = ex.Message });
-        //    }
-        //}
+                return Ok(filteredUsers);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
 
         [HttpGet("admin")]
         [Authorize(Roles = "1")]

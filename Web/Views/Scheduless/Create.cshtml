@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "Thêm lịch học";
 }
-
 <h2 class="text-primary mb-4">Thêm lịch học</h2>
 
 <form asp-action="Create" method="post">
@@ -32,7 +31,11 @@
         <select asp-for="WeekDayId" asp-items="ViewBag.DayList" class="form-select"></select>
         <span asp-validation-for="WeekDayId" class="text-danger"></span>
     </div>
-
+    <div class="form-group mb-3">
+        <label asp-for="startdate" class="form-label">Ngày học</label>
+        <input asp-for="startdate" type="date" class="form-control" />
+        <span asp-validation-for="startdate" class="text-danger"></span>
+    </div>
     <div class="d-flex justify-content-between">
         <a asp-action="Index" class="btn btn-secondary">⬅ Quay lại</a>
         <button type="submit" class="btn btn-success">➕ Thêm mới</button>

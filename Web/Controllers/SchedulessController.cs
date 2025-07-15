@@ -18,13 +18,20 @@ namespace Web.Controllers
         {
             _context = context;
             _client = client;
-            _client.BaseAddress = _client.BaseAddress = new Uri("https://localhost:7298/");
+            _client.BaseAddress =  new Uri("https://localhost:7298/");
         }
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index1()
         {
             var response =await _client.GetStringAsync("api/Schedules");
             var result = JsonConvert.DeserializeObject<List<SchedulesViewModel>>(response);
             return View(result);
+        }
+        public async Task<IActionResult> Index()
+        {
+            var response = await _client.GetStringAsync("api/Schedules/codinh");
+            var result = JsonConvert.DeserializeObject<List<Lichcodinh>>(response);
+            return View(result);
+
         }
         public async Task<IActionResult> Auto(Schedule sc)
         {
@@ -47,8 +54,16 @@ namespace Web.Controllers
         public async Task<IActionResult>Create(SchedulesDTO dto)
         {
             var response = await _client.PostAsJsonAsync("api/Schedules/create", dto);
-            //var  result = response.Content.ReadAsStringAsync();
-            await LoadSelectitem();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                ModelState.AddModelError(string.Empty, error); // <== đây sẽ đẩy lỗi vào ValidationSummary
+
+                await LoadSelectitem();
+                return View(dto);
+            }
+
             return RedirectToAction("Index");
         }
         [HttpGet]

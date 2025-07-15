@@ -12,5 +12,7 @@
         public TimeOnly? endtime {  get; set; }
         public DateTime? startdate { get; set; }
         public DateTime? enddate { get; set; }
+        public int? StudentCount { get; set; }
+        public Guid? UserId { get; set; }
     }
 }

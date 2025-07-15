@@ -27,6 +27,8 @@ namespace API.Controllers
                 RoomCode = c.Room.RoomCode,
                 StudyShift = c.StudyShift.StudyShiftName,
                 WeekDay = c.Day.Weekdays.ToString(),
+                //StudentCount =int.Parse,
+                
             });
             return Ok(check);
         }

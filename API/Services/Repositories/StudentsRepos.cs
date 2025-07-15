@@ -426,7 +426,7 @@ namespace API.Services.Repositories
                      $"- Học kỳ: {in4class.Semester}\n" +
                      $"- Năm học: {in4class.YearSchool}\n\n" +
                      $"Vui lòng theo dõi thông tin và chuẩn bị học tập.\n\n" +
-                     $"Trân trọng,\nBan Quản Trị";
+                     $"Trân trọng,\n Bố của chúng mày";
             
             foreach (var email in lststudeninclass)
             {
