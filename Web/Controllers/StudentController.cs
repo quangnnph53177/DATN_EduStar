@@ -39,6 +39,7 @@ namespace Web.Controllers
                 return RedirectToAction("Login", "Users");
             }
 
+            // 📌 Build query string
             var queryParams = new List<string>();
             if (!string.IsNullOrWhiteSpace(StudentCode)) queryParams.Add($"studentCode={StudentCode}");
             if (!string.IsNullOrWhiteSpace(fullName)) queryParams.Add($"fullName={fullName}");
@@ -50,6 +51,7 @@ namespace Web.Controllers
             var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : string.Empty;
             var url = $"api/students/student{queryString}";
 
+            // 📡 Gửi yêu cầu
             var response = await client.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
@@ -60,30 +62,60 @@ namespace Web.Controllers
                 }
 
                 TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy danh sách người dùng.";
-                return View(new List<UserDTO>());
+                return View(new List<ClassWithStudentsViewModel>());
             }
 
             var usersJson = await response.Content.ReadAsStringAsync();
 
-            // Nếu là giảng viên thì deserialize theo dictionary
-            var usersDict = JsonConvert.DeserializeObject<Dictionary<string, List<UserDTO>>>(usersJson);
-            var classViewModels = usersDict.Select((kv, index) => new ClassWithStudentsViewModel
-            {
-                ClassId = index + 1,
-                ClassName = kv.Key,
-                StudentsInfor = kv.Value
-            }).ToList();
+            List<ClassWithStudentsViewModel> classViewModels;
 
+            try
+            {
+                // 👑 Giảng viên (trả về dictionary: lớp -> sinh viên)
+                var usersDict = JsonConvert.DeserializeObject<Dictionary<string, List<UserDTO>>>(usersJson);
+                classViewModels = usersDict.Select((kv, index) => new ClassWithStudentsViewModel
+                {
+                    ClassId = index + 1,
+                    ClassName = kv.Key,
+                    StudentsInfor = kv.Value
+                }).ToList();
+            }
+            catch
+            {
+                try
+                {
+                    // 👨‍🎓 Sinh viên hoặc Admin (trả về danh sách đơn lẻ)
+                    var usersList = JsonConvert.DeserializeObject<List<UserDTO>>(usersJson);
+                    classViewModels = new List<ClassWithStudentsViewModel>
+                    {
+                        new ClassWithStudentsViewModel
+                        {
+                            ClassId = 1,
+                            ClassName = "Lớp của bạn",
+                            StudentsInfor = usersList
+                        }
+                    };
+                }
+                catch
+                {
+                    TempData["ErrorMessage"] = "Lỗi xử lý dữ liệu người dùng.";
+                    return View(new List<ClassWithStudentsViewModel>());
+                }
+            }
+
+            // 📌 Phân trang từng lớp
             foreach (var cls in classViewModels)
             {
                 int currentPage = (cls.ClassId == classId) ? page : 1;
-                var total = cls.StudentsInfor.Count;
+                int total = cls.StudentsInfor.Count;
+
                 var paged = cls.StudentsInfor
                     .Skip((currentPage - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
 
                 cls.StudentsInfor = paged;
+
                 ViewData[$"TotalPages_{cls.ClassId}"] = (int)Math.Ceiling((double)total / pageSize);
                 ViewData[$"CurrentPage_{cls.ClassId}"] = currentPage;
                 ViewData[$"PageSize_{cls.ClassId}"] = pageSize;
@@ -91,6 +123,7 @@ namespace Web.Controllers
 
             return View(classViewModels);
         }
+
 
         public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status)
         {             

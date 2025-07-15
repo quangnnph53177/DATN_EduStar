@@ -474,58 +474,52 @@ namespace API.Services.Repositories
             return user.Statuss == true ? "Mở khóa thành công" : "Khóa thành công";
 
         }
-
-        public async Task UpdateUser(UserDTO userd, IFormFile imgFile)
+        public async Task UpdateUser(UserDTO userDto, IFormFile? imgFile)
         {
-            var upuser = await _context.Users
-                  .Include(p => p.UserProfile)
-                  .FirstOrDefaultAsync(d => d.UserName.ToLower() == userd.UserName.ToLower());
+            var user = await _context.Users
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.UserName.ToLower() == userDto.UserName.ToLower());
 
-            if (upuser == null)
+            if (user == null)
                 throw new Exception("Không tìm thấy người dùng.");
-            if (await _context.Users.AnyAsync(u => u.UserName == userd.UserName && u.Id != upuser.Id))
+
+            if (await _context.Users.AnyAsync(u => u.UserName == userDto.UserName && u.Id != user.Id))
                 throw new Exception("Tên đăng nhập đã tồn tại.");
 
-            if (await _context.Users.AnyAsync(u => u.Email == userd.Email && u.Id != upuser.Id))
+            if (await _context.Users.AnyAsync(u => u.Email == userDto.Email && u.Id != user.Id))
                 throw new Exception("Email đã được sử dụng.");
 
-            // Check for unique UserCode
-            if (!string.IsNullOrWhiteSpace(userd.UserCode))
+            if (!string.IsNullOrWhiteSpace(userDto.UserCode))
             {
                 bool userCodeExists = await _context.UserProfiles
-                    .AnyAsync(up => up.UserCode == userd.UserCode && up.UserId != upuser.Id);
+                    .AnyAsync(up => up.UserCode == userDto.UserCode && up.UserId != user.Id);
                 if (userCodeExists)
                     throw new Exception("UserCode đã tồn tại.");
             }
-            if (!string.IsNullOrWhiteSpace(userd.Email))
-                upuser.Email = userd.Email;
-            // Kiểm tra UserProfile có null không, nếu null thì khởi tạo
-            if (upuser.UserProfile == null)
-            {
-                upuser.UserProfile = new UserProfile
-                {
-                    UserId = upuser.Id
-                };
-            }
-            if (!string.IsNullOrWhiteSpace(userd.FullName))
-                upuser.UserProfile.FullName = userd.FullName;
-            if (!string.IsNullOrWhiteSpace(userd.UserCode))
-                upuser.UserProfile.UserCode = userd.UserCode;
-            if (userd.Gender.HasValue)
-                upuser.UserProfile.Gender = userd.Gender;
-            if (!string.IsNullOrWhiteSpace(userd.PhoneNumber))
-                upuser.PhoneNumber = userd.PhoneNumber;
+
+            user.Email = userDto.Email;
+            user.PhoneNumber = userDto.PhoneNumber;
+
+            if (user.UserProfile == null)
+                user.UserProfile = new UserProfile { UserId = user.Id };
+
+            user.UserProfile.FullName = userDto.FullName;
+            user.UserProfile.UserCode = userDto.UserCode;
+            user.UserProfile.Gender = userDto.Gender;
+            user.UserProfile.Address = userDto.Address;
+            user.UserProfile.Dob = userDto.Dob.HasValue ? DateOnly.FromDateTime(userDto.Dob.Value) : null;
 
             if (imgFile != null && imgFile.Length > 0)
             {
-                upuser.UserProfile.Avatar = await SaveAvatar(imgFile, upuser.UserProfile.Avatar);
-            }
-            if (!string.IsNullOrWhiteSpace(userd.Address))
-                upuser.UserProfile.Address = userd.Address;
-            if (userd.Dob.HasValue)
-                upuser.UserProfile.Dob = DateOnly.FromDateTime(userd.Dob.Value);
+                var validExts = new[] { ".jpg", ".jpeg", ".png" };
+                var ext = Path.GetExtension(imgFile.FileName).ToLowerInvariant();
+                if (!validExts.Contains(ext)) throw new Exception("Chỉ hỗ trợ ảnh jpg, jpeg, png");
 
-            _context.Users.Update(upuser);
+                var avatarPath = await SaveAvatar(imgFile, user.UserProfile.Avatar);
+                user.UserProfile.Avatar = avatarPath;
+            }
+
+            _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
         public async Task<string> ChangeRole(string userName, int newRoleId)

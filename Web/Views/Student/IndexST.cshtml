@@ -1,4 +1,4 @@
-﻿@model List<API.ViewModel.ClassWithStudentsViewModel>
+﻿@* @model List<API.ViewModel.ClassWithStudentsViewModel>
 >
 
 @{
@@ -231,5 +231,175 @@
                 document.getElementById('advancedSearch').style.display = 'block';
             }
         });
+    </script>
+}
+ *@
+ @model List<API.ViewModel.ClassWithStudentsViewModel>
+
+@{
+    ViewData["Title"] = "Danh sách sinh viên";
+    var selectedGender = Context.Request.Query["gender"].ToString();
+    var selectedStatus = Context.Request.Query["status"].ToString();
+}
+
+<div class="container mt-4">
+    <h2 class="text-primary mb-4"><i class="bi bi-people-fill"></i> @ViewData["Title"]</h2>
+
+    <!-- Thông báo -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <!-- Tìm kiếm -->
+    <form asp-action="IndexST" method="get" class="card card-body mb-4 shadow-sm">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <input name="studentCode" class="form-control form-control-sm" placeholder="Mã SV"
+                       value="@Context.Request.Query["studentCode"]" />
+            </div>
+            <div class="col-md-2">
+                <input name="fullName" class="form-control form-control-sm" placeholder="Họ tên"
+                       value="@Context.Request.Query["fullName"]" />
+            </div>
+            <div class="col-md-2">
+                <input name="username" class="form-control form-control-sm" placeholder="Username"
+                       value="@Context.Request.Query["username"]" />
+            </div>
+            <div class="col-md-2">
+                <input name="email" class="form-control form-control-sm" placeholder="Email"
+                       value="@Context.Request.Query["email"]" />
+            </div>
+            <div class="col-md-2">
+                <select name="gender" class="form-select form-select-sm">
+                    <option value="">-- Giới tính --</option>
+                    <option value="true" selected="@(selectedGender == "true")">Nam</option>
+                    <option value="false" selected="@(selectedGender == "false")">Nữ</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">-- Trạng thái --</option>
+                    <option value="true" selected="@(selectedStatus == "true")">Hoạt động</option>
+                    <option value="false" selected="@(selectedStatus == "false")">Không hoạt động</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary btn-sm">🔍 Tìm</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Vòng qua từng lớp -->
+    @foreach (var cls in Model)
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-easel-fill me-2"></i>@cls.ClassName</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr class="text-center">
+                            <th style="width: 60px;">#</th>
+                            <th>Thông tin</th>
+                            <th>Trạng thái</th>
+                            <th style="width: 200px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < cls.StudentsInfor.Count; i++)
+                        {
+                            var s = cls.StudentsInfor[i];
+                            <tr>
+                                <td class="text-center">@((i + 1))</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <img id="avatar-img-@i"
+                                                 src="@(string.IsNullOrEmpty(s.Avatar) ? "#" : $"https://localhost:7298/{s.Avatar}")"
+                                                 alt="Avatar"
+                                                 class="d-none"
+                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%;" />
+                                            <button type="button" class="btn btn-sm btn-outline-secondary mt-1"
+                                                    onclick="toggleAvatar(@i, '@s.Avatar')" id="toggle-btn-@i">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div>
+                                            <strong>@s.FullName</strong><br />
+                                            <small class="text-muted">@s.Email</small><br />
+                                            <small class="text-muted">@s.UserCode</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(s.Statuss ? "success" : "secondary")">
+                                        @(s.Statuss ? "Hoạt động" : "Không hoạt động")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a class="btn btn-outline-secondary btn-sm mx-1"
+                                       asp-controller="Student" asp-action="Details" asp-route-username="@s.UserName">🔍</a>
+                                    <a class="btn btn-outline-secondary btn-sm mx-1"
+                                       asp-controller="Student" asp-action="EditBoss" asp-route-username="@s.UserName">✏️</a>
+                                    <form asp-controller="Student" asp-action="Lock" asp-route-username="@s.UserName"
+                                          method="post" class="d-inline"
+                                          onsubmit="return confirm('Bạn có chắc muốn thay đổi trạng thái?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm mx-1 @(s.Statuss ? "btn-danger" : "btn-success")">
+                                            @(s.Statuss ? "🔒" : "🔓")
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Phân trang -->
+            <div class="card-footer text-end">
+                @if (ViewData.ContainsKey($"TotalPages_{cls.ClassId}"))
+                {
+                    int totalPages = (int)ViewData[$"TotalPages_{cls.ClassId}"];
+                    int currentPage = (int)ViewData[$"CurrentPage_{cls.ClassId}"];
+
+                    for (int i = 1; i <= totalPages; i++)
+                    {
+                        <form method="get" class="d-inline">
+                            <input type="hidden" name="classId" value="@cls.ClassId" />
+                            <input type="hidden" name="page" value="@i" />
+                            <button type="submit" class="btn btn-sm @(i == currentPage ? "btn-primary" : "btn-outline-primary")">
+                                @i
+                            </button>
+                        </form>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function toggleAvatar(i, avatarUrl) {
+            const avatarImg = document.getElementById(`avatar-img-${i}`);
+            const button = document.getElementById(`toggle-btn-${i}`);
+            const icon = button.querySelector("i");
+
+            const hasAvatar = avatarUrl && avatarUrl.trim() !== '';
+            if (hasAvatar) {
+                const isVisible = !avatarImg.classList.contains("d-none");
+                avatarImg.classList.toggle("d-none", isVisible);
+            }
+
+            icon.classList.toggle("bi-eye");
+            icon.classList.toggle("bi-eye-slash");
+        }
     </script>
 }

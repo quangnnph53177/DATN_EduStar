@@ -70,116 +70,6 @@ namespace Web.Controllers
             return View(new PagedResult<UserDTO>());
         }
         [HttpGet]
-        public async Task<IActionResult> Register()
-        {
-            var client = GetClientWithToken();
-            if (client == null)
-            {
-                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
-                return RedirectToAction("Login", "Users");
-            }
-            var reponse = await client.GetAsync("api/Role/getroles");
-            if (!reponse.IsSuccessStatusCode)
-            {
-                TempData["ErrorMessage"] = "Không thể lấy danh sách vai trò.";
-                return RedirectToAction("Index");
-            }
-            var rolesJson = await reponse.Content.ReadAsStringAsync();
-            var roles = JsonSerializer.Deserialize<List<Role>>(rolesJson, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-            var model = new RegisterViewModel
-            {
-                User = new UserDTO(),
-                RoleLists = roles?.Select(r => new SelectListItem
-                {
-                    Value = r.Id.ToString(),
-                    Text = r.RoleName
-                }).ToList() ?? new List<SelectListItem>()
-            };
-            return View(model);
-        }
-        [HttpPost]
-        public async Task<IActionResult> Register(RegisterViewModel model, IFormFile? imgFile)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            var client = GetClientWithToken();
-            using var content = new MultipartFormDataContent();
-
-            content.Add(new StringContent(model.User.UserName ?? ""), "UserName");
-            content.Add(new StringContent(model.User.PassWordHash ?? ""), "PassWordHash");
-            content.Add(new StringContent(model.User.Email ?? ""), "Email");
-            content.Add(new StringContent(model.User.PhoneNumber ?? ""), "PhoneNumber");
-            content.Add(new StringContent(model.User.FullName ?? ""), "FullName");
-            content.Add(new StringContent(model.User.Address ?? ""), "Address");
-            content.Add(new StringContent(model.User.Statuss.ToString()), "Statuss");
-
-            if (model.User.Dob.HasValue)
-                content.Add(new StringContent(model.User.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
-            content.Add(new StringContent(model.User.Gender.HasValue ? model.User.Gender.Value.ToString() : ""), "Gender");
-
-            if (model.User.RoleIds != null && model.User.RoleIds.Any())
-            {
-                foreach (var roleId in model.User.RoleIds)
-                {
-                    content.Add(new StringContent(roleId.ToString()), "RoleIds");
-                }
-            }
-
-            if (imgFile != null && imgFile.Length > 0)
-            {
-                var streamContent = new StreamContent(imgFile.OpenReadStream());
-                streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
-                content.Add(streamContent, "imgFile", imgFile.FileName);
-            }
-            var response = await client.PostAsync("api/User/register", content);
-            if (response.IsSuccessStatusCode)
-            {
-                TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
-                return RedirectToAction("Index", "Users");
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync(); // 🔥 Đọc lỗi chi tiết từ API
-                TempData["ErrorMessage"] = $"Đăng ký không thành công: {errorContent}";
-                return View(model);
-            }
-        }
-        [HttpGet]
-        public IActionResult Upload()
-        {
-            var client = GetClientWithToken();
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Upload(IFormFile file)
-        {
-            if (file == null || file.Length == 0)
-            {
-                TempData["ErrorMessage"] = "Vui lòng chọn tệp để tải lên.";
-                return View();
-            }
-
-            var client = GetClientWithToken();
-
-            using var content = new MultipartFormDataContent();
-            using var fileStream = file.OpenReadStream();
-            content.Add(new StreamContent(fileStream), "file", file.FileName);
-
-            var response = await client.PostAsync("https://localhost:7298/api/User/upload", content);
-            if (response.IsSuccessStatusCode)
-            {
-                return RedirectToAction("Index", "Users");
-            }
-            TempData["ErrorMessage"] = "Tải lên không thành công.";
-            return View();
-
-        }
-        [HttpGet]
         public async Task<IActionResult> SearchUS(string? keyword, int page = 1, int pageSize = 10)
         {
             var client = GetClientWithToken();
@@ -195,8 +85,13 @@ namespace Web.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var users = JsonSerializer.Deserialize<List<UserDTO>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                var totalCount = users.Count;
-                var pagedUsers = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                // 🔍 Chỉ giữ lại các user có RoleIds chứa 1 (admin)
+                var filteredUsers = users
+                    .Where(u => u.RoleIds != null && u.RoleIds.Contains(2))
+                    .ToList();
+
+                var totalCount = filteredUsers.Count;
+                var pagedUsers = filteredUsers.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
                 var result = new PagedResult<UserDTO>
                 {
@@ -230,7 +125,7 @@ namespace Web.Controllers
                 if (string.IsNullOrEmpty(username))
                 {
                     TempData["ErrorMessage"] = "Không thể xác định người dùng";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("Index", "Teacher");
                 }
             }
             // Gọi API để lấy dữ liệu user cũ
@@ -248,7 +143,7 @@ namespace Web.Controllers
                 if (user == null)
                 {
                     TempData["ErrorMessage"] = "Không tìm thấy người dùng.";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("Index", "Teacher");
                 }
 
                 return View(user);
@@ -256,7 +151,7 @@ namespace Web.Controllers
             else
             {
                 TempData["ErrorMessage"] = "Không thể tải dữ liệu người dùng.";
-                return RedirectToAction("Index");
+                return RedirectToAction("Index", "Teacher");
             }
         }
         [HttpGet]
@@ -283,7 +178,7 @@ namespace Web.Controllers
                 if (user == null)
                 {
                     TempData["ErrorMessage"] = "Không tìm thấy người dùng.";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("Index", "Teacher");
                 }
 
                 return View(user);
@@ -291,7 +186,7 @@ namespace Web.Controllers
             else
             {
                 TempData["ErrorMessage"] = "Không thể tải dữ liệu người dùng.";
-                return RedirectToAction("Index");
+                return RedirectToAction("Index", "Teacher");
             }
         }
         [HttpPost]
@@ -332,19 +227,19 @@ namespace Web.Controllers
                 if (response.IsSuccessStatusCode)
                 {
                     TempData["SuccessMessage"] = "Cập nhật người dùng thành công.";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("IndexUser", new { username = userDto.UserName });
                 }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    TempData["ErrorMessage"] = !string.IsNullOrEmpty(errorContent) ? errorContent : "Cập nhật thất bại.";
-                    return RedirectToAction("Index");
-                }
+
+                var errorContent = await response.Content.ReadAsStringAsync();
+                TempData["ErrorMessage"] = !string.IsNullOrEmpty(errorContent)
+                    ? errorContent
+                    : "Cập nhật thất bại.";
+                return RedirectToAction("IndexUser", new { username = userDto.UserName });
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return RedirectToAction("Index");
+                return RedirectToAction("IndexUser", new { username = userDto.UserName });
             }
         }
         [HttpPost]
@@ -371,7 +266,7 @@ namespace Web.Controllers
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
             }
 
-            return RedirectToAction("Index");
+            return RedirectToAction("Index","Teacher");
         }
         [HttpGet]
         public async Task<IActionResult> ChangeRole(string username)
@@ -397,7 +292,7 @@ namespace Web.Controllers
                 if (user == null)
                 {
                     TempData["ErrorMessage"] = "Không tìm thấy người dùng.";
-                    return RedirectToAction("Index");
+                    return RedirectToAction("Index", "Teacher");
                 }
 
                 return View(user);
@@ -405,7 +300,7 @@ namespace Web.Controllers
             else
             {
                 TempData["ErrorMessage"] = "Không thể tải dữ liệu người dùng.";
-                return RedirectToAction("Index");
+                return RedirectToAction("Index", "Teacher");
             }
         }
         [HttpPost]
@@ -432,7 +327,7 @@ namespace Web.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return RedirectToAction("Index");
+                return RedirectToAction("Index", "Teacher");
             }
         }
     }

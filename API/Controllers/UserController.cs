@@ -96,114 +96,6 @@ namespace API.Controllers
                 return Unauthorized(new { success = false, error = ex.Message });
             }
         }
-        // [Authorize(Policy = "CreateUS")]
-        //[HttpPost("upload")]
-        //public async Task<IActionResult> Upload(IFormFile file)
-        //{
-        //    if (file == null || file.Length == 0)
-        //        return BadRequest("Không có file được tải lên.");
-
-        //    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
-        //    try
-        //    {
-        //        using var stream = new MemoryStream();
-        //        await file.CopyToAsync(stream);
-        //        stream.Position = 0;
-
-        //        using var package = new ExcelPackage(stream);
-        //        var worksheet = package.Workbook.Worksheets[0];
-        //        if (worksheet == null)
-        //            return BadRequest("File Excel không có worksheet nào.");
-
-        //        int rowCount = worksheet.Dimension.Rows;
-        //        var usersCreated = new List<string>();
-        //        var usersFailed = new List<object>();
-
-        //        for (int row = 2; row <= rowCount; row++) // Bắt đầu từ row 2 vì row 1 là header
-        //        {
-        //            try
-        //            {
-        //                // Đọc từng cột 
-        //                var fullname = worksheet.Cells[row, 2].Text.Trim();
-        //                var userName = worksheet.Cells[row, 3].Text.Trim();
-        //                var password = worksheet.Cells[row, 4].Text.Trim();
-        //                var phone = worksheet.Cells[row, 5].Text.Trim();
-        //                var dobText = worksheet.Cells[row, 6].Text.Trim();
-        //                var genderText = worksheet.Cells[row, 7].Text.Trim();
-        //                var email = worksheet.Cells[row, 8].Text.Trim();
-        //                if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
-        //                {
-        //                    usersFailed.Add(new { Row = row, Reason = "Thiếu username hoặc password." });
-        //                    continue;
-        //                }
-        //                if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
-        //                {
-        //                    usersFailed.Add(new { Row = row, Reason = "Thiếu username hoặc password." });
-        //                    continue;
-        //                }
-
-        //                DateTime? dob = null;
-        //                if (DateTime.TryParseExact(dobText, new[] { "d/M/yyyy", "dd/MM/yyyy", "M/d/yyyy" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDob))
-        //                {
-        //                    dob = parsedDob;
-        //                }
-        //                bool? gender = null;
-        //                if (!string.IsNullOrEmpty(genderText))
-        //                {
-        //                    genderText = genderText.ToLower();
-        //                    if (genderText == "nam")
-        //                        gender = true;
-        //                    else if (genderText == "nữ" || genderText == "nu")
-        //                        gender = false;
-        //                }
-        //                var userDto = new UserDTO
-        //                {
-        //                    UserName = userName,
-        //                    PassWordHash = password,
-        //                    PhoneNumber = phone,
-        //                    Email = email,
-        //                    FullName = fullname,
-        //                    Dob = dob,
-        //                    Gender = gender,
-        //                    Statuss = true,
-        //                    CreateAt = DateTime.Now
-        //                };
-        //                var createdUser = await _userRepos.Register(userDto, null);
-        //                usersCreated.Add(userName);
-        //                var newData = JsonSerializer.Serialize(new
-        //                {
-        //                    createdUser.Email,
-        //                    createdUser.UserName,
-        //                    createdUser.Statuss
-        //                });
-        //                Guid? performedByGuid = null;
-        //                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        //                if (Guid.TryParse(performedBy, out var userGuid))
-        //                {
-        //                    performedByGuid = userGuid;
-        //                }
-
-        //                // Kiểm tra performedBy có tồn tại trong DB  
-        //                var existed = await _context.Users.FindAsync(performedByGuid);
-        //                if (existed == null)
-        //                    return BadRequest("Người thực hiện không tồn tại.");
-
-        //                await _logRepos.LogAsync(createdUser.Id, "CreateListUser", null, newData, performedByGuid);
-        //            }
-        //            catch (Exception exRow)
-        //            {
-        //                usersFailed.Add(new { Row = row, Reason = exRow.Message });
-        //            }
-        //        }
-
-        //        return Ok(new { message = "Upload và tạo user thành công", users = usersCreated });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(new { error = "Lỗi khi xử lý file Excel: " + ex.Message });
-        //    }
-        //}
         [HttpPost("preview-upload")]
         public async Task<IActionResult> Upload(IFormFile file)
         {
@@ -627,73 +519,45 @@ namespace API.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-        // [Authorize(Policy = "EditUS")]
+        [Authorize(Policy = "EditUS")]
         [HttpPut("updateuser/{username}")]
         public async Task<IActionResult> UpdateUser(string username, [FromForm] UserDTO userDto, IFormFile? imgFile)
         {
-            var currentUserRoleIds = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => int.Parse(c.Value)).ToList();
             var currentUserName = User.Identity?.Name;
             if (string.IsNullOrEmpty(currentUserName))
                 return Unauthorized("Không tìm thấy thông tin người dùng");
 
             if (username != userDto.UserName || !ModelState.IsValid)
-                return BadRequest("Dữ liệu không hợp lệ hoặc ID không khớp.");
+                return BadRequest("Dữ liệu không hợp lệ hoặc tên người dùng không khớp.");
+
             try
             {
-                // Lấy danh sách user được phép truy cập
-                var allowedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName, true);
+                var currentUserRoleIds = User.Claims
+                    .Where(c => c.Type == ClaimTypes.Role)
+                    .Select(c => int.Parse(c.Value))
+                    .ToList();
 
-                // Kiểm tra người cần sửa có nằm trong danh sách được phép không
+                var allowedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName, true);
                 var targetUser = allowedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
+
                 if (targetUser == null)
                     return BadRequest("Bạn không có quyền sửa người dùng này.");
 
-                // Serialize old data
-                var oldData = JsonSerializer.Serialize(new
-                {
-                    targetUser.UserName,
-                    targetUser.Email,
-                    targetUser.Statuss,
-                    targetUser.UserCode,
-                    targetUser.FullName,
-                    targetUser.Avatar,
-                    targetUser.Address,
-                    targetUser.PhoneNumber,
-                    targetUser.Dob
-                });
-
-                // 4️⃣ Thực hiện cập nhật
+                var oldData = JsonSerializer.Serialize(targetUser);
                 await _userRepos.UpdateUser(userDto, imgFile);
-                var newData = JsonSerializer.Serialize(new
-                {
-                    userDto.UserName,
-                    userDto.Email,
-                    userDto.Statuss,
-                    userDto.UserCode,
-                    userDto.FullName,
-                    userDto.Avatar,
-                    userDto.Address,
-                    userDto.PhoneNumber,
-                    userDto.Dob
-                });
+                var newData = JsonSerializer.Serialize(userDto);
 
-                //// Lấy lại thông tin user sau khi update để log new data
-                //var updatedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
-                //var updatedUser = updatedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
-                Guid? performedByGuid = null;
-                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (Guid.TryParse(performedBy, out var userGuid))
-                {
-                    performedByGuid = userGuid;
-                }
+                var performedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!Guid.TryParse(performedById, out var performerGuid))
+                    return BadRequest("Người thực hiện không hợp lệ.");
 
-                // Kiểm tra performedBy có tồn tại trong DB  
-                var existed = await _context.Users.FindAsync(performedByGuid);
-                if (existed == null)
-                    return BadRequest("Người thực hiện không tồn tại.");
+                var performerExists = await _context.Users.FindAsync(performerGuid);
+                if (performerExists == null)
+                    return BadRequest("Người thực hiện không tồn tại trong hệ thống.");
 
-                await _logRepos.LogAsync(targetUser.Id, $"Sửa tài khoản {username}", oldData, newData, performedByGuid);
-                return Ok(new { message = "Cập nhật thành công" });
+                await _logRepos.LogAsync(targetUser.Id, $"Cập nhật thông tin người dùng {username}", oldData, newData, performerGuid);
+
+                return Ok(new { message = "Cập nhật thành công." });
             }
             catch (Exception ex)
             {
@@ -762,8 +626,16 @@ namespace API.Controllers
         {
             try
             {
+                // Lấy người thực hiện từ JWT Claims
+                var currentUserName = User.Identity?.Name;
+                if (string.IsNullOrEmpty(currentUserName))
+                    return Unauthorized("Không xác định được người thực hiện.");
+
+                // ❌ Không cho đổi vai trò của chính mình
+                if (username.Equals(currentUserName, StringComparison.OrdinalIgnoreCase))
+                    return BadRequest("Bạn không thể đổi vai trò của chính mình.");
                 // Lấy thông tin user trước khi đổi role để log oldData
-                var userBefore = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
+                var userBefore = await _context.Users.Include(u => u.Roles).FirstOrDefaultAsync(u => u.UserName == username);
                 string? oldData = null;
                 if (userBefore != null)
                 {
