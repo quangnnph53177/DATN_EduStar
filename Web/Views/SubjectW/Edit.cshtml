@@ -1,61 +1,80 @@
 ﻿@model API.ViewModel.SubjectViewModel
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Chỉnh sửa môn học";
 }
 
-<h1>Edit</h1>
+<div class="container mt-5">
+    <div class="card shadow-sm rounded-4 border-0">
+        <div class="card-header bg-primary text-white rounded-top-4">
+            <h4 class="mb-0">🎓 Chỉnh sửa thông tin môn học</h4>
+        </div>
 
-<h4>SubjectViewModel</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            @* <div class="form-group">
-                <label asp-for="Id" class="control-label"></label>
-                <input asp-for="Id" class="form-control" />
-                <span asp-validation-for="Id" class="text-danger"></span>
-            </div> *@
-            <div class="form-group">
-                <label asp-for="SubjectName" class="control-label"></label>
-                <input asp-for="SubjectName" class="form-control" />
-                <span asp-validation-for="SubjectName" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="subjectCode" class="control-label"></label>
-                <input asp-for="subjectCode" class="form-control" />
-                <span asp-validation-for="subjectCode" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="NumberOfCredits" class="control-label"></label>
-                <input asp-for="NumberOfCredits" class="form-control" />
-                <span asp-validation-for="NumberOfCredits" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Status" class="control-label"></label>
-                <select asp-for="Status" class="form-control">
-                    <option value="true">Hoạt động</option>
-                    <option value="false">Không hoạt động</option>
-                </select>
-                <span asp-validation-for="Status" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+        <div class="card-body">
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+            }
+
+            <form asp-action="Edit" class="needs-validation" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="SubjectName" class="form-label fw-semibold">📘 Tên môn học</label>
+                    <input asp-for="SubjectName" class="form-control" placeholder="Nhập tên môn học..." />
+                    <span asp-validation-for="SubjectName" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="subjectCode" class="form-label fw-semibold">🔖 Mã môn học</label>
+                    <input asp-for="subjectCode" class="form-control" placeholder="VD: CS101" />
+                    <span asp-validation-for="subjectCode" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label fw-semibold">📝 Mô tả</label>
+                    <textarea asp-for="Description" class="form-control auto-resize" rows="3" placeholder="Mô tả ngắn gọn..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="NumberOfCredits" class="form-label fw-semibold">🎯 Số tín chỉ</label>
+                    <input asp-for="NumberOfCredits" type="number" min="1" class="form-control" />
+                    <span asp-validation-for="NumberOfCredits" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Status" class="form-label fw-semibold">⚙️ Trạng thái</label>
+                    <select asp-for="Status" class="form-select">
+                        <option value="true">✅ Hoạt động</option>
+                        <option value="false">🚫 Không hoạt động</option>
+                    </select>
+                    <span asp-validation-for="Status" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="submit" class="btn btn-success px-4">
+                        💾 Lưu thay đổi
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        ← Quay lại danh sách
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        document.querySelectorAll('.auto-resize').forEach(textarea => {
+            textarea.setAttribute("style", "height:" + (textarea.scrollHeight) + "px;overflow-y:hidden;");
+            textarea.addEventListener("input", function () {
+                this.style.height = "auto";
+                this.style.height = (this.scrollHeight) + "px";
+            });
+        });
+    </script>
 }

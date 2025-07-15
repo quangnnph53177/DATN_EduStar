@@ -95,13 +95,11 @@ namespace API.Services
 
         public async Task AddClassAsync(ClassCreateViewModel classViewModel)
         {
-            // Tìm giảng viên theo tên
             var teacher = await _context.Users
                 .Include(u => u.Roles)
-                .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u =>
-                    u.UserProfile.FullName == classViewModel.TeacherName &&
-                    u.Roles.Any(r => r.Id == 2)
+                    u.Id == classViewModel.TeacherId &&
+                    u.Roles.Any(r => r.Id == 2) // đảm bảo là giảng viên
                 );
 
             if (teacher == null)

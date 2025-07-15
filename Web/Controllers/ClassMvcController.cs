@@ -95,6 +95,16 @@ namespace Web.Controllers
                 Value = c.Id.ToString(),
                 Text = c.SubjectName,
             }).ToList();
+            var teachrList = await _context.Users
+                .Include(u=>u.UserProfile)
+                .Include(u => u.Roles)
+                .Where(u => u.Roles.Any(r => r.Id == 2) && u.Statuss == true).ToListAsync();
+            ViewBag.TeacherList = teachrList.Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = c.UserName,
+            })?.ToList() ?? new List<SelectListItem>();
+
             return View();
         }
 

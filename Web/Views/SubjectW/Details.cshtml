@@ -1,61 +1,55 @@
 ﻿@model API.ViewModel.SubjectViewModel
-
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Chi tiết môn học";
 }
 
-<h1>Details</h1>
+<div class="container mt-5">
+    <div class="card border-0 shadow rounded-4">
+        <div class="card-header bg-gradient bg-primary text-white py-3 rounded-top-4">
+            <h3 class="mb-0"><i class="bi bi-journal-text me-2"></i>Thông tin môn học</h3>
+        </div>
+        <div class="card-body p-4">
+            <dl class="row mb-0">
+                <dt class="col-sm-4 fw-semibold text-secondary">Tên môn học:</dt>
+                <dd class="col-sm-8">@Model.SubjectName</dd>
 
-<div>
-    <h4>SubjectViewModel</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Id)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Id)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.SubjectName)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.SubjectName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.subjectCode)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.subjectCode)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.NumberOfCredits)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.NumberOfCredits)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status)
-        </dd>
-    </dl>
-</div>
-<div class="mb-3">
-    <form asp-action="Lock" asp-controller="SubjectW" asp-route-id="@Model.Id" method="post" style="display:inline;">
-        <button type="submit" class="btn btn-sm btn-warning @(Model.Status ==true )">
-            @(Model.Status ==true ? "Khóa tài khoản" : "Mở khóa")
-        </button>
-    </form>
-</div>
-<div>
-    @Html.ActionLink("Edit", "Edit", new { id = Model.Id }) |
-    <a asp-action="Index">Back to List</a>
+                <dt class="col-sm-4 fw-semibold text-secondary">Mã môn học:</dt>
+                <dd class="col-sm-8">@Model.subjectCode</dd>
+
+                <dt class="col-sm-4 fw-semibold text-secondary">Số tín chỉ:</dt>
+                <dd class="col-sm-8">@Model.NumberOfCredits</dd>
+
+                <dt class="col-sm-4 fw-semibold text-secondary">Mô tả:</dt>
+                <dd class="col-sm-8" style="white-space: pre-wrap;">@Model.Description</dd>
+
+                <dt class="col-sm-4 fw-semibold text-secondary">Trạng thái:</dt>
+                <dd class="col-sm-8">
+                    @if (Model.Status == true)
+                    {
+                        <span class="badge bg-success px-3 py-2">Hoạt động</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger px-3 py-2">Không hoạt động</span>
+                    }
+                </dd>
+            </dl>
+        </div>
+        <div class="card-footer bg-light border-top d-flex justify-content-between align-items-center rounded-bottom-4 px-4 py-3">
+            <form asp-action="Lock" asp-controller="SubjectW" asp-route-id="@Model.Id" method="post">
+                <button type="submit" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-shield-lock"></i>
+                    @(Model.Status == true ? "Khóa môn học" : "Mở khóa")
+                </button>
+            </form>
+            <div>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary btn-sm me-2">
+                    <i class="bi bi-pencil-square"></i> Chỉnh sửa
+                </a>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
