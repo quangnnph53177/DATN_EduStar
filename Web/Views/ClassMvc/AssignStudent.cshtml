@@ -1,14 +1,13 @@
-﻿@model dynamic
+﻿@model API.ViewModel.AssignStudentsRequest
 @{
     ViewData["Title"] = "Gán sinh viên vào lớp";
     var classId = ViewBag.ClassId;
     var nameClass = ViewBag.NameClass;
-
+    var studentList = ViewBag.StudentList as List<API.ViewModel.StudentDTO>;
 }
 
 <h1 class="mt-4">Gán sinh viên vào lớp</h1>
-<h3 class="mt-2">Lớp: @nameClass</h3>
-<hr />
+<h4 class="mb-3">Lớp: <strong>@nameClass</strong></h4>
 
 @if (ViewBag.ErrorMessage != null)
 {
@@ -16,26 +15,55 @@
         @ViewBag.ErrorMessage
     </div>
 }
-
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="AssignStudent" method="post">
-            <div class="form-group mb-3">
-                <label for="studentId" class="control-label">Mã sinh viên (GUID)</label>
-                <input type="text" id="studentId" name="studentId" class="form-control" placeholder="Nhập ID sinh viên" required />
-            </div>
-            <input type="hidden" name="classId" value="@classId" />
-            <div class="form-group mb-3">
-                <input type="submit" value="Gán" class="btn btn-success" />
-                <a asp-action="Details" asp-route-id="@classId" class="btn btn-secondary">Hủy</a>
-            </div>
-            @Html.AntiForgeryToken()
-        </form>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" role="alert">
+        @TempData["SuccessMessage"]
     </div>
-</div>
+}
+
+<form asp-action="AssignStudent" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" name="ClassId" value="@classId" />
+
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th style="width: 40px;"></th>
+                <th>Họ tên</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (studentList != null && studentList.Any())
+            {
+                foreach (var student in studentList)
+                {
+                    <tr>
+                        <td class="text-center">
+                            <input type="checkbox" name="StudentIds" value="@student.id" />
+                        </td>
+                        <td>@student.FullName</td>
+                        <td>@student.Email</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3" class="text-center text-muted">Không có sinh viên nào để gán.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="form-group mt-3 d-flex justify-content-between">
+        <a asp-action="Details" asp-route-id="@classId" class="btn btn-secondary">⬅ Quay lại</a>
+        <button type="submit" class="btn btn-success">✔ Gán sinh viên</button>
+    </div>
+</form>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

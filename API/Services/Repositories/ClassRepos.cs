@@ -100,7 +100,7 @@ namespace API.Services
                 .Include(u => u.Roles)
                 .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u =>
-                    u.UserProfile.FullName == classViewModel.TeacherName &&
+                    u.Id == classViewModel.TeacherId &&
                     u.Roles.Any(r => r.Id == 2)
                 );
 
@@ -189,43 +189,53 @@ namespace API.Services
         }
 
         // Sửa lỗi 500: Thêm AssignedDate vào bảng trung gian
-        public async Task<bool> AssignStudentToClassAsync(int classId, Guid studentId)
+        public async Task<bool> AssignStudentToClassAsync(AssignStudentsRequest request)
         {
-            var classExists = await _context.Classes.AnyAsync(c => c.Id == classId);
-            var studentExists = await _context.StudentsInfors.AnyAsync(s => s.UserId == studentId);
-
-            if (!classExists || !studentExists)
-            {
+            var classExists = await _context.Classes.AnyAsync(c => c.Id == request.ClassId);
+            if (!classExists || request.StudentIds == null || !request.StudentIds.Any())
                 return false;
+
+            var validStudents = await _context.StudentsInfors
+                .Where(s => request.StudentIds.Contains(s.UserId))
+                .Select(s => s.UserId)
+                .ToListAsync();
+
+            // Tránh thêm sinh viên đã có trong lớp
+            var existingEntries = await _context.Set<Dictionary<string, object>>("StudentInClass")
+                .Where(sc => (int)sc["ClassId"] == request.ClassId && validStudents.Contains((Guid)sc["StudentId"]))
+                .Select(sc => (Guid)sc["StudentId"])
+                .ToListAsync();
+
+            var newStudentIds = validStudents.Except(existingEntries).ToList();
+
+            // Tạo bản ghi mới
+            var newEntries = newStudentIds.Select(id => new Dictionary<string, object>
+            {
+                ["ClassId"] = request.ClassId,
+                ["StudentId"] = id,
+                ["AssignedDate"] = DateTime.Now
+            }).ToList();
+
+            // Thêm vào DB
+            foreach (var entry in newEntries)
+            {
+                _context.Set<Dictionary<string, object>>("StudentInClass").Add(entry);
             }
 
-            var exists = await _context.Set<Dictionary<string, object>>("StudentInClass")
-                                        .AnyAsync(sc => (int)sc["ClassId"] == classId && (Guid)sc["StudentId"] == studentId);
-
-            if (exists)
+            // Tăng StudentCount
+            var cls = await _context.Classes.FindAsync(request.ClassId);
+            if (cls != null)
             {
-                return false;
+                cls.StudentCount += newEntries.Count;
             }
 
-            var newEntry = new Dictionary<string, object>
-            {
-                ["ClassId"] = classId,
-                ["StudentId"] = studentId,
-                ["AssignedDate"] = DateTime.Now // Thêm giá trị cho cột AssignedDate
-            };
-           
-            var cls = await _context.Classes.FindAsync(classId);//tạm cho đỡ lỗi
-            if (cls != null)//tạm cho đỡ lỗi
-            {//tạm cho đỡ lỗi
-                cls.StudentCount += 1;//tạm cho đỡ lỗi
-                await _context.SaveChangesAsync();//tạm cho đỡ lỗi
-            }//tạm cho đỡ lỗi
-            return true;    
+            await _context.SaveChangesAsync();
+            return true;
         }
 
-        public async Task<bool> StudentRegisterClassAsync(int classId, Guid studentId)
+        public async Task<bool> StudentRegisterClassAsync(AssignStudentsRequest request)
         {
-            return await AssignStudentToClassAsync(classId, studentId);
+            return await AssignStudentToClassAsync(request);
         }
 
         public async Task<bool> RemoveStudentFromClassAsync(int classId, Guid studentId)

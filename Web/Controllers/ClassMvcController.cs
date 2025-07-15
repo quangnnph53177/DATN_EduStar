@@ -1,11 +1,14 @@
 ﻿using API.Data;
+using API.Models;
 using API.ViewModel;
+using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Text;
+using Web.ViewModels;
 
 namespace Web.Controllers
 {
@@ -95,6 +98,12 @@ namespace Web.Controllers
                 Value = c.Id.ToString(),
                 Text = c.SubjectName,
             }).ToList();
+            var TeacherList = await _context.Users.Where(r=>r.Roles.Any(c=> c.Id==2)).ToListAsync();
+            ViewBag.TeacherList = TeacherList.Select(t => new SelectListItem
+            {
+                Value = t.Id.ToString(),
+                Text = t.UserName,
+            });
             return View();
         }
 
@@ -137,6 +146,12 @@ namespace Web.Controllers
                 Value = c.Id.ToString(),
                 Text = c.SubjectName,
             }).ToList();
+            var TeacherList = await _context.Users.Where(r => r.Roles.Any(c => c.Id == 2)).ToListAsync();
+            ViewBag.TeacherList = TeacherList.Select(t => new SelectListItem
+            {
+                Value = t.Id.ToString(),
+                Text = t.UserName,
+            });
             return View(classCreateViewModel);
         }
 
@@ -283,39 +298,64 @@ namespace Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult AssignStudent(int id)
+        public async Task<IActionResult> AssignStudent(int Id)
         {
-            ViewBag.ClassId = id;
+            await LoadStudentListForClass(Id);
             return View();
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignStudent(int classId, Guid studentId)
+        public async Task<IActionResult> AssignStudent(AssignStudentsRequest request)
         {
-            try
-            {
-                var response = await _httpClient.PostAsync($"{classId}/assignStudent/{studentId}", null);
+            Console.WriteLine(">> [MVC] Nhận classId: " + request.ClassId);
+            Console.WriteLine(">> [MVC] Số sinh viên chọn: " + (request.StudentIds?.Count ?? 0));
 
-                if (response.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Sinh viên đã được gán vào lớp thành công!";
-                    return RedirectToAction("Details", new { id = classId });
-                }
-                else
-                {
-                    ViewBag.ClassId = classId;
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    ViewBag.ErrorMessage = $"Error assigning student: {response.ReasonPhrase}. Details: {errorContent}";
-                    return View();
-                }
-            }
-            catch (HttpRequestException e)
+            if (request.StudentIds == null || !request.StudentIds.Any())
             {
-                ViewBag.ClassId = classId;
-                ViewBag.ErrorMessage = "Request error: " + e.Message;
+                ViewBag.ErrorMessage = "Bạn chưa chọn sinh viên nào.";
+                await LoadStudentListForClass(request.ClassId);
                 return View();
             }
+
+            var response = await _httpClient.PostAsJsonAsync($"{request.ClassId}/assignStudent/{request.StudentIds}", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["SuccessMessage"] = "Gán sinh viên thành công!";
+                return RedirectToAction("Details", new { id = request.ClassId });
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            ViewBag.ErrorMessage = $"Lỗi khi gọi API: {errorContent}";
+            await LoadStudentListForClass(request.ClassId);
+            return View();
+        }
+
+        private async Task LoadStudentListForClass(int classId)
+        {
+            var cls = await _context.Classes.FindAsync(classId);
+
+            var allStudents = await _context.StudentsInfors
+                .Select(s => new StudentDTO
+                {
+                    id = s.UserId,
+                    FullName = s.User.UserProfile.FullName,
+                    Email = s.User.Email
+                })
+                .ToListAsync();
+
+            var assignedStudentIds = await _context.Set<Dictionary<string, object>>("StudentInClass")
+                .Where(sc => (int)sc["ClassId"] == classId)
+                .Select(sc => (Guid)sc["StudentId"])
+                .ToListAsync();
+
+            var unassignedStudents = allStudents
+                .Where(s => !assignedStudentIds.Contains(s.id))
+                .ToList();
+
+            ViewBag.ClassId = classId;
+            ViewBag.NameClass = cls?.NameClass;
+            ViewBag.StudentList = unassignedStudents;
         }
 
         [HttpPost]

@@ -215,6 +215,7 @@ namespace API.Services.Repositories
                 .Include(s => s.Day)
                 .Include(s => s.StudyShift)
                 .GroupBy(s => new {
+                    s.Class.Id,
                     s.Class.NameClass,
                     s.Class.Subject.SubjectName,
                     s.Room.RoomCode,
@@ -222,6 +223,7 @@ namespace API.Services.Repositories
                 })
                 .Select(g => new Lichcodinh
                 {
+                    ClassId=g.Key.Id,
                     ClassName = g.Key.NameClass,
                     SubjectName = g.Key.SubjectName,
                     RoomCode = g.Key.RoomCode,

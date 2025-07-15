@@ -46,7 +46,7 @@ namespace API.Controllers
             return Ok(result);
         }
         [HttpGet("student")]
-        [Authorize(Roles = "1,2,3")]
+        //[Authorize(Roles = "1,2,3")]
         public async Task<IActionResult> GetStudentView()
         {
             try

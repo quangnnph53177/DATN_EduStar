@@ -19,8 +19,8 @@ namespace API.Services
         // Đã sửa kiểu trả về từ ClassDetailViewModel thành ClassViewModel
         Task<IEnumerable<ClassViewModel>> SearchClassesAsync(int id);
 
-        Task<bool> AssignStudentToClassAsync(int classId, Guid studentId);
-        Task<bool> StudentRegisterClassAsync(int classId, Guid studentId);
+        Task<bool> AssignStudentToClassAsync(AssignStudentsRequest request);
+        Task<bool> StudentRegisterClassAsync(AssignStudentsRequest request);
         Task<bool> RemoveStudentFromClassAsync(int classId, Guid studentId);
         Task<IEnumerable<ClassChangeViewModel>> GetClassHistoryAsync(int classId);
     }
