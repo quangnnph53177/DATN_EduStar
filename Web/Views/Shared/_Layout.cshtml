@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Web</title>
+    <title>@ViewData["Title"] - EduStar</title>
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -15,18 +15,26 @@
         html, body {
             height: 100%;
             margin: 0;
+            display: flex;
+            flex-direction: column;
+            background-color: #f0f2f5;
         }
 
-        .full-height {
-            height: 100vh;
+        td, th {
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
+        .wrapper {
+            flex: 1;
+            display: flex;
             overflow: hidden;
         }
 
         .sidebar {
-            height: 100vh;
-            overflow-y: auto;
-            background-color: #004085;
-            color: #fff;
+        min-height: 100vh;
+        background-color: #004085;
+        color: #fff;
         }
 
         .main-content {
@@ -35,15 +43,38 @@
             padding: 1rem;
         }
 
-        .sidebar .nav-link {
-            color: #fff;
+            .sidebar .nav-link {
+                color: #fff;
+                margin-bottom: 0.5rem;
+            }
+
+                .sidebar .nav-link:hover,
+                .sidebar .nav-link.active-flame {
+                    background-color: #0d6efd;
+                    border-radius: 0.375rem;
+                    padding-left: 0.5rem;
+                }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-            .sidebar .nav-link:hover,
-            .sidebar .nav-link.active-flame {
-                background-color: #0d6efd;
-                border-radius: 0.375rem;
-            }
+        .main-content {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background-color: #fff;
+        }
+
+        footer {
+            background-color: #004085;
+            color: white;
+            text-align: center;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+        }
 
         .dropdown .dropdown-menu {
             min-width: 200px;
@@ -77,17 +108,20 @@
             }
 
         @@keyframes l20 {
-            30%, 70% {
-                transform: rotate(0deg);
-            }
+            30%, 70%
 
-            49.99% {
-                transform: rotate(0.2deg);
-            }
+        {
+            transform: rotate(0deg);
+        }
 
-            50% {
-                transform: rotate(-0.2deg);
-            }
+        49.99% {
+            transform: rotate(0.2deg);
+        }
+
+        50% {
+            transform: rotate(-0.2deg);
+        }
+
         }
     </style>
 </head>
@@ -145,40 +179,41 @@
                     }
                 </ul>
 
-                <hr />
+            <hr />
 
-                <div class="dropdown">
-                    @if (User.Identity.IsAuthenticated)
-                    {
-                        <button class="btn btn-light text-dark w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            👋 Xin chào, @User.Identity?.Name
-                        </button>
-                        <ul class="dropdown-menu w-100">
-                            <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a></li>
-                            <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexLog">🕓 Lịch sử hoạt động</a></li>
-                            <li>
-                                <form method="post" asp-controller="Users" asp-action="Logout">
-                                    <button type="submit" class="dropdown-item">🚪 Đăng xuất</button>
-                                </form>
-                            </li>
-                        </ul>
-                    }
-                    else
-                    {
-                        <a class="btn btn-outline-light w-100" asp-controller="Users" asp-action="Login">🔐 Đăng nhập</a>
-                    }
-                </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="col-md-10 main-content bg-light">
-                @RenderBody()
+            <div class="dropdown">
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <button class="btn btn-light text-dark w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        👋 Xin chào, @User.Identity?.Name
+                    </button>
+                    <ul class="dropdown-menu w-100">
+                        <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a></li>
+                        <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexLog">🕓 Lịch sử hoạt động</a></li>
+                        <li>
+                            <form method="post" asp-controller="Users" asp-action="Logout">
+                                <button type="submit" class="dropdown-item">🚪 Đăng xuất</button>
+                            </form>
+                        </li>
+                    </ul>
+                }
+                else
+                {
+                    <a class="btn btn-outline-light w-100" asp-controller="Users" asp-action="Login">🔐 Đăng nhập</a>
+                }
             </div>
         </div>
-    </div>
 
-    <!-- Loader -->
-    <div id="page-loader" class="loader position-fixed top-50 start-50 translate-middle" style="z-index: 1050;"></div>
+        <!-- Main content + footer -->
+        <div class="main-wrapper">
+            <div class="main-content">
+                @RenderBody()
+            </div>
+            <footer>
+                &copy; @DateTime.Now.Year - EduStar. Mọi quyền được bảo lưu.
+            </footer>
+        </div>
+    </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -186,20 +221,16 @@
 
     <script>
         const loader = document.getElementById("page-loader");
-
         window.addEventListener("load", () => {
             if (loader) loader.style.display = "none";
         });
-
         document.addEventListener("DOMContentLoaded", () => {
             const links = document.querySelectorAll("a.nav-link, a.btn, a[href]");
             links.forEach(link => {
-                link.addEventListener("click", (e) => {
+                link.addEventListener("click", () => {
                     const href = link.getAttribute("href");
-                    const isExternal = href && (href.startsWith("http") || href.startsWith("mailto:") || href.startsWith("#"));
-                    const target = link.getAttribute("target");
-                    if (!isExternal && !target) {
-                        loader.style.display = "block";
+                    if (href && !href.startsWith("http") && !href.startsWith("mailto:") && !href.startsWith("#")) {
+                        loader?.style.display = "block";
                     }
                 });
             });

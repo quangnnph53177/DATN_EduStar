@@ -8,13 +8,13 @@ namespace API.Services
     {
         Task<IEnumerable<UserDTO>> GetAllUsers(List<int> currentUserRoleIds, string? currentUserName, bool excludeTeacher = false);
         Task<User> Register(UserDTO user, IFormFile? imgFile);
-        Task CleanupUnconfirmedUsers();
+        Task<List<User>> CleanupUnconfirmedUsers();
         Task<LoginResult> Login(string userName, string password);
         Task UpdateUser(UserDTO userd, IFormFile imgFile);
-        Task<bool> ConfirmEmail(string token);
-        Task<string> LockUser(string userName);
+        Task<string> ConfirmEmail(string token);
+        Task<string> LockUser(string userName, Guid currentUserId);
         Task<string> ChangeRole(string userName, int newRoleId);
-        Task<TeacherWithClassesViewModel> GetStudentByTeacher(Guid? teacherId);
+        //Task<TeacherWithClassesViewModel> GetStudentByTeacher(Guid? teacherId);
         Task ForgetPassword(string email);
         Task<string> ResetPassword(string token, string newPassword);
 

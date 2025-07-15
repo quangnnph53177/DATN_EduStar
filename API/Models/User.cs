@@ -16,7 +16,8 @@ public partial class User
     public string? PhoneNumber { get; set; }
 
     public bool? Statuss { get; set; }
-
+    public bool? IsConfirm { get; set; }
+    public bool? IsDeleted { get; set; } = false;
     public DateTime? CreateAt { get; set; }
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
 

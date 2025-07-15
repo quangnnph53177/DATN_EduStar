@@ -30,8 +30,7 @@ namespace Web.Controllers
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             return client;
         }
-        [HttpGet]
-        public async Task<IActionResult> IndexST(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status,int page = 1, int pageSize = 10)
+        public async Task<IActionResult> IndexST(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status, int classId = 0, int page = 1, int pageSize = 10)
         {
             var client = GetClientWithToken();
             if (client == null)
@@ -39,6 +38,7 @@ namespace Web.Controllers
                 TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
                 return RedirectToAction("Login", "Users");
             }
+
             var queryParams = new List<string>();
             if (!string.IsNullOrWhiteSpace(StudentCode)) queryParams.Add($"studentCode={StudentCode}");
             if (!string.IsNullOrWhiteSpace(fullName)) queryParams.Add($"fullName={fullName}");
@@ -51,31 +51,45 @@ namespace Web.Controllers
             var url = $"api/students/student{queryString}";
 
             var response = await client.GetAsync(url);
-
-            if (response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
-                var usersJson = await response.Content.ReadAsStringAsync();
-                var users = JsonConvert.DeserializeObject<List<UserDTO>>(usersJson);
-                var totalCount = users.Count;
-                var pagedUsers = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-                var result = new PagedResult<UserDTO>
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    Items = pagedUsers,
-                    TotalCount = totalCount,
-                    PageSize = pageSize,
-                    PageIndex = page
-                };
+                    TempData["ErrorMessage"] = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.";
+                    return RedirectToAction("Login");
+                }
 
-                return View(result);
+                TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy danh sách người dùng.";
+                return View(new List<UserDTO>());
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+
+            var usersJson = await response.Content.ReadAsStringAsync();
+
+            // Nếu là giảng viên thì deserialize theo dictionary
+            var usersDict = JsonConvert.DeserializeObject<Dictionary<string, List<UserDTO>>>(usersJson);
+            var classViewModels = usersDict.Select((kv, index) => new ClassWithStudentsViewModel
             {
-                TempData["ErrorMessage"] = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.";
-                return RedirectToAction("Login");
+                ClassId = index + 1,
+                ClassName = kv.Key,
+                StudentsInfor = kv.Value
+            }).ToList();
+
+            foreach (var cls in classViewModels)
+            {
+                int currentPage = (cls.ClassId == classId) ? page : 1;
+                var total = cls.StudentsInfor.Count;
+                var paged = cls.StudentsInfor
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                cls.StudentsInfor = paged;
+                ViewData[$"TotalPages_{cls.ClassId}"] = (int)Math.Ceiling((double)total / pageSize);
+                ViewData[$"CurrentPage_{cls.ClassId}"] = currentPage;
+                ViewData[$"PageSize_{cls.ClassId}"] = pageSize;
             }
-            TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy danh sách người dùng.";
-            return View(new PagedResult<UserDTO>());
+
+            return View(classViewModels);
         }
 
         public async Task<IActionResult> Index(string? StudentCode, string? fullName, string? username, string? email, bool? gender, bool? status)

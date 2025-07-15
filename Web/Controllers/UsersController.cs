@@ -163,7 +163,7 @@ namespace Web.Controllers
             TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy danh sách người dùng.";
             return View(new PagedResult<UserDTO>());
         }
-        
+
         [HttpGet]
         public async Task<IActionResult> Register()
         {
@@ -205,7 +205,7 @@ namespace Web.Controllers
             using var content = new MultipartFormDataContent();
 
             content.Add(new StringContent(model.User.UserName ?? ""), "UserName");
-            content.Add(new StringContent(model.User.PassWordHash ?? ""), "PassWordHash");   
+            content.Add(new StringContent(model.User.PassWordHash ?? ""), "PassWordHash");
             content.Add(new StringContent(model.User.Email ?? ""), "Email");
             content.Add(new StringContent(model.User.PhoneNumber ?? ""), "PhoneNumber");
             content.Add(new StringContent(model.User.FullName ?? ""), "FullName");
@@ -253,27 +253,65 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Upload(IFormFile file)
         {
-            if (file == null || file.Length == 0)
+            try
             {
-                TempData["ErrorMessage"] = "Vui lòng chọn tệp để tải lên.";
-                return View();
+
+                if (file == null || file.Length == 0)
+                {
+                    TempData["ErrorMessage"] = "Vui lòng chọn tệp để tải lên.";
+                    return View(new List<UserDTO>());
+                }
+
+                var client = GetClientWithToken(); // Hàm tạo HttpClient có Bearer token
+
+                using var content = new MultipartFormDataContent();
+                using var fileStream = file.OpenReadStream();
+                content.Add(new StreamContent(fileStream), "file", file.FileName);
+
+                var response = await client.PostAsync("https://localhost:7298/api/User/preview-upload", content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    TempData["Error"] = "Lỗi khi upload file.";
+                    return View(new List<UserDTO>());
+                }
+
+                var resultString = await response.Content.ReadAsStringAsync();
+
+                using var doc = JsonDocument.Parse(resultString);
+                var usersJson = doc.RootElement.GetProperty("users").GetRawText();
+
+                var users = JsonSerializer.Deserialize<List<UserDTO>>(usersJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return View(users);
             }
-
-            var client = GetClientWithToken();
-
-            using var content = new MultipartFormDataContent();
-            using var fileStream = file.OpenReadStream();
-            content.Add(new StreamContent(fileStream), "file", file.FileName);
-
-            var response = await client.PostAsync("https://localhost:7298/api/User/upload", content);
-            if (response.IsSuccessStatusCode)
+            catch (Exception ex)
             {
-                return RedirectToAction("Index", "Users");
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                return View(new List<UserDTO>());
             }
-            TempData["ErrorMessage"] = "Tải lên không thành công.";
-            return View();
-
         }
+        [HttpPost]
+        public async Task<IActionResult> CreateFromPreview(List<UserDTO> users)
+        {
+            var client = GetClientWithToken();
+            var json = JsonSerializer.Serialize(users);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync("https://localhost:7298/api/User/create-from-preview", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["ErrorMessage"] = "Lỗi khi tạo tài khoản.";
+                return RedirectToAction("Upload");
+            }
+
+            var result = await response.Content.ReadAsStringAsync();
+            TempData["SuccessMessage"] = "Tạo tài khoản thành công!";
+            return RedirectToAction("Index","Student");
+        }
+
         public IActionResult Confirm()
         {
             return View(); // Trả về form nhập token

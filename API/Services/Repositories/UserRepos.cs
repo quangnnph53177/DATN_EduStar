@@ -43,6 +43,14 @@ namespace API.Services.Repositories
         }
         private UserDTO MapToUserDTO(User u)
         {
+            if (u == null)
+                throw new Exception("User object is null");
+
+            if (u.UserProfile == null)
+                Console.WriteLine($"⚠️ UserProfile is null for user {u.UserName}");
+
+            if (u.Roles == null)
+                Console.WriteLine($"⚠️ Roles is null for user {u.UserName}");
             return new UserDTO
             {
                 Id = u.Id,
@@ -50,21 +58,26 @@ namespace API.Services.Repositories
                 Email = u.Email,
                 PhoneNumber = u.PhoneNumber,
                 Statuss = u.Statuss ?? false,
+                IsConfirm = u.IsConfirm ?? false,
                 CreateAt = u.CreateAt,
                 UserCode = u.UserProfile?.UserCode,
-                FullName = u.UserProfile?.FullName,
+                FullName = u.UserProfile?.FullName ?? "",
                 Gender = u.UserProfile?.Gender,
                 Avatar = u.UserProfile?.Avatar,
                 Address = u.UserProfile?.Address,
-                Dob = u.UserProfile.Dob.HasValue ? u.UserProfile.Dob.Value.ToDateTime(TimeOnly.MinValue) : null,
-                RoleIds = u.Roles.Select(r => r.Id).ToList()
+                Dob = u.UserProfile?.Dob.HasValue == true
+                ? u.UserProfile.Dob.Value.ToDateTime(TimeOnly.MinValue)
+                : null,
+                RoleIds = u.Roles?.Select(r => r.Id).ToList() ?? new List<int>(),
+                ClassName = u.StudentsInfor?.Classes?.Select(c => c.NameClass).ToList()
             };
         }
         private async Task<string> SaveAvatar(IFormFile imgFile, string? oldPath = null)
         {
             var validImageFormats = new[] { ".jpg", ".jpeg", ".png" };
             var ext = Path.GetExtension(imgFile.FileName).ToLowerInvariant();
-            if (!validImageFormats.Contains(ext)) throw new ArgumentException("Định dạng ảnh không hợp lệ");
+            if (!validImageFormats.Contains(ext))
+                return "Định dạng ảnh không hợp lệ";
 
             var avatarDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "avatars");
             if (!Directory.Exists(avatarDir)) Directory.CreateDirectory(avatarDir);
@@ -145,7 +158,9 @@ namespace API.Services.Repositories
                 PhoneNumber = usd.PhoneNumber,
                 Roles = roles,
                 Statuss = false,
+                IsConfirm = false,
                 CreateAt = DateTime.Now
+
             };
 
             _context.UserProfiles.Add(new UserProfile
@@ -171,8 +186,97 @@ namespace API.Services.Repositories
             // Gửi email xác nhận  
             var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(user.Email));
             var confirmationLink = $"https://localhost:7298/api/User/confirm?token={HttpUtility.UrlEncode(token)}";
+            string message = $@"
+                <!DOCTYPE html>
+                <html lang='vi'>
+                <head>
+                    <meta charset='UTF-8'>
+                    <title>Xác nhận email</title>
+                    <style>
+                        body {{
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            background-color: #f8f9fa;
+                            margin: 0;
+                            padding: 0;
+                        }}
+                        .email-container {{
+                            max-width: 600px;
+                            margin: 40px auto;
+                            background-color: #ffffff;
+                            padding: 30px;
+                            border-radius: 10px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                        }}
+                        h2 {{
+                            color: #333;
+                        }}
+                        p {{
+                            color: #555;
+                            font-size: 15px;
+                        }}
+                        .info-table {{
+                            width: 100%;
+                            margin: 20px 0;
+                            border-collapse: collapse;
+                        }}
+                        .info-table td {{
+                            padding: 8px 10px;
+                            border: 1px solid #ddd;
+                        }}
+                        .info-table td.label {{
+                            font-weight: bold;
+                            background-color: #f1f1f1;
+                            width: 150px;
+                        }}
+                        .btn {{
+                            display: inline-block;
+                            margin-top: 20px;
+                            padding: 12px 24px;
+                            font-size: 16px;
+                            color: #ffffff;
+                            background-color: #007bff;
+                            text-decoration: none;
+                            border-radius: 6px;
+                        }}
+                        .btn:hover {{
+                            background-color: #0056b3;
+                        }}
+                        .footer {{
+                            margin-top: 30px;
+                            font-size: 12px;
+                            color: #888;
+                            text-align: center;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class='email-container'>
+                        <h2>🎉 Yêu cầu xác nhận tài khoản để đăng nhập</h2>
+                        <p>Chúng tôi đã tạo tài khoản cho bạn trên hệ thống. Dưới đây là thông tin đăng nhập:</p>
 
-            string message = $"Vui lòng xác nhận email bằng cách <a href='{confirmationLink}'>nhấn vào đây.</a>";
+                        <table class='info-table'>
+                            <tr>
+                                <td class='label'>Tên đăng nhập:</td>
+                                <td>{user.UserName}</td>
+                            </tr>
+                            <tr>
+                                <td class='label'>Mật khẩu:</td>
+                                <td>{usd.PassWordHash}</td>
+                            </tr>
+ <tr>
+                                <td class='label'>Mật khẩu:</td>
+                                <td>{usd.Email}</td>
+                            </tr>
+                        </table>
+
+                        <p>👉 Vui lòng nhấn vào nút bên dưới để xác nhận email và kích hoạt tài khoản:</p>
+                        <a href='{confirmationLink}' class='btn'>Xác nhận tài khoản</a>
+
+                        <p class='footer'>Nếu bạn không yêu cầu hành động này, vui lòng bỏ qua email này.</p>
+                    </div>
+                </body>
+                </html>";
+
             await _emailService.SendEmail(user.Email, "Xác nhận email", message);
 
             _context.Users.Add(user);
@@ -180,29 +284,53 @@ namespace API.Services.Repositories
             await _context.SaveChangesAsync();
             return user;
         }
-        public async Task<bool> ConfirmEmail(string token)
+        public async Task<string> ConfirmEmail(string token)
         {
             var decodedToken = HttpUtility.UrlDecode(token);
             var email = Encoding.UTF8.GetString(Convert.FromBase64String(decodedToken));
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
             if (user == null)
-                return false;
+                return "Không tìm thấy tài khoản.";
 
-            if (!user.Statuss.HasValue || user.Statuss == false)
-            {
-                user.Statuss = true;
-                await _context.SaveChangesAsync();
-            }
-            return true;
+            if (user.IsConfirm == true)
+                return "Tài khoản đã được xác nhận trước đó.";
+
+            user.IsConfirm = true;
+            user.Statuss = true;
+            await _context.SaveChangesAsync();
+
+            return "Xác nhận email thành công. Tài khoản đã được mở khóa.";
         }
-        public async Task CleanupUnconfirmedUsers()
+        public async Task<List<User>> CleanupUnconfirmedUsers()
         {
             var now = DateTime.Now;
 
-            var expiredUsers = await _context.Users
-                .Where(u => u.Statuss == false && EF.Functions.DateDiffDay(u.CreateAt, now) >= 7)
+            // 1. Lấy danh sách user unlock (trong quá khứ)
+            var unlockedUserMap = await _context.Auditlogs
+                .Where(a => a.Active == "Unlock")
+                .GroupBy(a => a.Userid)
+                .Select(g => new
+                {
+                    UserId = g.Key,
+                    UnlockAfterCreate = g.Min(x => x.Timestamp)
+                })
                 .ToListAsync();
+
+            // 2. Lấy danh sách user chưa xác nhận, chưa xóa, quá hạn 2 phút
+            var allExpired = await _context.Users
+                .Where(u =>
+                    u.Statuss == false &&
+                    EF.Functions.DateDiffMinute(u.CreateAt, now) >= 2 &&
+                    (u.IsDeleted == null || u.IsDeleted == false))
+                .ToListAsync();
+
+            // 3. Lọc bỏ user nào đã được unlock sau khi tạo
+            var expiredUsers = allExpired
+                .Where(u =>
+                    !unlockedUserMap.Any(un =>
+                        un.UserId == u.Id && un.UnlockAfterCreate >= u.CreateAt))
+                .ToList();
 
             if (expiredUsers.Any())
             {
@@ -214,14 +342,24 @@ namespace API.Services.Repositories
                 var students = await _context.StudentsInfors.Where(s => userIds.Contains(s.UserId)).ToListAsync();
                 _context.StudentsInfors.RemoveRange(students);
 
-                _context.Users.RemoveRange(expiredUsers);
+                // ❗️XÓA MỀM user — KHÔNG dùng RemoveRange
+                foreach (var user in expiredUsers)
+                {
+                    user.IsDeleted = true;
 
+                    // Gắn thêm hậu tố vào Email & Username để tránh trùng nếu tạo lại
+                    user.Email += $"_deleted_{Guid.NewGuid():N}@deleted.local";
+                    user.UserName += "_deleted";
+                }
                 await _context.SaveChangesAsync();
+
             }
+            return expiredUsers;
         }
 
         public async Task<LoginResult> Login(string userName, string password)
         {
+
             if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
                 throw new Exception("Tên đăng nhập hoặc mật khẩu không được để trống.");
 
@@ -230,6 +368,8 @@ namespace API.Services.Repositories
                 .ThenInclude(r => r.Permissions)
                 .FirstOrDefaultAsync(u => u.UserName == userName);
 
+            //if (user.IsDeleted == true)
+            //    throw new Exception("Tài khoản đã bị xóa.");
             if (user == null)
                 throw new Exception("Tên đăng nhập không tồn tại.");
 
@@ -298,9 +438,12 @@ namespace API.Services.Repositories
         public async Task<IEnumerable<UserDTO>> GetAllUsers(List<int> currentUserRoleIds, string? currentUserName, bool excludeTeacher = false)
         {
             var query = _context.Users
-         .Include(u => u.UserProfile)
-         .Include(u => u.Roles)
-         .AsSplitQuery();
+                .Where(u => u.IsDeleted == false)
+                 .Include(u => u.UserProfile)
+                 .Include(u => u.Roles)
+                 .Include(u => u.StudentsInfor)
+                 .ThenInclude(s => s.Classes)
+                 .AsSplitQuery();
 
             query = FilterUsersByRole(query, currentUserRoleIds, currentUserName);
 
@@ -317,16 +460,19 @@ namespace API.Services.Repositories
                 .ThenBy(u => u.MainRole)
                 .Select(u => MapToUserDTO(u.User));
         }
-        public async Task<string> LockUser(string userName)
+        public async Task<string> LockUser(string userName, Guid currentUserId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
             if (user == null)
-                throw new Exception("Không tìm thấy người dùng với tên đăng nhập đã cho.");
+                return "Không tìm thấy người dùng với tên đăng nhập đã cho.";
+            if (user.Id == currentUserId)
+                return "Không thể khóa hoặc mở khóa chính tài khoản của bạn.";
             user.Statuss = !(user.Statuss ?? false); // Đảo trạng thái
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
             return user.Statuss == true ? "Mở khóa thành công" : "Khóa thành công";
+
         }
 
         public async Task UpdateUser(UserDTO userd, IFormFile imgFile)
@@ -387,7 +533,7 @@ namespace API.Services.Repositories
             // Lấy user và các vai trò hiện tại
             var user = await _context.Users.Include(u => u.Roles).FirstOrDefaultAsync(u => u.UserName == userName);
             if (user == null)
-                throw new Exception("Không tìm thấy người dùng với tên đăng nhập đã cho.");
+                return "Không tìm thấy người dùng với tên đăng nhập đã cho.";
 
             // Lấy danh sách tất cả vai trò
             var allRoles = await _context.Roles.ToListAsync();
@@ -395,7 +541,7 @@ namespace API.Services.Repositories
             // Kiểm tra vai trò mới có tồn tại không
             var newRole = allRoles.FirstOrDefault(r => r.Id == newRoleId);
             if (newRole == null)
-                throw new Exception("Vai trò muốn chuyển không tồn tại.");
+                return "Vai trò muốn chuyển không tồn tại.";
 
             // Gán vai trò mới cho user (chỉ giữ vai trò này)
             user.Roles = new List<Role> { newRole };
@@ -413,7 +559,58 @@ namespace API.Services.Repositories
             var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(user.Email));
             var forgetpasswordLink = $"https://localhost:7298/api/User/forget-password?token={HttpUtility.UrlEncode(token)}";
 
-            string message = $"Vui lòng xác nhận email bằng cách <a href='{forgetpasswordLink}'>nhấn vào đây.</a>";
+            string message = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='UTF-8'>
+                    <title>Xác nhận email</title>
+                    <style>
+                        body {{
+                            font-family: Arial, sans-serif;
+                            background-color: #f4f4f4;
+                            margin: 0;
+                            padding: 0;
+                        }}
+                        .container {{
+                            background-color: #ffffff;
+                            margin: 50px auto;
+                            padding: 30px;
+                            border-radius: 8px;
+                            max-width: 600px;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                            text-align: center;
+                        }}
+                        .btn {{
+                            display: inline-block;
+                            padding: 12px 24px;
+                            margin-top: 20px;
+                            font-size: 16px;
+                            color: #fff;
+                            background-color: #007bff;
+                            text-decoration: none;
+                            border-radius: 5px;
+                        }}
+                        .btn:hover {{
+                            background-color: #0056b3;
+                        }}
+                        p {{
+                            font-size: 16px;
+                            color: #333;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <h2>Yêu cầu đặt lại mật khẩu</h2>
+                        <p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
+                        <p>Vui lòng nhấn vào nút bên dưới để tiến hành:</p>
+                        <a href='{forgetpasswordLink}' class='btn'>Đặt lại mật khẩu</a>
+                        <p>Nếu bạn không yêu cầu hành động này, bạn có thể bỏ qua email này.</p>
+                    </div>
+                </body>
+                </html>";
+
             await _emailService.SendEmail(user.Email, "Đặt lại mật khẩu", message);
 
         }
@@ -423,10 +620,10 @@ namespace API.Services.Repositories
             var email = Encoding.UTF8.GetString(Convert.FromBase64String(decodedToken));
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
-                throw new Exception("Email không tồn tại.");
+                return "Email không tồn tại.";
             // Kiểm tra mật khẩu mới
             if (string.IsNullOrWhiteSpace(newPassword))
-                throw new Exception("Mật khẩu mới không được để trống.");
+                return"Mật khẩu mới không được để trống.";
             // Hash mật khẩu mới
             user.PassWordHash = PasswordHasher.HashPassword(newPassword);
             _context.Users.Update(user);
@@ -434,44 +631,44 @@ namespace API.Services.Repositories
             return "Đặt lại mật khẩu thành công.";
         }
         //Lấy danh sách sinh viên có trong lớp của giảng viên
-        public async Task<TeacherWithClassesViewModel> GetStudentByTeacher(Guid? teacherId)
-        {
-            // 🔎 Truy vấn tên giảng viên
-            var teacher = await _context.Users
-                .Include(u => u.UserProfile)
-                .FirstOrDefaultAsync(u => u.Id == teacherId);
+        //public async Task<TeacherWithClassesViewModel> GetStudentByTeacher(Guid? teacherId)
+        //{
+        //    // 🔎 Truy vấn tên giảng viên
+        //    var teacher = await _context.Users
+        //        .Include(u => u.UserProfile)
+        //        .FirstOrDefaultAsync(u => u.Id == teacherId);
 
-            if (teacher == null)
-                throw new Exception("Không tìm thấy giảng viên.");
-            var teacherName = teacher.UserProfile?.FullName ?? "Không rõ";
-            // Lấy các lớp của giảng viên  
-            var classList = await _context.Classes
-                .Where(c => c.UsersId == teacherId)
-                .Include(c => c.Students)
-                    .ThenInclude(s => s.User)
-                        .ThenInclude(u => u.UserProfile)
-                .Include(c => c.Students)
-                    .ThenInclude(s => s.User)
-                        .ThenInclude(u => u.Roles)
-                .ToListAsync();
+        //    if (teacher == null)
+        //        throw new Exception("Không tìm thấy giảng viên.");
+        //    var teacherName = teacher.UserProfile?.FullName ?? "Không rõ";
+        //    // Lấy các lớp của giảng viên  
+        //    var classList = await _context.Classes
+        //        .Where(c => c.UsersId == teacherId)
+        //        .Include(c => c.Students)
+        //            .ThenInclude(s => s.User)
+        //                .ThenInclude(u => u.UserProfile)
+        //        .Include(c => c.Students)
+        //            .ThenInclude(s => s.User)
+        //                .ThenInclude(u => u.Roles)
+        //        .ToListAsync();
 
-            var result = new TeacherWithClassesViewModel
-            {
-                TeacherId = teacher.Id,
-                TeacherName = teacher.UserProfile?.FullName ?? "Không rõ",
-                Classes = classList.Select(c => new ClassWithStudentsViewModel
-                {
-                    ClassId = c.Id,
-                    ClassName = c.NameClass,
-                    StudentsInfor = c.Students
-                        .Where(s => s.UserId != null && s.User != null)
-                        .Select(s => MapToUserDTO(s.User))
-                        .ToList()
-                }).ToList()
-            };
+        //    var result = new TeacherWithClassesViewModel
+        //    {
+        //        TeacherId = teacher.Id,
+        //        TeacherName = teacher.UserProfile?.FullName ?? "Không rõ",
+        //        Classes = classList.Select(c => new ClassWithStudentsViewModel
+        //        {
+        //            ClassId = c.Id,
+        //            ClassName = c.NameClass,
+        //            StudentsInfor = c.Students
+        //                .Where(s => s.UserId != null && s.User != null)
+        //                .Select(s => MapToUserDTO(s.User))
+        //                .ToList()
+        //        }).ToList()
+        //    };
 
-            return result;
-        }
+        //    return result;
+        //}
         public static class PasswordHasher
         {
             private const int SaltSize = 16; // 128-bit salt
