@@ -266,5 +266,50 @@ namespace API.Services
                                         }).ToListAsync();
             return history;
         }
+
+        public async Task UpdateClassAsyncdat(int id, ClassCreateViewModel classViewModel)
+        {
+            var classToUpdate = await _context.Classes.FindAsync(id);
+            if (classToUpdate == null)
+            {
+                throw new KeyNotFoundException($"Class with ID {id} not found.");
+            }
+
+            if (classViewModel.ClassName != null)
+            {
+                classToUpdate.NameClass = classViewModel.ClassName;
+            }
+            if (classViewModel.SubjectId.HasValue)
+            {
+                classToUpdate.SubjectId = classViewModel.SubjectId;
+            }
+            if (classViewModel.Semester != null)
+            {
+                classToUpdate.Semester = classViewModel.Semester;
+            }
+            if (classViewModel.YearSchool.HasValue)
+            {
+                classToUpdate.YearSchool = classViewModel.YearSchool;
+            }
+
+            if (classViewModel.TeacherId.HasValue)
+            {
+                var teacher = await _context.Users
+                    .Include(u => u.Roles)
+                    .Include(u => u.UserProfile)
+                    .FirstOrDefaultAsync(u =>
+                        u.Id == classViewModel.TeacherId &&
+                        u.Roles.Any(r => r.Id == 2 )
+                    );
+
+                if (teacher == null)
+                {
+                    throw new Exception($"Không tìm thấy giảng viên có tên '{classViewModel.TeacherId}'.");
+                }
+
+                classToUpdate.UsersId = teacher.Id;
+            }
+            await _context.SaveChangesAsync();
+        }
     }
 }

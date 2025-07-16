@@ -150,7 +150,7 @@ namespace Web.Controllers
             ViewBag.TeacherList = TeacherList.Select(t => new SelectListItem
             {
                 Value = t.Id.ToString(),
-                Text = t.UserProfile.FullName,
+                Text = t.UserName,
             });
             return View(classCreateViewModel);
         }
@@ -172,7 +172,7 @@ namespace Web.Controllers
                         ClassName = classViewModel.ClassName,
                         Semester = classViewModel.Semester,
                         YearSchool = classViewModel.YearSchool,
-                        TeacherName = classViewModel.TeacherName,
+                        TeacherName =classViewModel.TeacherName,
                     };
                 }
                 else
@@ -192,7 +192,6 @@ namespace Web.Controllers
             {
                 ViewBag.ErrorMessage = "An unexpected error occurred during edit retrieval: " + ex.Message;
             }
-
             return View(classUpdateViewModel);
         }
 
@@ -233,10 +232,123 @@ namespace Web.Controllers
                     ViewBag.ErrorMessage = "An unexpected error occurred during update: " + ex.Message;
                 }
             }
+          
+            return View(classUpdateViewModel);
+        }
+        [HttpGet]
+        public async Task<IActionResult> EditNgu(int id)
+        {
+            ClassCreateViewModel classUpdateViewModel = null;
+            try
+            {
+                var response = await _httpClient.GetAsync($"{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var data = await response.Content.ReadAsStringAsync();
+                    var classViewModel = JsonConvert.DeserializeObject<ClassCreateViewModel>(data);
+
+                    classUpdateViewModel = new ClassCreateViewModel
+                    {
+                        ClassName = classViewModel.ClassName,
+                        SubjectId = classViewModel.SubjectId,
+                        Semester = classViewModel.Semester,
+                        YearSchool = classViewModel.YearSchool,
+                        TeacherId = classViewModel.TeacherId,
+                    };
+                }
+                else
+                {
+                    ViewBag.ErrorMessage = "Error fetching class details for edit.";
+                    classUpdateViewModel = new ClassCreateViewModel();
+                }
+            }
+            catch (HttpRequestException e)
+            {
+                ViewBag.ErrorMessage = "Request error: " + e.Message;
+                classUpdateViewModel = new ClassCreateViewModel();
+            }
+            catch (JsonException e)
+            {
+                ViewBag.ErrorMessage = "Data parsing error: " + e.Message;
+                classUpdateViewModel = new ClassCreateViewModel();
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "An unexpected error occurred during edit retrieval: " + ex.Message;
+                classUpdateViewModel = new ClassCreateViewModel();
+            }
+            //var SubjectList = await _context.Subjects.ToListAsync();
+            //ViewBag.SubjectList = SubjectList.Select(c => new SelectListItem
+            //{
+            //    Value = c.Id.ToString(),
+            //    Text = c.SubjectName,
+            //}).ToList();
+            var allSubjects = await _context.Subjects.ToListAsync();
+            ViewBag.SubjectList = new SelectList(allSubjects, "Id", "SubjectName");
+            var TeacherList = await _context.Users.Where(r => r.Roles.Any(c => c.Id == 2)).ToListAsync();
+            ViewBag.TeacherList = TeacherList.Select(t => new SelectListItem
+            {
+                Value = t.Id.ToString(),
+                Text = t.UserName,
+            });
             return View(classUpdateViewModel);
         }
 
-        [HttpGet]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditNgu(int id, ClassCreateViewModel classUpdateViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var content = new StringContent(JsonConvert.SerializeObject(classUpdateViewModel), Encoding.UTF8, "application/json");
+                    var response = await _httpClient.PutAsync($"ngu/{id}", content);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        ViewBag.ErrorMessage = $"Class with ID {id} not found for update.";
+                    }
+                    else
+                    {
+                        var errorContent = await response.Content.ReadAsStringAsync();
+                        ViewBag.ErrorMessage = $"Error updating class: {response.ReasonPhrase}. Details: {errorContent}";
+                    }
+                }
+                catch (HttpRequestException e)
+                {
+                    ViewBag.ErrorMessage = "Request error: " + e.Message;
+                }
+                catch (JsonException e)
+                {
+                    ViewBag.ErrorMessage = "Data parsing error: " + e.Message;
+                }
+                catch (Exception ex)
+                {
+                    ViewBag.ErrorMessage = "An unexpected error occurred during update: " + ex.Message;
+                }
+            }
+
+            //var SubjectList = await _context.Subjects.ToListAsync();
+            //ViewBag.SubjectList = SubjectList.Select(c => new SelectListItem
+            //{
+            //    Value = c.Id.ToString(),
+            //    Text = c.SubjectName,
+            //}).ToList();
+            var allSubjects = await _context.Subjects.ToListAsync();
+            ViewBag.SubjectList = new SelectList(allSubjects, "Id", "SubjectName");
+            var TeacherList = await _context.Users.Where(r => r.Roles.Any(c => c.Id == 2)).ToListAsync();
+            ViewBag.TeacherList = TeacherList.Select(t => new SelectListItem
+            {
+                Value = t.Id.ToString(),
+                Text = t.UserName,
+            });
+            return View(classUpdateViewModel);
+        }
+            [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
             ClassViewModel classViewModel = null;

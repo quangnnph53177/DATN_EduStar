@@ -120,6 +120,7 @@
 <body style="backdrop-filter: blur(2px)">
     <div class="wrapper">
         <!-- Sidebar -->
+
         <div class="col-md-2 sidebar p-3">
             <h5 class="mb-4">
                 @{
@@ -212,10 +213,17 @@
         <!-- Main content -->
         <div class="main-wrapper">
             <div class="main-content">
+               @*  <marquee behavior="alternate" direction="right"> *@
                 @RenderBody()
+               @*  </marquee> *@
+                <marquee style="font-size: 44px;" scrollamount="100" scrolldelay="3" behavior="alternate">
+                    ỐI RỒI ÔI ỐI RỒI ÔI TRÌNH LÀ J MÀ TRÌNH AI CHẤM
+                </marquee>
             </div>
             <footer>
-                &copy; @DateTime.Now.Year - EduStar. Hành trang vững – Tương lai rộng mở.
+                <marquee behavior="scroll" direction="left">
+                   @*  &copy; @DateTime.Now.Year - EduStar. Hành trang vững – Tương lai rộng mở. *@ TRÌNH LÀ GÌ
+                </marquee>
             </footer>
         </div>
     </div>

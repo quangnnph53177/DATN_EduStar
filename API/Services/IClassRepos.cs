@@ -14,6 +14,7 @@ namespace API.Services
 
         Task AddClassAsync(ClassCreateViewModel classViewModel);
         Task UpdateClassAsync(int id, ClassUpdateViewModel classViewModel);
+        Task UpdateClassAsyncdat(int id, ClassCreateViewModel classViewModel);
         Task DeleteClassAsync(int id);
 
         // Đã sửa kiểu trả về từ ClassDetailViewModel thành ClassViewModel
