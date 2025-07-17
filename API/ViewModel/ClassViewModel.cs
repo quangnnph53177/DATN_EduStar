@@ -6,7 +6,7 @@
         public string? ClassName { get; set; }
         public string? Description { get; set; }
         public string? SubjectName { get; set; }
-        public string? Semester { get; set; }
+        public int? Semester { get; set; }
         public int YearSchool { get; set; }
         public int NumberOfCredits { get; set; }
         //Thêm 2 trường này

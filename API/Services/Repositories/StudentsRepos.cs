@@ -163,7 +163,7 @@ namespace API.Services.Repositories
                 {
                     ClassName = u.NameClass,
                     SubjectName = u.Subject.SubjectName,
-                    Semester = u.Semester,
+                    Semester = u.SemesterId,
                     YearSchool = u.YearSchool ?? 0,
                     NumberOfCredits = u.Subject.NumberOfCredits ?? 0
                 }).ToList()
@@ -334,7 +334,7 @@ namespace API.Services.Repositories
             {
                 ClassName = u.NameClass,
                 SubjectName = u.Subject.SubjectName,
-                Semester = u.Semester,
+                Semester = u.SemesterId,
                 YearSchool = u.YearSchool ?? 0,
                 NumberOfCredits = u.Subject.NumberOfCredits ?? 0
             }).ToList();
@@ -363,7 +363,7 @@ namespace API.Services.Repositories
             {
                 ClassName = u.NameClass,
                 SubjectName = u.Subject.SubjectName,
-                Semester = u.Semester,
+                Semester = u.SemesterId,
                 YearSchool = u.YearSchool ?? 0,
                 NumberOfCredits = u.Subject.NumberOfCredits ?? 0
             }).ToList();
@@ -372,7 +372,7 @@ namespace API.Services.Repositories
             {
                 ClassName = u.NameClass,
                 SubjectName = u.Subject.SubjectName,
-                Semester = u.Semester,
+                Semester = u.SemesterId,
                 YearSchool = u.YearSchool ?? 0,
                 NumberOfCredits = u.Subject.NumberOfCredits ?? 0
             }).ToList();

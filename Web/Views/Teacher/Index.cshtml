@@ -109,18 +109,18 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <a asp-controller="Users" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-outline-info btn-sm mx-1" title="Xem">
+                                    <a asp-controller="Teacher" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-outline-info btn-sm mx-1" title="Xem">
                                         <i class="bi bi-eye-fill"></i>
                                     </a>
                                     @if (User.HasClaim("Permission", "Create"))
                                     {
-                                        <a asp-controller="Users" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1" title="Sửa">
+                                        <a asp-controller="Teacher" asp-action="UpdateUser" asp-route-username="@user.UserName" class="btn btn-outline-secondary btn-sm mx-1" title="Sửa">
                                             <i class="bi bi-pencil-square"></i>
                                         </a>
-                                        <a asp-controller="Users" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-warning btn-sm mx-1" title="Đổi vai trò">
+                                        <a asp-controller="Teacher" asp-action="ChangeRole" asp-route-username="@user.UserName" class="btn btn-outline-warning btn-sm mx-1" title="Đổi vai trò">
                                             <i class="bi bi-arrow-repeat"></i>
                                         </a>
-                                        <form asp-controller="Users" asp-action="LockUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc muốn thay đổi trạng thái?');" class="d-inline">
+                                        <form asp-controller="Teacher" asp-action="LockUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Bạn có chắc muốn thay đổi trạng thái?');" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn btn-sm mx-1 @(user.Statuss ? "btn-danger" : "btn-success")" title="Khóa / Mở khóa">
                                                 <i class="bi bi-@(user.Statuss ? "lock-fill" : "unlock-fill")"></i>

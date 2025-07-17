@@ -97,7 +97,7 @@ namespace API.Controllers
                 var classDtos = result.Select(c => new ClassCreateViewModel
                 {
                     ClassName = c.NameClass,
-                    Semester = c.Semester,
+                    SemesterId = c.SemesterId,
                     SubjectId = c.SubjectId ?? 0,
                     YearSchool = (int)c.YearSchool
                 }).ToList();

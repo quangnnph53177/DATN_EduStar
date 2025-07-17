@@ -16,6 +16,8 @@ public partial class Subject
     public string? Subjectcode { get; set; }
 
     public bool? Status { get; set; }
+    public int? SemesterId { get; set; }
+    public Semester Semester { get; set; } = null!;
 
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
 }

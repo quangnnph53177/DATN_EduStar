@@ -16,7 +16,7 @@ namespace API.Controllers
             _service = service;
         }
         [HttpGet]
-        public async Task<IActionResult> Get(string? subjectName, int? numberofCredit, string? subcode, bool? status)
+        public async Task<IActionResult> Get(string? subjectName, int? numberofCredit, string? subcode, bool? status,int? semesterId)
         {
             if(string.IsNullOrEmpty(subjectName)&&
                 string.IsNullOrEmpty(subcode)&&
@@ -26,7 +26,7 @@ namespace API.Controllers
                 var re = await _service.Getall();
                 return Ok(re);
             }
-            var result = await _service.Search(subjectName, numberofCredit, subcode, status);
+            var result = await _service.Search(subjectName, numberofCredit, subcode, status,semesterId);
             if (result == null || !result.Any())
             {
                 return NotFound(new { message = "Không tìm thấy môn phù hợp." });

@@ -169,6 +169,9 @@
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClassMvc" ? "active-flame" : "")" asp-controller="ClassMvc" asp-action="Index">🏫 Lớp học</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "TeachingRegistrations" ? "active-flame" : "")" asp-controller="TeachingRegistrations" asp-action="Index">🏫 Giảng viên đăng ký lịch dạy</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Complaint" ? "active-flame" : "")" asp-controller="Complaint" asp-action="Index">⚠️ Khiếu nại</a>
                     </li>
                     @if (User.HasClaim("Permission", "Create"))

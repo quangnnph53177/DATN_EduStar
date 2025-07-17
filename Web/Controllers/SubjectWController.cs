@@ -1,5 +1,8 @@
-﻿using API.ViewModel;
+﻿using API.Data;
+using API.ViewModel;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using Newtonsoft.Json;
 
@@ -8,18 +11,21 @@ namespace Web.Controllers
     public class SubjectWController : Controller
     {
         private readonly HttpClient _Client;
-        public SubjectWController(HttpClient client)
+        private readonly AduDbcontext _context; 
+        public SubjectWController(HttpClient client, AduDbcontext aduDbcontext)
         {
             _Client = client;
             _Client.BaseAddress = new Uri("https://localhost:7298/");
+            _context = aduDbcontext;
         }
-        public async Task<IActionResult> Index(string? subjectName, int? numberofCredit, string? subcode, bool? status)
+        public async Task<IActionResult> Index(string? subjectName, int? numberofCredit, string? subcode, bool? status,int? semesterId)
         {
             var queryParams = new List<string>();
             if (!string.IsNullOrWhiteSpace(subjectName)) queryParams.Add($"subjectName={subjectName}");
             if (!string.IsNullOrWhiteSpace(subcode)) queryParams.Add($"subjectCode={subcode}");
             if (numberofCredit.HasValue) queryParams.Add($"numberofCredit={numberofCredit.Value}");
             if (status.HasValue) queryParams.Add($"status={status.Value}");
+            if (semesterId.HasValue) queryParams.Add($"semesterId={semesterId.Value}");
 
             string query = queryParams.Count > 0 ? "api/subject?" + string.Join("&", queryParams) : "api/subject";
             var response = await _Client.GetAsync(query);
@@ -54,11 +60,17 @@ namespace Web.Controllers
             }
 
             TempData["Message"] = "✅ Cập nhật trạng thái thành công.";
-            return RedirectToAction("Index");
+            return RedirectToAction();
         }
         [HttpGet]
         public async Task<IActionResult> Create()
         {
+            var semesters = await _context.Semesters.ToListAsync();
+            ViewBag.SemesterList = semesters.Select(s => new SelectListItem
+            {
+                Value = s.Id.ToString(),
+                Text = s.Name
+            }).ToList();
             return View();
         }
         [HttpPost]
@@ -70,8 +82,12 @@ namespace Web.Controllers
             {
                 return RedirectToAction("Index");
             }
-            ModelState.AddModelError(string.Empty, "Error creating subject.");
+            // Đọc nội dung lỗi trả về từ API
+            var errorContent = await response.Content.ReadAsStringAsync();
+
+            ModelState.AddModelError(string.Empty, $"Lỗi khi tạo môn học: {errorContent}");
             return View(model);
+
         }
         [HttpGet]
         public async Task<IActionResult> Edit(int id)

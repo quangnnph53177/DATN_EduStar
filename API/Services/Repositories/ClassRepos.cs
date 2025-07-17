@@ -30,11 +30,11 @@ namespace API.Services
             {
                 ClassId = classEntity.Id,
                 ClassName = classEntity.NameClass,
-                Semester = classEntity.Semester,
+                Semester = classEntity.SemesterId,
 
                 // Thuộc tính SubjectName có trong Model Subject
                 SubjectName = classEntity.Subject?.SubjectName,
-                TeacherName = isTeacher? classEntity.User?.UserProfile?.FullName : null,
+                TeacherName = isTeacher? classEntity.User?.UserName : null,
 
                 // Thuộc tính YearSchool có trong Model Class
                 YearSchool = classEntity.YearSchool ?? 0, // Dùng ?? để xử lý giá trị null
@@ -109,7 +109,7 @@ namespace API.Services
             {
                 NameClass = classViewModel.ClassName,
                 SubjectId = classViewModel.SubjectId,
-                Semester = classViewModel.Semester,
+                SemesterId = classViewModel.SemesterId,
                 YearSchool = classViewModel.YearSchool,
                 UsersId = teacher.Id,
             };
@@ -136,7 +136,7 @@ namespace API.Services
             }
             if (classViewModel.Semester != null)
             {
-                classToUpdate.Semester = classViewModel.Semester;
+                classToUpdate.SemesterId = classViewModel.Semester;
             }
             if (classViewModel.YearSchool.HasValue)
             {

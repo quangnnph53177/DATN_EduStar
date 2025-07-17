@@ -11,6 +11,7 @@ namespace API.ViewModel
         public string subjectCode { get; set; } = null!;
         public string? Description { get; set; }
         public int? NumberOfCredits { get; set; }
+        public int? SemesterId { get; set; }
         public bool? Status { get; set; }
     }
 }

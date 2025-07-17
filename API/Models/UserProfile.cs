@@ -19,5 +19,7 @@ public partial class UserProfile
 
     public DateOnly? Dob { get; set; }
 
+    public int? SemesterId { get; set; }
+    public Semester Semester { get; set; } = null!;
     public virtual User User { get; set; } = null!;
 }

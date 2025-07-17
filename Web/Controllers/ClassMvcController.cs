@@ -104,7 +104,14 @@ namespace Web.Controllers
                 Value = c.Id.ToString(),
                 Text = c.UserName,
             })?.ToList() ?? new List<SelectListItem>();
-
+            var semesterList = await _context.Semesters
+                .Where(s => s.IsActive)
+                .ToListAsync();
+            ViewBag.SemesterList = semesterList.Select(s => new SelectListItem
+            {
+                Value = s.Id.ToString(),
+                Text = s.Name,
+            }).ToList();
             return View();
         }
 

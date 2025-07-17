@@ -36,14 +36,16 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label asp-for="Semester" class="form-label">🗓️ Học kỳ</label>
-                    <input asp-for="Semester" class="form-control" placeholder="VD: SP2025 hoặc Spring2025" />
-                    <span asp-validation-for="Semester" class="text-danger"></span>
+                    <label asp-for="SemesterId" class="form-label">🗓️ Học kỳ</label>
+                    <select asp-for="SemesterId" asp-items="ViewBag.SemesterList" class="form-select">
+                        <option value="">-- Chọn học kỳ--</option>
+                    </select>
+                    <span asp-validation-for="SemesterId" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6">
                     <label asp-for="YearSchool" class="form-label">📅 Năm học</label>
-                    <input asp-for="YearSchool" class="form-control" placeholder="VD: 2025-2026" />
+                    <input asp-for="YearSchool" class="form-control" placeholder="VD: 2025 hoặc 2026" />
                     <span asp-validation-for="YearSchool" class="text-danger"></span>
                 </div>
 

@@ -37,6 +37,8 @@ builder.Services.AddScoped<IPermissionRepos, PermissionRepos>();
 builder.Services.AddScoped<IAttendance , AttendanceRepos>();
 builder.Services.AddScoped<IComplaintRepos, ComplaintRepos>();
 builder.Services.AddScoped<IRoom, RoomRepos>();
+builder.Services.AddScoped<ITeachingRegistrationRepos, TeachingRegistrationRepos>();
+builder.Services.AddScoped<ISemesterRepos, SemesterRepos>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>

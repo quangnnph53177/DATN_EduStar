@@ -104,7 +104,7 @@ namespace Web.Controllers
                 ViewBag.RequestedClassList = classList.Select(c => new SelectListItem
                 {
                     Value = c.SubjectId.ToString(), // hoặc c.Id nếu bạn có ID lớp
-                    Text = $"{c.ClassName} - {c.Semester}"
+                    Text = $"{c.ClassName} - {c.SemesterId}"
                 }).ToList();
 
                 return View();

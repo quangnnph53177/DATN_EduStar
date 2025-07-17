@@ -10,7 +10,8 @@ public partial class ClassChange
     public int? CurrentClassId { get; set; }
 
     public int? RequestedClassId { get; set; }
-
+    public int? SemesterId { get; set; }
+    public Semester Semester { get; set; } = null!;
     public virtual Complaint Complaint { get; set; } = null!;
 
     public virtual Class? CurrentClass { get; set; }

@@ -25,7 +25,7 @@
                     <input type="text" name="subjectName" class="form-control" placeholder="Ví dụ: Cơ sở dữ liệu"
                            value="@ViewContext.HttpContext.Request.Query["subjectName"]" />
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Mã môn học</label>
                     <input type="text" name="subcode" class="form-control" placeholder="VD: CS101"
                            value="@ViewContext.HttpContext.Request.Query["subcode"]" />
@@ -35,7 +35,12 @@
                     <input type="number" name="numberofCredit" class="form-control"
                            value="@ViewContext.HttpContext.Request.Query["numberofCredit"]" />
                 </div>
-                <div class="col-md-3 d-grid">
+                <div class="col-md-2">
+                    <label class="form-label">Kỳ</label>
+                    <input type="number" name="semesterId" class="form-control"
+                           value="@ViewContext.HttpContext.Request.Query["semesterId"]" />
+                </div>
+                <div class="col-md-2 d-grid">
                     <button type="submit" class="btn btn-outline-primary">
                         <i class="bi bi-search"></i> Tìm kiếm
                     </button>

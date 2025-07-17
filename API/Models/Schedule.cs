@@ -14,10 +14,11 @@ public partial class Schedule
     public int? DayId { get; set; }
 
     public int? StudyShiftId { get; set; }
+    public int? SemesterId { get; set; }
     public bool? Status { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
-
+    public Semester Semester { get; set; } = null!;
     public virtual ICollection<AttendanceDetailsComplaint> AttendanceDetailsComplaints { get; set; } = new List<AttendanceDetailsComplaint>();
 
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();

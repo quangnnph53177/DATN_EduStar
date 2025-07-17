@@ -148,7 +148,7 @@ namespace API.Services.Repositories
             return student.Classes.Select(c => new ClassCreateViewModel
             {
                 ClassName = c.NameClass,
-                Semester = c.Semester,
+                SemesterId = c.SemesterId,
                 SubjectId = c.SubjectId ?? 0,
                 YearSchool = (int)c.YearSchool
             }).ToList();

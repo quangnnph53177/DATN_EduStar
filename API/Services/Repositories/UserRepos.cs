@@ -412,6 +412,7 @@ namespace API.Services.Repositories
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                 new Claim("UserId", user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName)
             };
             claims.AddRange(user.Roles.Select(r => new Claim("RoleName", r.RoleName) /* Tên vai trò*/ ));

@@ -11,13 +11,13 @@ public partial class Class
 
     public int? SubjectId { get; set; }
 
-    public string? Semester { get; set; }
-
     public int? YearSchool { get; set; }
     public  DateTime? StartTime { get; set; }
     public bool? Status { get; set; }
     public Guid? UsersId { get; set; }
     public int? StudentCount { get; set; }
+    public int? SemesterId { get; set; } 
+    public Semester? Semester { get; set; }
     public virtual User? User { get; set; }
 
     public virtual ICollection<ClassChange> ClassChangeCurrentClasses { get; set; } = new List<ClassChange>();

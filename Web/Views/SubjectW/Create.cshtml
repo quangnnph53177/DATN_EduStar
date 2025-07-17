@@ -23,6 +23,13 @@
                     <input asp-for="subjectCode" class="form-control" placeholder="VD: IT001" />
                     <span asp-validation-for="subjectCode" class="text-danger"></span>
                 </div>
+                <div class="mb-3">
+                    <label asp-for="SemesterId" class="form-label fw-semibold">Kỳ</label>
+                    <select asp-for="SemesterId" asp-items="ViewBag.SemesterList" class="form-select">
+                        <option>---Chọn học kỳ---</option>
+                    </select>
+                    <span asp-validation-for="subjectCode" class="text-danger"></span>
+                </div>
 
                 <div class="mb-3">
                     <label asp-for="Description" class="form-label fw-semibold">Mô tả</label>
