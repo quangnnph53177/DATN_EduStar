@@ -3,6 +3,7 @@
     public class Lichcodinh
     {
         public int Id { get; set; }
+        public int ClassId { get; set; }
         public string ClassName { get; set; }
         public string RoomCode { get; set; }
         public string SubjectName { get; set; }

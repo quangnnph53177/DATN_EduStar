@@ -1,10 +1,12 @@
-﻿using API.Services;
+﻿
+using API.Services;
 using API.ViewModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
 
 namespace API.Controllers
 {
@@ -107,7 +109,35 @@ namespace API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
+        [HttpPut("ngu/{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdateClassDat(int id, [FromBody] ClassCreateViewModel classViewModel)
+        {
+            try
+            {
+                if (classViewModel == null || !ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
+                try
+                {
+                    await _classRepos.UpdateClassAsyncdat(id, classViewModel);
+                    return NoContent();
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return NotFound(ex.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
+        }
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -129,24 +159,22 @@ namespace API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict, Type = typeof(string))]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> AssignStudentToClass(int classId, Guid studentId)
+        public async Task<IActionResult> AssignStudentToClass([FromBody] AssignStudentsRequest request )
         {
             try
             {
-                var success = await _classRepos.AssignStudentToClassAsync(classId, studentId);
+                var success = await _classRepos.AssignStudentToClassAsync(request);
                 if (success)
                 {
-                    return Ok(true);
+                    return Ok(new { success = true, message = "Gán sinh viên vào lớp thành công." });
                 }
 
-                // You may want to check for existence of Class and Student here for a more specific error
-                // This logic would require injecting the DbContext or a separate service
-                // For now, we'll assume a 'false' return means either not found or already assigned.
-                return Conflict("Student is already assigned to this class or class/student does not exist.");
+                return Conflict("Một số sinh viên đã được gán hoặc lớp/sinh viên không tồn tại.");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Lỗi máy chủ: {ex.Message}");
             }
         }
 

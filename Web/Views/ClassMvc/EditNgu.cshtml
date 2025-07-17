@@ -1,10 +1,9 @@
-﻿@model API.ViewModel.ClassUpdateViewModel
-
+﻿@model API.ViewModel.ClassCreateViewModel
 @{
     ViewData["Title"] = "Sửa thông tin Lớp học";
 }
 
-<h1 class="mt-4">Sửa thông tin Lớp học</h1>
+<h1 class="mt-4">Sửa thông tin Lớp học Ngu </h1>
 <hr />
 
 @if (ViewBag.ErrorMessage != null)
@@ -16,13 +15,22 @@
 
 <div class="row">
     <div class="col-md-6">
-        <form asp-action="Edit">
+        <form asp-action="EditNgu">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="SubjectId" /> <div class="form-group mb-3">
+        @*     <input type="hidden" asp-for="SubjectId" /> *@
+            <div class="form-group mb-3">
                 <label asp-for="ClassName" class="control-label">Tên lớp</label>
                 <input asp-for="ClassName" class="form-control" />
                 <span asp-validation-for="ClassName" class="text-danger"></span>
             </div>
+            <div class="form-group mb-3">
+                <label asp-for="SubjectId" class="control-label">Môn học</label>
+                <select asp-for="SubjectId" asp-items="ViewBag.SubjectList" class="form-select">
+                    <option value="">--Sửa cái này thì hãy chọn--</option>
+                </select>
+                <span asp-validation-for="SubjectId" class="text-danger"></span>
+            </div>
+
             <div class="form-group mb-3">
                 <label asp-for="Semester" class="control-label">Học kỳ</label>
                 <input asp-for="Semester" class="form-control" />
@@ -34,9 +42,11 @@
                 <span asp-validation-for="YearSchool" class="text-danger"></span>
             </div>
             <div class="form-group mb-3">
-                <label asp-for="TeacherName" class="control-label">Giảng viên phụ trách</label>
-                <select asp-for="TeacherName" asp-items="ViewBag.TeacherList" class="form-select"></select>
-                <span asp-validation-for="TeacherName" class="text-danger"></span>
+                <label asp-for="TeacherId" class="control-label">Giảng viên phụ trách</label>
+                <select asp-for="TeacherId" asp-items="ViewBag.TeacherList" class="form-select">
+                    <option value="">--Sửa cái này thì hãy chọn--</option>
+                </select>
+                <span asp-validation-for="TeacherId" class="text-danger"></span>
             </div>
             <div class="form-group mb-3">
                 <input type="submit" value="Lưu" class="btn btn-primary" />
@@ -45,9 +55,3 @@
         </form>
     </div>
 </div>
-
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}
