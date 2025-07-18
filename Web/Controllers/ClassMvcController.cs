@@ -268,7 +268,7 @@ namespace Web.Controllers
                     {
                         ClassName = classViewModel.ClassName,
                         SubjectId = classViewModel.SubjectId,
-                        Semester = classViewModel.Semester,
+                        SemesterId = classViewModel.SemesterId,
                         YearSchool = classViewModel.YearSchool,
                         TeacherId = classViewModel.TeacherId,
                     };

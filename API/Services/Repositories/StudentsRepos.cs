@@ -107,32 +107,42 @@ namespace API.Services.Repositories
             return package.GetAsByteArray();
         }
 
+
         public async Task<List<StudentViewModels>> GetAllStudents()
         {
-            var lstSv = await _context.StudentsInfors
-                .Include(s => s.User)
-                    .ThenInclude(u => u.UserProfile)
-                .Include(s => s.User)
-                    .ThenInclude(u => u.Roles)
-                .Where(s => s.User.Roles.Any(r => r.Id == 3))
+            var users = await _context.Users
+                .Where(u => u.IsDeleted == false &&
+                                 u.Roles.Any(r => r.Id == 3) &&         // Role sinh viên
+                                 u.StudentsInfor != null)
+                .Include(u => u.UserProfile)
+                .Include(u => u.Roles)
+                .Include(u => u.StudentsInfor)
+                    .ThenInclude(s => s.Classes)
                 .AsSplitQuery()
                 .ToListAsync();
-          var student = lstSv.Select(u=> new StudentViewModels
-          {
-              id = u.UserId,
-              FullName = u.User?.UserProfile?.FullName ?? "N/A",
-              UserName = u.User?.UserName ?? "N/A",
-              Email = u.User?.Email ?? "N/A",
-              PhoneNumber = u.User?.PhoneNumber ?? "N/A",
-              StudentCode = u.StudentsCode ?? "N/A",
-              Gender = u.User?.UserProfile?.Gender ?? false,
-              Avatar = u.User?.UserProfile?.Avatar ?? "N/A",
-              Address = u.User?.UserProfile?.Address ?? "N/A",
-              Dob = u.User?.UserProfile?.Dob,
-              Status = u.User?.Statuss ?? false
-          }).ToList();
-          return student;
+
+            var result = users
+                .OrderByDescending(u => u.Statuss ?? false)
+                .ThenBy(u => u.UserProfile?.FullName)
+                .Select(u => new StudentViewModels
+                {
+                    id = u.Id,
+                    FullName = u.UserProfile?.FullName ?? "N/A",
+                    UserName = u.UserName ?? "N/A",
+                    Email = u.Email ?? "N/A",
+                    PhoneNumber = u.PhoneNumber ?? "N/A",
+                    StudentCode = u.StudentsInfor?.StudentsCode ?? "N/A",
+                    Gender = u.UserProfile?.Gender ?? false,
+                    Avatar = u.UserProfile?.Avatar ?? "N/A",
+                    Address = u.UserProfile?.Address ?? "N/A",
+                    Dob = u.UserProfile?.Dob,
+                    Status = u.Statuss ?? false
+                })
+                .ToList(); // ✅ Bổ sung ToList()
+
+            return result;
         }
+
 
         public async Task<StudentViewModels> GetById(Guid Id)
         {

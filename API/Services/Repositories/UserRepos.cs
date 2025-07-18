@@ -445,6 +445,7 @@ namespace API.Services.Repositories
                  .Include(u => u.StudentsInfor)
                  .ThenInclude(s => s.Classes)
                  .AsSplitQuery();
+;
 
             query = FilterUsersByRole(query, currentUserRoleIds, currentUserName);
 
@@ -453,12 +454,12 @@ namespace API.Services.Repositories
                 query = query.Where(u => !u.Roles.Any(r => r.Id == 2)); // loại giảng viên
             }
 
-            var users = await query.OrderByDescending(u => u.Statuss).ToListAsync();
+            var users = await query.ToListAsync();
 
             return users
                 .Select(u => new { User = u, MainRole = u.Roles.Min(r => r.Id) })
-                .OrderByDescending(u => u.User.Statuss ?? false)
-                .ThenBy(u => u.MainRole)
+                .OrderByDescending(u => u.User.Statuss ?? false  )
+                .ThenBy(u => u.User?.UserProfile?.FullName)
                 .Select(u => MapToUserDTO(u.User));
         }
         public async Task<string> LockUser(string userName, Guid currentUserId)
@@ -525,25 +526,64 @@ namespace API.Services.Repositories
         }
         public async Task<string> ChangeRole(string userName, int newRoleId)
         {
-            // Lấy user và các vai trò hiện tại
-            var user = await _context.Users.Include(u => u.Roles).FirstOrDefaultAsync(u => u.UserName == userName);
+            var user = await _context.Users
+                .Include(u => u.UserProfile)
+                .Include(u => u.StudentsInfor)
+                .Include(u => u.Roles)
+                .FirstOrDefaultAsync(u => u.UserName == userName);
+
             if (user == null)
                 return "Không tìm thấy người dùng với tên đăng nhập đã cho.";
 
-            // Lấy danh sách tất cả vai trò
-            var allRoles = await _context.Roles.ToListAsync();
-
-            // Kiểm tra vai trò mới có tồn tại không
-            var newRole = allRoles.FirstOrDefault(r => r.Id == newRoleId);
+            var newRole = await _context.Roles.FirstOrDefaultAsync(r => r.Id == newRoleId);
             if (newRole == null)
                 return "Vai trò muốn chuyển không tồn tại.";
 
-            // Gán vai trò mới cho user (chỉ giữ vai trò này)
+            // Xác định vai trò hiện tại
+            var currentRoleId = user.Roles.Min(r => r.Id);
+
+            // Gán role mới (chỉ giữ 1 vai trò)
             user.Roles = new List<Role> { newRole };
+
+            if (currentRoleId == 3 && (newRoleId == 1 || newRoleId == 2)) // Sinh viên → Admin/Giảng viên
+            {
+                if (user.StudentsInfor != null)
+                    _context.StudentsInfors.Remove(user.StudentsInfor);
+
+                if (user.UserProfile == null)
+                {
+                    user.UserProfile = new UserProfile
+                    {
+                        UserId = user.Id,
+                        FullName = "Tên người dùng",
+                        Gender = false,
+                        Address = "Chưa cập nhật",
+                        Avatar = "default.png",
+                        Dob = DateOnly.FromDateTime(new DateTime(1990, 1, 1))
+                    };
+                }
+            }
+            else if ((currentRoleId == 1 || currentRoleId == 2) && newRoleId == 3) // Admin/Giảng viên → Sinh viên
+            {
+                if (user.UserProfile != null)
+                    _context.UserProfiles.Remove(user.UserProfile);
+
+                if (user.StudentsInfor == null)
+                {
+                    user.StudentsInfor = new StudentsInfor
+                    {
+                        UserId = user.Id,
+                        StudentsCode = "SV" + DateTime.Now.Ticks.ToString().Substring(10)
+                    };
+                }
+            }
+            else
+            {                
+            }
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
-            return $"Đã đổi vai trò thành công sang: {newRole.RoleName}";
+            return $"✅ Đã đổi vai trò thành công sang: {newRole.RoleName}";
         }
         public async Task ForgetPassword(string email)
         {

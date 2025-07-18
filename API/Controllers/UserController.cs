@@ -29,7 +29,7 @@ namespace API.Controllers
             _logRepos = auditLogRepos;
             _context = aduDbcontext;
         }
-        // [Authorize(Policy = "CreateUS")]
+        [Authorize(Policy = "CreateUS")]
         [HttpPost("register")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Register([FromForm] UserDTO userDto, IFormFile? imgFile)
@@ -248,7 +248,7 @@ namespace API.Controllers
         }
 
         [HttpDelete("cleanup-unconfirmed")]
-        // [Authorize(Policy = "CreateUS")]
+        [Authorize(Policy = "CreateUS")]
         public async Task<IActionResult> CleanupUnconfirmed()
         {
             try
@@ -302,7 +302,7 @@ namespace API.Controllers
                 });
             }
         }
-        //[Authorize(Policy = "DetailUS")]
+        [Authorize(Policy = "DetailUS")]
         [HttpGet("user")]
         public async Task<IActionResult> GetAllUsers()
         {
@@ -426,30 +426,12 @@ namespace API.Controllers
 
                     return Ok(filtered);
                 }
-                //else if () // 👨‍🏫 Giảng viên
-                //{
-                //    var teacher = users.FirstOrDefault(u => u.UserName == currentUserName);
-                //    if (teacher == null)
-                //        return Forbid("Không tìm thấy giảng viên.");
-
-                //    var classList = await _userRepos.GetStudentByTeacher(teacher.Id);
-
-                //    var uniqueStudents = classList.Classes
-                //         .SelectMany(c => c.StudentsInfor)
-                //         .Where(s => s.UserName != currentUserName && s.UserName != null)
-                //         .GroupBy(s => s.UserName) // hoặc s.Id nếu muốn chắc chắn hơn
-                //         .Select(g => g.First())   // chỉ lấy 1 bản ghi duy nhất
-                //         .ToList();
-
-                //    return Ok(uniqueStudents);
-                //}
                 else // 👩‍🎓 Sinh viên -> chỉ trả về lớp của họ
                 {
                     var filtered = users.Where(u => u.UserName == currentUserName);
 
                     return Ok(filtered);
                 }
-                //return Ok(resultDict);
             }
             catch (Exception ex)
             {
@@ -537,7 +519,7 @@ namespace API.Controllers
                     .Select(c => int.Parse(c.Value))
                     .ToList();
 
-                var allowedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName, true);
+                var allowedUsers = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName, false);
                 var targetUser = allowedUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
 
                 if (targetUser == null)
@@ -564,7 +546,7 @@ namespace API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        // [Authorize(Policy = "CreateUS")]
+        [Authorize(Policy = "CreateUS")]
         [HttpPost("lock/{username}")]
         public async Task<IActionResult> LockUser(string username)
         {
@@ -620,7 +602,7 @@ namespace API.Controllers
                 return BadRequest(new { success = false, message = ex.Message });
             }
         }
-        //[Authorize(Policy = "CreateUS")]
+        [Authorize(Policy = "CreateUS")]
         [HttpPut("changerole/{username}")]
         public async Task<IActionResult> ChangeRole(string username, [FromQuery] int newRoleId)
         {
@@ -716,7 +698,7 @@ namespace API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        //[Authorize]
+        [Authorize]
         [HttpGet("log")]
         public async Task<IActionResult> GetAuditLogs()
         {

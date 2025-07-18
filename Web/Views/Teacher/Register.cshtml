@@ -1,6 +1,6 @@
 ﻿@model API.ViewModel.RegisterViewModel
 @{
-    ViewData["Title"] = "Đăng ký tài khoản quản trị";
+    ViewData["Title"] = "Đăng ký tài khoản giảng viên";
 }
 
 <div class="container mt-5">
@@ -17,7 +17,7 @@
                 <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
             }
 
-            <form asp-controller="Users" asp-action="Register" method="post" enctype="multipart/form-data">
+            <form asp-controller="Teacher" asp-action="Register" method="post" enctype="multipart/form-data">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label asp-for="User.UserName" class="form-label"></label>
@@ -99,7 +99,7 @@
                     </div>
 
                     <div class="col-12 d-flex justify-content-between mt-4">
-                        <a asp-controller="Users" asp-action="Index" class="btn btn-outline-secondary">
+                        <a asp-controller="Teacher" asp-action="Index" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách
                         </a>
                         <button type="submit" class="btn btn-success">

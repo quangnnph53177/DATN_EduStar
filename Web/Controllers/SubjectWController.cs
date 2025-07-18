@@ -65,7 +65,7 @@ namespace Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            var semesters = await _context.Semesters.ToListAsync();
+            var semesters = await _context.Semesters.Where(x=>x.IsActive).ToListAsync();
             ViewBag.SemesterList = semesters.Select(s => new SelectListItem
             {
                 Value = s.Id.ToString(),

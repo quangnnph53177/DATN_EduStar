@@ -173,27 +173,7 @@ namespace Web.Controllers
                 TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
                 return RedirectToAction("Login", "Users");
             }
-            var reponse = await client.GetAsync("api/Role/getroles");
-            if (!reponse.IsSuccessStatusCode)
-            {
-                TempData["ErrorMessage"] = "Không thể lấy danh sách vai trò.";
-                return RedirectToAction("Index");
-            }
-            var rolesJson = await reponse.Content.ReadAsStringAsync();
-            var roles = JsonSerializer.Deserialize<List<Role>>(rolesJson, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-            var model = new RegisterViewModel
-            {
-                User = new UserDTO(),
-                RoleLists = roles?.Select(r => new SelectListItem
-                {
-                    Value = r.Id.ToString(),
-                    Text = r.RoleName
-                }).ToList() ?? new List<SelectListItem>()
-            };
-            return View(model);
+            return View();
         }
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model, IFormFile? imgFile)
@@ -216,14 +196,7 @@ namespace Web.Controllers
                 content.Add(new StringContent(model.User.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
             content.Add(new StringContent(model.User.Gender.HasValue ? model.User.Gender.Value.ToString() : ""), "Gender");
 
-            if (model.User.RoleIds != null && model.User.RoleIds.Any())
-            {
-                foreach (var roleId in model.User.RoleIds)
-                {
-                    content.Add(new StringContent(roleId.ToString()), "RoleIds");
-                }
-            }
-
+            content.Add(new StringContent("1"), "RoleIds");
             if (imgFile != null && imgFile.Length > 0)
             {
                 var streamContent = new StreamContent(imgFile.OpenReadStream());

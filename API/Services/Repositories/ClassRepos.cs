@@ -99,7 +99,7 @@ namespace API.Services
                 .Include(u => u.Roles)
                 .FirstOrDefaultAsync(u =>
                     u.Id == classViewModel.TeacherId &&
-                    u.Roles.Any(r => r.Id == 2) // đảm bảo là giảng viên
+                    u.Roles.Any(r => r.Id == 2)&&
                     u.Id == classViewModel.TeacherId &&
                     u.Roles.Any(r => r.Id == 2)
                 );
@@ -283,9 +283,9 @@ namespace API.Services
             {
                 classToUpdate.SubjectId = classViewModel.SubjectId;
             }
-            if (classViewModel.Semester != null)
+            if (classViewModel.SemesterId != null)
             {
-                classToUpdate.Semester = classViewModel.Semester;
+                classToUpdate.SemesterId = classViewModel.SemesterId;
             }
             if (classViewModel.YearSchool.HasValue)
             {

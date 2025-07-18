@@ -242,6 +242,58 @@ namespace Web.Controllers
                 return RedirectToAction("IndexUser", new { username = userDto.UserName });
             }
         }
+        [HttpGet]
+        public async Task<IActionResult> Register()
+        {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
+                return RedirectToAction("Login", "Users");
+            }
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Register(RegisterViewModel model, IFormFile? imgFile)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var client = GetClientWithToken();
+            using var content = new MultipartFormDataContent();
+
+            content.Add(new StringContent(model.User.UserName ?? ""), "UserName");
+            content.Add(new StringContent(model.User.PassWordHash ?? ""), "PassWordHash");
+            content.Add(new StringContent(model.User.Email ?? ""), "Email");
+            content.Add(new StringContent(model.User.PhoneNumber ?? ""), "PhoneNumber");
+            content.Add(new StringContent(model.User.FullName ?? ""), "FullName");
+            content.Add(new StringContent(model.User.Address ?? ""), "Address");
+            content.Add(new StringContent(model.User.Statuss.ToString()), "Statuss");
+
+            if (model.User.Dob.HasValue)
+                content.Add(new StringContent(model.User.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
+            content.Add(new StringContent(model.User.Gender.HasValue ? model.User.Gender.Value.ToString() : ""), "Gender");
+
+            content.Add(new StringContent("2"), "RoleIds");
+            if (imgFile != null && imgFile.Length > 0)
+            {
+                var streamContent = new StreamContent(imgFile.OpenReadStream());
+                streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
+                content.Add(streamContent, "imgFile", imgFile.FileName);
+            }
+            var response = await client.PostAsync("api/User/register", content);
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
+                return RedirectToAction("Index", "Users");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(); // 🔥 Đọc lỗi chi tiết từ API
+                TempData["ErrorMessage"] = $"Đăng ký không thành công: {errorContent}";
+                return View(model);
+            }
+        }
         [HttpPost]
         public async Task<IActionResult> LockUser(string username)
         {

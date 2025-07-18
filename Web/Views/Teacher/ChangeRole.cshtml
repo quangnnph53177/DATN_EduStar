@@ -2,33 +2,46 @@
 
 @{
     ViewData["Title"] = "Đổi vai trò người dùng";
-    var currentRoleId = Model.RoleIds.FirstOrDefault(); // Lấy vai trò hiện tại
+    var currentRoleId = Model.RoleIds.FirstOrDefault();
 }
 
-<h2>Đổi vai trò cho @Model.UserName</h2>
+<div class="container mt-5">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-body p-4">
+            <h3 class="mb-4 text-primary">
+                <i class="bi bi-shield-lock-fill me-2"></i>Đổi vai trò: <span class="text-dark">@Model.UserName</span>
+            </h3>
 
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-}
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+            }
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+            }
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-}
+            <form asp-action="ChangeRole" method="post">
+                <input type="hidden" name="username" value="@Model.UserName" />
 
-<form asp-action="ChangeRole" method="post">
-    <input type="hidden" name="username" value="@Model.UserName" />
+                <div class="mb-3">
+                    <label for="newRoleId" class="form-label fw-semibold">Chọn vai trò mới</label>
+                    <select name="newRoleId" id="newRoleId" class="form-select">
+                        <option value="1" selected="@(currentRoleId == 1)">🔒 Admin</option>
+                        <option value="2" selected="@(currentRoleId == 2)">👨‍🏫 Giảng viên</option>
+                        <option value="3" selected="@(currentRoleId == 3)">🎓 Sinh viên</option>
+                    </select>
+                </div>
 
-    <div class="form-group">
-        <label>Vai trò mới</label>
-        <select name="newRoleId" class="form-control">
-            <option value="1" selected="@(currentRoleId == 1 ? "selected" : null)">Admin</option>
-            <option value="2" selected="@(currentRoleId == 2 ? "selected" : null)">Teacher</option>
-            <option value="3" selected="@(currentRoleId == 3 ? "selected" : null)">Student</option>
-        </select>
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left-circle"></i> Quay lại
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle-fill"></i> Xác nhận đổi vai trò
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-
-    <button type="submit" class="btn btn-primary mt-3">Đổi vai trò</button>
-    <a asp-action="Index" class="btn btn-secondary mt-3">Quay lại</a>
-</form>
+</div>
