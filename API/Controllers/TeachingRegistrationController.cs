@@ -14,11 +14,9 @@ namespace API.Controllers
     public class TeachingRegistrationController : ControllerBase
     {
         private readonly ITeachingRegistrationRepos _repos;
-        private readonly ILogger<TeachingRegistrationController> _logger;
-        public TeachingRegistrationController(ITeachingRegistrationRepos repos, ILogger<TeachingRegistrationController> logger)
+        public TeachingRegistrationController(ITeachingRegistrationRepos repos)
         {
             _repos = repos;
-            _logger = logger;
         }
         // GET: api/TeachingRegistrationApi/classes
         //[HttpGet("classes")]
@@ -62,44 +60,53 @@ namespace API.Controllers
         // POST: api/TeachingRegistrationApi/register
         [HttpPost("register")]
         // [Authorize(Roles = "Teacher")]
-        public async Task<IActionResult> Register([FromBody] TeachingRegistrationViewModel request)
+        public async Task<IActionResult> Register([FromBody] TeachingRegistrationViewModel request, [FromQuery] string dayGroup)
         {
             try
             {
                 var teacherId = User.GetUserId();
-
-                // Bước 1: kiểm tra điều kiện đăng ký
-                var result = await _repos.CanRegister(
-                    teacherId,
-                    request.ClassId,
-                    request.SemesterId,
-                    request.DayId,
-                    request.StudyShiftId,
-                    request.StartDate,
-                    request.EndDate
-                );
-                if (result != "OK")
+                List<int> dayIds = !string.IsNullOrEmpty(dayGroup)
+                ? dayGroup switch
                 {
-                    _logger.LogWarning("Không thể đăng ký: {Message}", result); // THÊM LOG
-                    return BadRequest(result); // đây chính là trả về 400
+                    "2-4-6" => new List<int> { 2, 4, 6 },
+                    "3-5-7" => new List<int> { 3, 5, 7 },
+                    _ => new List<int>()
                 }
+                : new List<int> { request.DayId };
 
-                // Bước 2: tiến hành đăng ký
-                result = await _repos.RegisterTeaching(
+                if (!dayIds.Any())
+                    return BadRequest("Lịch học không hợp lệ. Vui lòng chọn Thứ 2-4-6 hoặc Thứ 3-5-7.");
+                // ✅ Bước 2: Kiểm tra từng ngày
+                    var canRegister = await _repos.CanRegister(
+                        teacherId,
+                        request.ClassId,
+                        request.SemesterId,
+                        dayIds,
+                        request.StudyShiftId,
+                        request.StartDate,
+                        request.EndDate
+                    );
+
+                    if (canRegister != "OK")
+                    {
+                        return BadRequest($"Không thể đăng ký cho Thứ {dayIds}: {canRegister}");
+                    }
+                
+                // ✅ Bước 3: Tiến hành đăng ký tất cả ngày
+                var result = await _repos.RegisterTeaching(
                     teacherId,
                     request.ClassId,
                     request.SemesterId,
-                    request.DayId,
+                    dayIds,
                     request.StudyShiftId,
                     request.StartDate,
                     request.EndDate
                 );
 
-                if (result != "Đăng ký thành công.")
-                    return BadRequest(result); // Trường hợp xảy ra lỗi khi ghi DB, hoặc lớp không đúng giảng viên
+                if (!result.Contains("thành công"))
+                    return BadRequest(result);
 
                 return Ok(result);
-
             }
             catch (Exception ex)
             {

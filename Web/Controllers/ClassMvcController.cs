@@ -92,7 +92,7 @@ namespace Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            var SubjectList =  await _context.Subjects.ToListAsync();
+            var SubjectList =  await _context.Subjects.Where(u=>u.Status == true).ToListAsync();
             ViewBag.SubjectList = SubjectList.Select(c => new SelectListItem
             {
                 Value = c.Id.ToString(),
@@ -115,7 +115,7 @@ namespace Web.Controllers
                 Value = s.Id.ToString(),
                 Text = s.Name,
             }).ToList();
-            var TeacherList = await _context.Users.Where(r=>r.Roles.Any(c=> c.Id==2)).ToListAsync();
+            var TeacherList = await _context.Users.Where(r=>r.Roles.Any(c=> c.Id==2)&& r.IsDeleted == false).ToListAsync();
             ViewBag.TeacherList = TeacherList.Select(t => new SelectListItem
             {
                 Value = t.Id.ToString(),

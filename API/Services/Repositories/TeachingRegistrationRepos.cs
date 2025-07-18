@@ -39,7 +39,7 @@ namespace API.Services.Repositories
             //    return await _context.Rooms.Where(r => !busyRoomIds.Contains(r.Id)).ToListAsync();
             //}
 
-        public async Task<string> CanRegister(Guid teacherId, int classId, int dayId, int shiftId, int semesterId, DateTime start, DateTime end)
+        public async Task<string> CanRegister(Guid teacherId, int classId, int semesterId, List<int> dayIds, int shiftId, DateTime start, DateTime end)
         {
             // 1. Kiểm tra học kỳ
             var semester = await _context.Semesters.FindAsync(semesterId);
@@ -64,27 +64,30 @@ namespace API.Services.Repositories
                 return "Lớp học không tồn tại hoặc đã bị khóa.";
 
             // 3. Kiểm tra giảng viên đã đăng ký trùng ca học chưa
-            var hasConflict = await _context.TeachingRegistrations.AnyAsync(x =>
-                x.TeacherId == teacherId &&
-                x.DayId == dayId &&
-                x.StudyShiftId == shiftId &&
-                x.Status == true);
-            if (hasConflict)
-                return "Bạn đã đăng ký ca học này. Hãy chọn ca học khác vào ngày khác nhé";
+            foreach (var dayId in dayIds)
+            {
+                // Trùng ca học trong cùng ngày
+                var hasConflict = await _context.TeachingRegistrations.AnyAsync(x =>
+                    x.TeacherId == teacherId &&
+                    x.DayId == dayId &&
+                    x.StudyShiftId == shiftId &&
+                    x.Status == true);
+                if (hasConflict)
+                    return $"Bạn đã đăng ký ca học Thứ {dayId} rồi. Hãy chọn ngày khác.";
 
-            // 4. ❗ Kiểm tra xem giảng viên này đã đăng ký lớp đó ở ca khác chưa
-            var hasRegisteredSameClass = await _context.TeachingRegistrations.AnyAsync(x =>
-                x.TeacherId == teacherId &&
-                x.ClassId == classId &&
-                x.StudyShiftId != shiftId &&  x.DayId != dayId && 
-                x.Status == true);
-
-            if (hasRegisteredSameClass)
-                return "Bạn đã đăng ký lớp này ở ca học khác.";
-
+                // Trùng lớp học ở ca khác
+                var hasRegisteredSameClass = await _context.TeachingRegistrations.AnyAsync(x =>
+                    x.TeacherId == teacherId &&
+                    x.ClassId == classId &&
+                    x.DayId != dayId &&
+                    x.StudyShiftId != shiftId &&
+                    x.Status == true);
+                if (hasRegisteredSameClass)
+                    return $"Bạn đã đăng ký lớp này ở ca khác rồi. Không thể đăng ký thêm.";
+            }
             // 5. Kiểm tra giới hạn đăng ký (tổng số lớp và phòng)
             var totalRegistrations = await _context.TeachingRegistrations.CountAsync(x =>
-                x.DayId == dayId &&
+                dayIds.Contains(x.DayId) &&
                 x.StudyShiftId == shiftId &&
                 x.Status == true);
 
@@ -109,31 +112,35 @@ namespace API.Services.Repositories
 
             return "OK"; // ✅ Có thể đăng ký
         }
-        public async Task<string> RegisterTeaching(Guid teacherId, int classId, int semesterId, int dayId, int shiftId, DateTime start, DateTime end)
+        public async Task<string> RegisterTeaching(Guid teacherId, int classId, int semesterId, List<int> dayIds, int shiftId, DateTime start, DateTime end)
         {
-            var canRegisterResult = await CanRegister(teacherId, classId, dayId, shiftId,semesterId,start,end);
-            if (canRegisterResult != "OK")
-                return canRegisterResult; // Trả về lý do không thể đăng ký
             var classInfo = await _context.Classes.FindAsync(classId);
             if (classInfo == null)
                 return "Không tìm thấy thông tin lớp.";
             if (classInfo.UsersId != teacherId)
-                return "Bạn không phải là giảng viên phụ trách lớp này.";           
+                return "Bạn không phải là giảng viên phụ trách lớp này.";
 
-            var reg = new TeachingRegistration
+            foreach (var dayId in dayIds)
             {
-                TeacherId = teacherId,
-                ClassId = classId,
-                DayId = dayId,
-                StudyShiftId = shiftId,
-                SemesterId = semesterId,
-                StartDate = start,
-                EndDate = end,
-                Status = true,
-                IsConfirmed = false
-            };
+                var canRegisterResult = await CanRegister(teacherId, classId, semesterId, dayIds, shiftId, start, end);
+                if (canRegisterResult != "OK")
+                    return $"Không thể đăng ký cho thứ {dayId}: {canRegisterResult}";
 
-            _context.TeachingRegistrations.Add(reg);
+                var reg = new TeachingRegistration
+                {
+                    TeacherId = teacherId,
+                    ClassId = classId,
+                    SemesterId = semesterId,
+                    DayId = dayId,
+                    StudyShiftId = shiftId,
+                    StartDate = start,
+                    EndDate = end,
+                    Status = true,
+                    IsConfirmed = false
+                };
+
+                _context.TeachingRegistrations.Add(reg);
+            }
             await _context.SaveChangesAsync();
 
             return "Đăng ký thành công.";
@@ -147,6 +154,7 @@ namespace API.Services.Repositories
                 .Include(r => r.Day)
                 .Include(r => r.StudyShift)
                 .Include(r => r.Semester)
+                
                 .AsQueryable();
 
             if (!isAdmin)
@@ -170,6 +178,7 @@ namespace API.Services.Repositories
                     EndDate = r.EndDate ?? DateTime.MinValue,
                     IsConfirmed = r.IsConfirmed ?? false
                 })
+                .OrderByDescending(r => r.IsConfirmed == false)
                 .ToListAsync();
 
             return list;
@@ -183,8 +192,9 @@ namespace API.Services.Repositories
             registration.IsConfirmed = true;
             await _context.SaveChangesAsync();
             // 🔁 Gọi logic RegisterSchedule ngay sau xác nhận
-            var classId = registration.ClassId;
             var teacherId = registration.TeacherId;
+            var classId = registration.ClassId;
+            var semesterId = registration.SemesterId;
             var dayId = registration.DayId;
             var shiftId = registration.StudyShiftId;
             var start = registration.StartDate;
@@ -217,6 +227,7 @@ namespace API.Services.Repositories
             {
                 ClassId = classId,
                 RoomId = roomId,
+                SemesterId = semesterId,
                 DayId = dayId,
                 StudyShiftId = shiftId,
                 StartDate = start,

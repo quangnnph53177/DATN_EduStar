@@ -5,8 +5,10 @@ using Azure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 
 namespace Web.Controllers
@@ -52,7 +54,7 @@ namespace Web.Controllers
             }
 
             var json = await response.Content.ReadAsStringAsync();
-            var registrations = JsonSerializer.Deserialize<List<TeachingRegistrationVMD>>(json, new JsonSerializerOptions
+            var registrations = System.Text.Json.JsonSerializer.Deserialize<List<TeachingRegistrationVMD>>(json, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             }) ?? new List<TeachingRegistrationVMD>();
@@ -69,7 +71,7 @@ namespace Web.Controllers
             return View();
         }
         [HttpPost]
-        public async Task<IActionResult> TeacherRegister(TeachingRegistrationViewModel model)
+        public async Task<IActionResult> TeacherRegister(TeachingRegistrationViewModel model, string dayGroup)
         {
             var client = GetClientWithToken(); // Hàm này trả về HttpClient có kèm JWT token
             if (client == null)
@@ -81,33 +83,30 @@ namespace Web.Controllers
             }
             try
             {
-                var response = await client.PostAsJsonAsync("api/TeachingRegistration/register", model);
+                var json = JsonConvert.SerializeObject(model);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await client.PostAsync($"api/TeachingRegistration/register?dayGroup={dayGroup}", content);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Đăng ký thành công!";
-                    return RedirectToAction("Index"); // hoặc quay lại trang danh sách đăng ký
-                }
-
-                var content = await response.Content.ReadAsStringAsync();
+                var result = await response.Content.ReadAsStringAsync();
 
                 // Nếu là BadRequest từ API (400)
-                if (response.StatusCode == HttpStatusCode.BadRequest)
+                if (response.IsSuccessStatusCode)
                 {
-                    TempData["ErrorMessage"] = "Đăng ký thất bại: " + content;
+                    TempData["SuccessMessage"] = result;
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Lỗi không xác định: " + content;
+                    TempData["ErrorMessage"] = $"Lỗi đăng ký: {result}";
                 }
+
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "Lỗi hệ thống khi gọi API: " + ex.Message;
             }
             Console.WriteLine($"SemesterId gửi lên: {model.SemesterId}");
-
-            return await TeacherRegister();
+            await LoadDropdownData();
+            return RedirectToAction("Index");
         }
         private async Task LoadDropdownData()
         {
@@ -149,6 +148,28 @@ namespace Web.Controllers
                 Value = s.Id.ToString(),
                 Text = $"{s.Name} ({s.StartDate:dd/MM/yyyy} - {s.EndDate:dd/MM/yyyy})"
             }).ToList();
+        }
+        [HttpPost]
+        public async Task<IActionResult> ConfirmRegistration(int registrationId)
+        {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return RedirectToAction("Login", "Account");
+            }
+            var response = await client.PutAsync($"api/TeachingRegistration/confirm/{registrationId}", null);
+            var result = await response.Content.ReadAsStringAsync();
+            TempData["Message"] = result;
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["SuccessMessage"] = "Xác nhận đăng ký thành công!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Lỗi khi xác nhận đăng ký. Vui lòng thử lại sau.";
+            }
+            return RedirectToAction("Index");
         }
     }
 

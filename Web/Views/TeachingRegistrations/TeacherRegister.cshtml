@@ -4,7 +4,6 @@
     ViewData["Title"] = "Đăng ký giảng dạy";
     var classList = ViewBag.ClassList as List<SelectListItem>;
     var semesterList = ViewBag.SemesterList as List<SelectListItem>;
-    var dayList = ViewBag.DayList as List<SelectListItem>;
     var shiftList = ViewBag.ShiftList as List<SelectListItem>;
 }
 
@@ -42,11 +41,15 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label asp-for="DayId" class="form-label">Thứ</label>
-                    <select asp-for="DayId" asp-items="dayList" class="form-select">
-                        <option value="">-- Chọn thứ --</option>
-                    </select>
-                    <span asp-validation-for="DayId" class="text-danger"></span>
+                    <label class="form-label">Lịch học trong tuần</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="dayGroup" value="2-4-6" id="d246">
+                        <label class="form-check-label" for="d246">Thứ 2 - 4 - 6</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="dayGroup" value="3-5-7" id="d357">
+                        <label class="form-check-label" for="d357">Thứ 3 - 5 - 7</label>
+                    </div>
                 </div>
 
                 <div class="col-md-6">

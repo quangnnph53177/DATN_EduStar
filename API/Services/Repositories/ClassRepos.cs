@@ -95,6 +95,11 @@ namespace API.Services
 
         public async Task AddClassAsync(ClassCreateViewModel classViewModel)
         {
+            var isExisted = await _context.Classes
+                .AnyAsync(c => c.NameClass.ToLower() == classViewModel.ClassName.Trim().ToLower());
+
+            if (isExisted)
+                throw new Exception("Tên lớp đã tồn tại. Vui lòng chọn tên khác.");
             var teacher = await _context.Users
                 .Include(u => u.Roles)
                 .FirstOrDefaultAsync(u =>
