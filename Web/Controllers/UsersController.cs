@@ -267,10 +267,16 @@ namespace Web.Controllers
             }
         }
         [HttpPost]
-        public async Task<IActionResult> CreateFromPreview(List<UserDTO> users)
+        public async Task<IActionResult> CreateFromPreview(List<UserDTO> users, [FromForm] List<int> selectedIndexes)
         {
+            var selectUsers = users.Where((u,index) => selectedIndexes.Contains(index)).ToList();
+            if (selectUsers.Count == 0)
+            {
+                TempData["ErrorMessage"] = "Vui lòng chọn ít nhất một người dùng để tạo tài khoản.";
+                return RedirectToAction("Upload");
+            }
             var client = GetClientWithToken();
-            var json = JsonSerializer.Serialize(users);
+            var json = JsonSerializer.Serialize(selectUsers);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await client.PostAsync("https://localhost:7298/api/User/create-from-preview", content);

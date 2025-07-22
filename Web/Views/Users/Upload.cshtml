@@ -32,71 +32,116 @@
                 </div>
             </form>
 
-            @if (Model != null && Model.Any())
-            {
-                <hr />
-                <h4 class="text-success mt-4">📋 Dữ liệu xem trước</h4>
 
-                <form asp-action="CreateFromPreview" method="post">
-                    <input type="hidden" name="usersJson" id="usersJson" />
+            <hr />
+            <h4 class="text-success mt-4">📋 Dữ liệu xem trước</h4>
 
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover align-middle text-center mt-3">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Họ tên</th>
-                                    <th>Tên đăng nhập</th>
-                                    <th>Email</th>
-                                    <th>SĐT</th>
-                                    <th>Ngày sinh</th>
-                                    <th>Giới tính</th>
-                                    <th>Địa chỉ</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+            <form asp-action="CreateFromPreview" method="post">
+                @* <input type="hidden" name="usersJson" id="usersJson" /> *@
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle text-center mt-3">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Họ tên</th>
+                                <th>Tên đăng nhập</th>
+                                <th>Email</th>
+                                <th>SĐT</th>
+                                <th>Ngày sinh</th>
+                                <th>Giới tính</th>
+                                <th>Địa chỉ</th>
+                                <th>
+                                    ✔ Tạo?
+                                    <br />
+                                    <input type="checkbox" id="checkAll" title="Chọn tất cả" />
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
                                 @for (int i = 0; i < Model.Count; i++)
                                 {
                                     <tr>
-                                        <td>@Model[i].FullName</td>
+                                        @* <td>@Model[i].FullName</td>
                                         <td>@Model[i].UserName</td>
                                         <td>@Model[i].Email</td>
                                         <td>@Model[i].PhoneNumber</td>
                                         <td>@Model[i].Dob?.ToString("dd/MM/yyyy")</td>
                                         <td>@(Model[i].Gender == true ? "Nam" : Model[i].Gender == false ? "Nữ" : "Không rõ")</td>
                                         <td>@Model[i].Address</td>
-
+                                        <td>
+                                            <input type="checkbox" name="selectedIndexes" value="@i" />
+                                        </td> *@
                                         <!-- Dữ liệu ẩn -->
-                                        <input type="hidden" name="users[@i].FullName" value="@Model[i].FullName" />
-                                        <input type="hidden" name="users[@i].UserName" value="@Model[i].UserName" />
-                                        <input type="hidden" name="users[@i].PassWordHash" value="@Model[i].PassWordHash" />
-                                        <input type="hidden" name="users[@i].Email" value="@Model[i].Email" />
-                                        <input type="hidden" name="users[@i].PhoneNumber" value="@Model[i].PhoneNumber" />
-                                        <input type="hidden" name="users[@i].Dob" value="@Model[i].Dob?.ToString("yyyy-MM-dd")" />
-                                        <input type="hidden" name="users[@i].Gender" value="@(Model[i].Gender?.ToString())" />
-                                        <input type="hidden" name="users[@i].Address" value="@Model[i].Address" />
+                                        <td>
+                                            <input type="text" name="users[@i].FullName" value="@Model[i].FullName" class="form-control" />
+                                        </td
+                                        <td>
+                                        <input type="text" name="users[@i].UserName" value="@Model[i].UserName" class="form-control" />
+                                        </td>
+                                        <td>
+                                        <input type="text" name="users[@i].PassWordHash" value="@Model[i].PassWordHash" class="form-control" />
+                                        </td>
+                                        <td>
+                                        <input type="text" name="users[@i].Email" value="@Model[i].Email" class="form-control" />
+
+                                        </td>
+                                        <td>
+                                        <input type="text" name="users[@i].PhoneNumber" value="@Model[i].PhoneNumber" class="form-control" />
+
+                                        </td>
+                                        <td>
+                                        <input type="text" name="users[@i].Dob" value="@Model[i].Dob?.ToString("yyyy-MM-dd")" class="form-control" />
+
+                                        </td>
+                                        <td>
+                                        <input type="text" name="users[@i].Gender" value="@(Model[i].Gender?.ToString())" class="form-control" />
+
+                                        </td>
+                                        <td>
+                                        <input type="text" name="users[@i].Address" value="@Model[i].Address" class="form-control" />
+
+                                        </td>
                                     </tr>
                                 }
-                            </tbody>
-                        </table>
-                    </div>
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-muted">Chưa có dữ liệu. Vui lòng tải lên file Excel.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
 
-                    <!-- Nút hành động -->
-                    <div class="d-flex justify-content-between mt-4">
-                        
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-circle-fill"></i> Tạo tất cả tài khoản
-                        </button>
-                    </div>
-                </form>
-            }
+                <!-- Nút hành động -->
+                <div class="d-flex justify-content-between mt-4">
+
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle-fill"></i> Tạo tài khoản
+                    </button>
+                </div>
+            </form>
             <br />
-            <a asp-controller="Users" asp-action="Register" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left-circle"></i> Quay lại 
+            <a asp-controller="Student" asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left-circle"></i> Quay lại
             </a>
         </div>
     </div>
 </div>
-
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const checkAll = document.getElementById("checkAll");
+            const checkboxes = document.querySelectorAll("input[type='checkbox'][name='selectedIndexes']");
+
+            checkAll.addEventListener("change", function () {
+                checkboxes.forEach(cb => cb.checked = this.checked);
+            });
+        });
+    </script>
 }
