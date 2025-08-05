@@ -1,4 +1,4 @@
-﻿@model API.ViewModel.RegisterViewModel
+﻿@model API.ViewModel.UserRegisterDTO
 @{
     ViewData["Title"] = "Đăng ký tài khoản quản trị";
 }
@@ -17,89 +17,76 @@
                 <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
             }
 
-            <form asp-controller="Users" asp-action="Register" method="post" enctype="multipart/form-data">
+            <form asp-action="Register" method="post" enctype="multipart/form-data">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label asp-for="User.UserName" class="form-label"></label>
-                        <input asp-for="User.UserName" class="form-control" placeholder="Nhập tên đăng nhập" />
-                        <span asp-validation-for="User.UserName" class="text-danger small"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="User.PassWordHash" class="form-label">Mật khẩu</label>
-                        <input asp-for="User.PassWordHash" type="password" class="form-control" placeholder="********" />
-                        <span asp-validation-for="User.PassWordHash" class="text-danger small"></span>
+                        <label asp-for="UserName" class="form-label"></label>
+                        <input asp-for="UserName" class="form-control" placeholder="Nhập tên đăng nhập" />
+                        <span asp-validation-for="UserName" class="text-danger small"></span>
                     </div>
 
                     <div class="col-md-6">
-                        <label asp-for="User.Email" class="form-label"></label>
-                        <input asp-for="User.Email" class="form-control" placeholder="example@email.com" />
-                        <span asp-validation-for="User.Email" class="text-danger small"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="User.PhoneNumber" class="form-label">Số điện thoại</label>
-                        <input asp-for="User.PhoneNumber" class="form-control" placeholder="0123456789" />
-                        <span asp-validation-for="User.PhoneNumber" class="text-danger small"></span>
+                        <label asp-for="Password" class="form-label">Mật khẩu</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="********" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
                     </div>
 
                     <div class="col-md-6">
-                        <label asp-for="User.FullName" class="form-label">Họ tên</label>
-                        <input asp-for="User.FullName" class="form-control" />
-                        <span asp-validation-for="User.FullName" class="text-danger small"></span>
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" placeholder="example@email.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
                     </div>
+
                     <div class="col-md-6">
-                        <label asp-for="User.Dob" class="form-label">Ngày sinh</label>
-                        <input asp-for="User.Dob" type="date" class="form-control" />
-                        <span asp-validation-for="User.Dob" class="text-danger small"></span>
+                        <label asp-for="PhoneNumber" class="form-label">Số điện thoại</label>
+                        <input asp-for="PhoneNumber" class="form-control" placeholder="0123456789" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="FullName" class="form-label">Họ tên</label>
+                        <input asp-for="FullName" class="form-control" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Dob" class="form-label">Ngày sinh</label>
+                        <input asp-for="Dob" type="date" class="form-control" />
+                        <span asp-validation-for="Dob" class="text-danger small"></span>
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Giới tính</label>
                         <div class="d-flex gap-3">
                             <div class="form-check">
-                                <input type="radio" name="User.Gender" value="true" class="form-check-input" id="genderMale" />
+                                <input asp-for="Gender" class="form-check-input" type="radio" value="true" id="genderMale" />
                                 <label class="form-check-label" for="genderMale">Nam</label>
                             </div>
                             <div class="form-check">
-                                <input type="radio" name="User.Gender" value="false" class="form-check-input" id="genderFemale" />
+                                <input asp-for="Gender" class="form-check-input" type="radio" value="false" id="genderFemale" />
                                 <label class="form-check-label" for="genderFemale">Nữ</label>
                             </div>
+
                         </div>
-                        <span asp-validation-for="User.Gender" class="text-danger small"></span>
+                        <span asp-validation-for="Gender" class="text-danger small"></span>
                     </div>
 
                     <div class="col-md-6">
-                        <label asp-for="User.Address" class="form-label"></label>
-                        <input asp-for="User.Address" class="form-control" />
-                        <span asp-validation-for="User.Address" class="text-danger small"></span>
+                        <label asp-for="Address" class="form-label"></label>
+                        <input asp-for="Address" class="form-control" />
+                        <span asp-validation-for="Address" class="text-danger small"></span>
                     </div>
-
-                    @* <div class="col-12">
-                        <label class="form-label">Vai trò</label>
-                        <div class="row">
-                            @for (int i = 0; i < Model.RoleLists.Count; i++)
-                            {
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="User.RoleIds"
-                                               value="@Model.RoleLists[i].Value" id="role_@i" />
-                                        <label class="form-check-label" for="role_@i">
-                                            @Model.RoleLists[i].Text
-                                        </label>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        <span asp-validation-for="User.RoleIds" class="text-danger small"></span>
-                    </div> *@
-
-                    <div class="col-12">
+                    <div class="col-6">
+                        <input type="hidden" name="RoleIds" value="1" />
+                    </div>
+                    <div class="col-6">
                         <label for="imgFile" class="form-label">Ảnh đại diện</label>
                         <input type="file" name="imgFile" id="imgFile" class="form-control" accept=".jpg,.jpeg,.png" />
                         <small class="text-muted">Chấp nhận định dạng: .jpg, .jpeg, .png</small>
                     </div>
 
                     <div class="col-12 d-flex justify-content-between mt-4">
-                        <a asp-controller="Users" asp-action="Index" class="btn btn-outline-secondary">
+                        <a asp-action="Index" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách
                         </a>
                         <button type="submit" class="btn btn-success">
@@ -108,7 +95,6 @@
                     </div>
                 </div>
             </form>
-
            @*  <div class="mt-4 text-center">
                 <a asp-action="Upload" asp-controller="Users" class="btn btn-sm btn-primary">
                     <i class="bi bi-upload"></i> Upload danh sách người dùng

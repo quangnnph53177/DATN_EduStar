@@ -18,7 +18,6 @@ namespace API.Controllers
     [ApiController]
     //[Authorize]
     public class UserController : ControllerBase
-
     {
         private readonly IUserRepos _userRepos;
         private readonly IAuditLogRepos _logRepos;
@@ -32,34 +31,30 @@ namespace API.Controllers
         [Authorize(Policy = "CreateUS")]
         [HttpPost("register")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> Register([FromForm] UserDTO userDto, IFormFile? imgFile)
+        public async Task<IActionResult> Register([FromForm] UserRegisterDTO userDto, IFormFile? imgFile)
         {
-            if (userDto == null || !ModelState.IsValid)
-                return BadRequest("Dữ liệu không hợp lệ");
-
             try
             {
                 var createdUser = await _userRepos.Register(userDto, imgFile);
-                var newData = JsonSerializer.Serialize(new
-                {
-                    createdUser.Email,
-                    createdUser.UserName,
-                    createdUser.Statuss
-                });
-                Guid? performedByGuid = null;
                 var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (Guid.TryParse(performedBy, out var userGuid))
-                {
-                    performedByGuid = userGuid;
-                }
+                Guid? performedByGuid = Guid.TryParse(performedBy, out var guid) ? guid : null;
 
                 // ✅ Kiểm tra performedBy có tồn tại trong DB  
                 var existed = await _context.Users.FindAsync(performedByGuid);
                 if (existed == null)
                     return BadRequest("Người thực hiện không tồn tại.");
 
-                await _logRepos.LogAsync(createdUser.Id, "CreateUser", null, newData, performedByGuid);
-                return Ok(new { message = "Đăng ký thành công, vui lòng kiểm tra email để xác nhận.", userId = createdUser.Id });
+                await _logRepos.LogAsync(createdUser.Id, "CreateUser", null, JsonSerializer.Serialize(new
+                {
+                    createdUser.Email,
+                    createdUser.UserName,
+                    createdUser.Statuss
+                }), performedByGuid);
+                return Ok(new 
+                {   
+                    message = "Đăng ký thành công, vui lòng kiểm tra email để xác nhận.",
+                    userId = createdUser.Id }
+                );
             }
             catch (Exception ex)
             {
@@ -81,21 +76,37 @@ namespace API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO loginDto)
         {
-            if (loginDto == null || !ModelState.IsValid)
-                return BadRequest("Dữ liệu đăng nhập không hợp lệ.");
-
             try
             {
 
                 var loginResult = await _userRepos.Login(loginDto.UserName, loginDto.Password);
-                //return Ok(new { message = "Đăng nhập thành công", loginResult });
                 return Ok(loginResult);
             }
             catch (Exception ex)
             {
-                return Unauthorized(new { success = false, error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
+        [Authorize]
+        [HttpGet("check-claims")]
+        public IActionResult CheckClaims()
+        {
+            var claims = HttpContext.User.Claims.ToList();
+            var name = User.Identity?.Name;
+            var role = claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+            var roleName = claims.Where(c => c.Type == "RoleName").Select(c => c.Value).ToList();
+            var permissions = claims.Where(c => c.Type == "Permission").Select(c => c.Value).ToList();
+
+            return Ok(new
+            {
+                name,
+                role,
+                roleName,
+                permissions
+            });
+        }
+
+        [Authorize(Policy = "CreateUS")]
         [HttpPost("preview-upload")]
         public async Task<IActionResult> Upload(IFormFile file)
         {
@@ -172,7 +183,7 @@ namespace API.Controllers
             }
         }
         [HttpPost("create-from-preview")]
-        public async Task<IActionResult> CreateFromPreview([FromBody] List<UserDTO> users)
+        public async Task<IActionResult> CreateFromPreview([FromBody] List<UserRegisterDTO> users)
         {
             if (users == null || users.Count == 0)
                 return BadRequest("Không có dữ liệu người dùng để tạo.");
@@ -186,10 +197,6 @@ namespace API.Controllers
                 {
                     // Kiểm tra dữ liệu đầu vào
                     var missingFields = new List<string>();
-                    if (string.IsNullOrWhiteSpace(userDto.UserName)) missingFields.Add("username");
-                    if (string.IsNullOrWhiteSpace(userDto.PassWordHash)) missingFields.Add("passwordhash");
-                    if (string.IsNullOrWhiteSpace(userDto.Email)) missingFields.Add("email");
-
                     if (missingFields.Any())
                     {
                         failed.Add(new
@@ -306,7 +313,6 @@ namespace API.Controllers
         [HttpGet("user")]
         public async Task<IActionResult> GetAllUsers()
         {
-            // Thêm logic lọc theo vai trò vào trước khi trả về users trong GetAllUsers
             try
             {
                 var currentUserRoleIds = User.Claims
@@ -359,7 +365,7 @@ namespace API.Controllers
                     return Unauthorized("Không tìm thấy thông tin người dùng");
                 var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
                 var filtered = users.Where(u => u.RoleIds.Contains(1));
-                return Ok(filtered); // hoặc return View("AdminView", filtered);
+                return Ok(filtered);
             }
             catch (Exception ex)
             {
@@ -686,8 +692,6 @@ namespace API.Controllers
         [HttpPut("resetpassword")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO resetDto)
         {
-            if (resetDto == null || string.IsNullOrEmpty(resetDto.Token) || string.IsNullOrEmpty(resetDto.NewPassword))
-                return BadRequest("Dữ liệu không hợp lệ.");
             try
             {
                 var result = await _userRepos.ResetPassword(resetDto.Token, resetDto.NewPassword);
@@ -723,11 +727,6 @@ namespace API.Controllers
             }).OrderByDescending(x => x.Timestamp).ToList();
 
             return Ok(result);
-        }
-        public class ResetPasswordDTO
-        {
-            public string Token { get; set; } = null!;
-            public string NewPassword { get; set; } = null!;
         }
     }
 }

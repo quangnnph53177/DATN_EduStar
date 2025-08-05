@@ -19,12 +19,14 @@ namespace API.Services.Repositories
         private readonly AduDbcontext _context;
         private readonly IConfiguration _configuration;
         private readonly IEmailRepos _emailService;
+        private readonly ILogger<UserRepos> _logger;
 
-        public UserRepos(AduDbcontext adu, IConfiguration configuration, IEmailRepos emailService)
+        public UserRepos(AduDbcontext adu, IConfiguration configuration, IEmailRepos emailService, ILogger<UserRepos> logger)
         {
             _context = adu;
             _configuration = configuration;
             _emailService = emailService;
+            _logger = logger;
         }
         private IQueryable<User> FilterUsersByRole(IQueryable<User> query, List<int> currentUserRoleIds, string? currentUserName)
         {
@@ -44,13 +46,13 @@ namespace API.Services.Repositories
         private UserDTO MapToUserDTO(User u)
         {
             if (u == null)
-                throw new Exception("User object is null");
+                throw new Exception("Đối tượng người dùng đang bị null (không tồn tại trong hệ thống).");
 
             if (u.UserProfile == null)
-                Console.WriteLine($"⚠️ UserProfile is null for user {u.UserName}");
+                _logger.LogWarning($"Hồ sơ người dùng đang bị thiếu đối với tài khoản: {u.UserName}");
 
             if (u.Roles == null)
-                Console.WriteLine($"⚠️ Roles is null for user {u.UserName}");
+                _logger.LogWarning($"Danh sách vai trò chưa được tải hoặc chưa được gán cho tài khoản:{u.UserName}");
             return new UserDTO
             {
                 Id = u.Id,
@@ -77,7 +79,7 @@ namespace API.Services.Repositories
             var validImageFormats = new[] { ".jpg", ".jpeg", ".png" };
             var ext = Path.GetExtension(imgFile.FileName).ToLowerInvariant();
             if (!validImageFormats.Contains(ext))
-                return "Định dạng ảnh không hợp lệ";
+                _logger.LogError("Định dạng ảnh không hợp lệ");
 
             var avatarDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "avatars");
             if (!Directory.Exists(avatarDir)) Directory.CreateDirectory(avatarDir);
@@ -117,35 +119,25 @@ namespace API.Services.Repositories
             return $"US{Guid.NewGuid().ToString()[..5].ToUpper()}";
         }
 
-        public async Task<User> Register(UserDTO usd, IFormFile? imgFile)
+        public async Task<User> Register(UserRegisterDTO usd, IFormFile? imgFile)
         {
-            // Kiểm tra thông tin đầu vào  
-            if (string.IsNullOrWhiteSpace(usd.UserName) || string.IsNullOrWhiteSpace(usd.PassWordHash) || string.IsNullOrWhiteSpace(usd.Email))
-            {
-                throw new Exception("Thiếu thông tin bắt buộc.");
-            }
-
             // Kiểm tra tài khoản đã tồn tại chưa  
             if (await _context.Users.AnyAsync(u => u.UserName == usd.UserName))
                 throw new Exception("Tên đăng nhập đã tồn tại.");
 
             if (await _context.Users.AnyAsync(u => u.Email == usd.Email))
                 throw new Exception("Email đã được sử dụng.");
-
-            var hashedPassword = PasswordHasher.HashPassword(usd.PassWordHash);
+            var passWordHash = PasswordHasher.HashPassword(usd.Password);
 
             var roleIds = (usd.RoleIds == null || !usd.RoleIds.Any()) ? new List<int> { 3 } : usd.RoleIds;
             var roles = await _context.Roles.Where(r => roleIds.Contains(r.Id)).ToListAsync();
             if (!roles.Any())
                 throw new Exception("Không tìm thấy role hợp lệ để gán.");
 
+            string? avatarPath = null;
             if (imgFile != null && imgFile.Length > 0)
             {
-                usd.Avatar = await SaveAvatar(imgFile);
-            }
-            if (usd.Dob.HasValue && usd.Dob.Value.Date >= DateTime.Now.Date)
-            {
-                throw new Exception("Ngày sinh không hợp lệ. Hãy nhập lại ngày sinh.");
+                avatarPath = await SaveAvatar(imgFile);
             }
             string userCode = await GenerateUserCode(roles);
 
@@ -153,7 +145,7 @@ namespace API.Services.Repositories
             {
                 Id = Guid.NewGuid(),
                 UserName = usd.UserName,
-                PassWordHash = hashedPassword,
+                PassWordHash = passWordHash,
                 Email = usd.Email,
                 PhoneNumber = usd.PhoneNumber,
                 Roles = roles,
@@ -162,7 +154,7 @@ namespace API.Services.Repositories
                 CreateAt = DateTime.Now
 
             };
-
+            _context.Users.Add(user);
             _context.UserProfiles.Add(new UserProfile
             {
                 UserId = user.Id,
@@ -170,7 +162,7 @@ namespace API.Services.Repositories
                 UserCode = userCode,
                 Gender = usd.Gender,
                 Dob = usd.Dob.HasValue ? DateOnly.FromDateTime(usd.Dob.Value) : null,
-                Avatar = usd.Avatar,
+                Avatar = avatarPath,
                 Address = usd.Address
             });
 
@@ -261,10 +253,10 @@ namespace API.Services.Repositories
                             </tr>
                             <tr>
                                 <td class='label'>Mật khẩu:</td>
-                                <td>{usd.PassWordHash}</td>
+                                <td>{usd.Password}</td>
                             </tr>
  <tr>
-                                <td class='label'>Mật khẩu:</td>
+                                <td class='label'>Email:</td>
                                 <td>{usd.Email}</td>
                             </tr>
                         </table>

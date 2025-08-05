@@ -39,6 +39,7 @@ builder.Services.AddScoped<IComplaintRepos, ComplaintRepos>();
 builder.Services.AddScoped<IRoom, RoomRepos>();
 builder.Services.AddScoped<ITeachingRegistrationRepos, TeachingRegistrationRepos>();
 builder.Services.AddScoped<ISemesterRepos, SemesterRepos>();
+builder.Services.AddMemoryCache();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -73,7 +74,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = jwtSettings["Audience"],
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero, // không delay khi hết hạn
+        ClockSkew = TimeSpan.Zero, 
+        NameClaimType = ClaimTypes.Name,
         RoleClaimType = ClaimTypes.Role
     };
 

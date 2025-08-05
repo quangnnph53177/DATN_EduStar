@@ -112,8 +112,14 @@ namespace Web.Controllers
                 TempData["SuccessMessage"] = "Đăng nhập thành công!";
                 return RedirectToAction("Index", "Home");
             }
-            TempData["ErrorMessage"] = "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.";
-            return View(loginDto);
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                TempData["ErrorMessage"] = !string.IsNullOrEmpty(errorContent) ? errorContent : "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.";
+                return View(loginDto);
+            }
+            //TempData["ErrorMessage"] = "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.";
+            //return View(loginDto);
         }
         [HttpPost]
         public async Task<IActionResult> Logout()
@@ -176,43 +182,46 @@ namespace Web.Controllers
             return View();
         }
         [HttpPost]
-        public async Task<IActionResult> Register(RegisterViewModel model, IFormFile? imgFile)
+        public async Task<IActionResult> Register(UserRegisterDTO model, IFormFile? imgFile)
         {
+            if (model.RoleIds == null || !model.RoleIds.Any())
+                model.RoleIds = new List<int> { 1 };
             if (!ModelState.IsValid)
                 return View(model);
 
             var client = GetClientWithToken();
             using var content = new MultipartFormDataContent();
 
-            content.Add(new StringContent(model.User.UserName ?? ""), "UserName");
-            content.Add(new StringContent(model.User.PassWordHash ?? ""), "PassWordHash");
-            content.Add(new StringContent(model.User.Email ?? ""), "Email");
-            content.Add(new StringContent(model.User.PhoneNumber ?? ""), "PhoneNumber");
-            content.Add(new StringContent(model.User.FullName ?? ""), "FullName");
-            content.Add(new StringContent(model.User.Address ?? ""), "Address");
-            content.Add(new StringContent(model.User.Statuss.ToString()), "Statuss");
+            content.Add(new StringContent(model.UserName ?? ""), "UserName");
+            content.Add(new StringContent(model.Password ?? ""), "Password");
+            content.Add(new StringContent(model.Email ?? ""), "Email");
+            content.Add(new StringContent(model.PhoneNumber ?? ""), "PhoneNumber");
+            content.Add(new StringContent(model.FullName ?? ""), "FullName");
+            content.Add(new StringContent(model.Address ?? ""), "Address");
 
-            if (model.User.Dob.HasValue)
-                content.Add(new StringContent(model.User.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
-            content.Add(new StringContent(model.User.Gender.HasValue ? model.User.Gender.Value.ToString() : ""), "Gender");
+            if (model.Dob.HasValue)
+                content.Add(new StringContent(model.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
 
-            content.Add(new StringContent("1"), "RoleIds");
+            content.Add(new StringContent(model.Gender.HasValue ? model.Gender.Value.ToString() : ""), "Gender");
+
+            foreach (var roleId in model.RoleIds)
+                content.Add(new StringContent(roleId.ToString()), "RoleIds");
             if (imgFile != null && imgFile.Length > 0)
             {
-                var streamContent = new StreamContent(imgFile.OpenReadStream());
-                streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
-                content.Add(streamContent, "imgFile", imgFile.FileName);
+                var stream = imgFile.OpenReadStream();
+                content.Add(new StreamContent(stream), "imgFile", imgFile.FileName);
             }
             var response = await client.PostAsync("api/User/register", content);
             if (response.IsSuccessStatusCode)
             {
+                var result = await response.Content.ReadFromJsonAsync<object>();
                 TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
                 return RedirectToAction("Index", "Users");
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync(); // 🔥 Đọc lỗi chi tiết từ API
-                TempData["ErrorMessage"] = $"Đăng ký không thành công: {errorContent}";
+                var errorJson = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+                TempData["ErrorMessage"] = $"Đăng ký không thành công: {errorJson?["error"] ?? errorJson?.ToString()}";
                 return View(model);
             }
         }

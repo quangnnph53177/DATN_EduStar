@@ -7,6 +7,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(options =>
     {
         options.LoginPath = "/Users/Login";
+        options.LogoutPath = "/Users/Logout";
         options.ExpireTimeSpan = TimeSpan.FromHours(1);
         options.SlidingExpiration = true;
         options.ClaimsIssuer = "localhost";
