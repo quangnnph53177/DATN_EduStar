@@ -133,14 +133,14 @@ namespace API.Controllers
                 {
                     var fullname = worksheet.Cells[row, 2].Text.Trim();
                     var userName = worksheet.Cells[row, 3].Text.Trim();
-                    var passwordhash = worksheet.Cells[row, 4].Text.Trim();
+                    var password = worksheet.Cells[row, 4].Text.Trim();
                     var phone = worksheet.Cells[row, 5].Text.Trim();
                     var dobText = worksheet.Cells[row, 6].Text.Trim();
                     var genderText = worksheet.Cells[row, 7].Text.Trim();
                     var email = worksheet.Cells[row, 8].Text.Trim();
                     var address = worksheet.Cells[row, 9].Text.Trim();
 
-                    if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(passwordhash))
+                    if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
                     {
                         continue; // Bỏ qua dòng thiếu thông tin cần thiết
                     }
@@ -162,12 +162,13 @@ namespace API.Controllers
                     {
                         FullName = fullname,
                         UserName = userName,
-                        PasswordHash = passwordhash,
+                        Password = password,
                         PhoneNumber = phone,
                         Dob = dob,
                         Gender = gender,
                         Email = email,
                         Address = address,
+                        RoleIds = new List<int> { 3 }
                     });
                 }
 
@@ -183,6 +184,7 @@ namespace API.Controllers
             }
         }
         [HttpPost("create-from-preview")]
+        [Authorize(Policy = "CreateUS")]
         public async Task<IActionResult> CreateFromPreview([FromBody] List<UserRegisterDTO> users)
         {
             if (users == null || users.Count == 0)

@@ -229,7 +229,7 @@ namespace Web.Controllers
         public IActionResult Upload()
         {
             var client = GetClientWithToken();
-            return View();
+            return View(new List<UserRegisterDTO>());
         }
 
         [HttpPost]
@@ -241,7 +241,7 @@ namespace Web.Controllers
                 if (file == null || file.Length == 0)
                 {
                     TempData["ErrorMessage"] = "Vui lòng chọn tệp để tải lên.";
-                    return View(new List<UserDTO>());
+                    return View(new List<UserRegisterDTO>());
                 }
 
                 var client = GetClientWithToken(); // Hàm tạo HttpClient có Bearer token
@@ -253,8 +253,8 @@ namespace Web.Controllers
                 var response = await client.PostAsync("https://localhost:7298/api/User/preview-upload", content);
                 if (!response.IsSuccessStatusCode)
                 {
-                    TempData["Error"] = "Lỗi khi upload file.";
-                    return View(new List<UserDTO>());
+                    TempData["ErrorMessage"] = "Lỗi từ API: " + response.StatusCode;
+                    return RedirectToAction("Upload");
                 }
 
                 var resultString = await response.Content.ReadAsStringAsync();
@@ -262,7 +262,7 @@ namespace Web.Controllers
                 using var doc = JsonDocument.Parse(resultString);
                 var usersJson = doc.RootElement.GetProperty("users").GetRawText();
 
-                var users = JsonSerializer.Deserialize<List<UserDTO>>(usersJson, new JsonSerializerOptions
+                var users = JsonSerializer.Deserialize<List<UserRegisterDTO>>(usersJson, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
@@ -272,11 +272,11 @@ namespace Web.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return View(new List<UserDTO>());
+                return View(new List<UserRegisterDTO>());
             }
         }
         [HttpPost]
-        public async Task<IActionResult> CreateFromPreview(List<UserDTO> users, [FromForm] List<int> selectedIndexes)
+        public async Task<IActionResult> CreateFromPreview(List<UserRegisterDTO> users, [FromForm] List<int> selectedIndexes)
         {
             var selectUsers = users.Where((u,index) => selectedIndexes.Contains(index)).ToList();
             if (selectUsers.Count == 0)
@@ -289,13 +289,13 @@ namespace Web.Controllers
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await client.PostAsync("https://localhost:7298/api/User/create-from-preview", content);
+            var result = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
-                TempData["ErrorMessage"] = "Lỗi khi tạo tài khoản.";
+                TempData["ErrorMessage"] = $"Lỗi khi tạo tài khoản: {result}";
                 return RedirectToAction("Upload");
             }
 
-            var result = await response.Content.ReadAsStringAsync();
             TempData["SuccessMessage"] = "Tạo tài khoản thành công!";
             return RedirectToAction("Index", "Student");
         }
