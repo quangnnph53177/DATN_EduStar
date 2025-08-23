@@ -1,0 +1,47 @@
+﻿@model API.ViewModel.UserDTO
+
+@{
+    ViewData["Title"] = "Đổi vai trò người dùng";
+    var currentRoleId = Model.RoleIds.FirstOrDefault();
+}
+
+<div class="container mt-5">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-body p-4">
+            <h3 class="mb-4 text-primary">
+                <i class="bi bi-shield-lock-fill me-2"></i>Đổi vai trò: <span class="text-dark">@Model.UserName</span>
+            </h3>
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+            }
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+            }
+
+            <form asp-action="ChangeRole" method="post">
+                <input type="hidden" name="username" value="@Model.UserName" />
+
+                <div class="mb-3">
+                    <label for="newRoleId" class="form-label fw-semibold">Chọn vai trò mới</label>
+                    <select name="newRoleId" id="newRoleId" class="form-select">
+                        <option value="1" selected="@(currentRoleId == 1)">🔒 Admin</option>
+                        <option value="2" selected="@(currentRoleId == 2)">👨‍🏫 Giảng viên</option>
+                        <option value="3" selected="@(currentRoleId == 3)">🎓 Sinh viên</option>
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left-circle"></i> Quay lại
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle-fill"></i> Xác nhận đổi vai trò
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

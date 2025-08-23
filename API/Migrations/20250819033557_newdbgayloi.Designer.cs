@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Migrations
 {
     [DbContext(typeof(AduDbcontext))]
-    [Migration("20250715025047_dmpage")]
-    partial class dmpage
+    [Migration("20250819033557_newdbgayloi")]
+    partial class newdbgayloi
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -154,50 +154,6 @@ namespace API.Migrations
                     b.ToTable("auditlog", (string)null);
                 });
 
-            modelBuilder.Entity("API.Models.Class", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("NameClass")
-                        .HasMaxLength(90)
-                        .HasColumnType("nvarchar(90)");
-
-                    b.Property<string>("Semester")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<DateTime?>("StartTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool?>("Status")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("StudentCount")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SubjectId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("UsersId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("YearSchool")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Classes__3214EC07EDA37A0C");
-
-                    b.HasIndex("UsersId");
-
-                    b.HasIndex(new[] { "SubjectId" }, "IX_Classes_SubjectId");
-
-                    b.ToTable("Classes");
-                });
-
             modelBuilder.Entity("API.Models.ClassChange", b =>
                 {
                     b.Property<int>("ComplaintId")
@@ -209,8 +165,13 @@ namespace API.Migrations
                     b.Property<int?>("RequestedClassId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SemesterId")
+                        .HasColumnType("int");
+
                     b.HasKey("ComplaintId")
                         .HasName("PK__ClassCha__740D898F5A03A251");
+
+                    b.HasIndex("SemesterId");
 
                     b.HasIndex(new[] { "CurrentClassId" }, "IX_ClassChange_CurrentClassId");
 
@@ -285,6 +246,43 @@ namespace API.Migrations
                         .HasName("PK__DayOfWeek__3214EC079A470A2D");
 
                     b.ToTable("DayOfWeeks");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Weekdays = 0
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Weekdays = 1
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Weekdays = 2
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Weekdays = 3
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Weekdays = 4
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Weekdays = 5
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Weekdays = 6
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Permission", b =>
@@ -437,11 +435,8 @@ namespace API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("ClassId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("DayId")
-                        .HasColumnType("int");
+                    b.Property<string>("ClassName")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
@@ -449,27 +444,128 @@ namespace API.Migrations
                     b.Property<int?>("RoomId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SemesterId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool?>("Status")
-                        .HasColumnType("bit");
+                    b.Property<int?>("Status")
+                        .HasColumnType("int");
 
                     b.Property<int?>("StudyShiftId")
                         .HasColumnType("int");
 
-                    b.HasKey("Id")
-                        .HasName("PK__Schedule__3214EC0741018C97");
+                    b.Property<int?>("SubjectId")
+                        .HasColumnType("int");
 
-                    b.HasIndex(new[] { "ClassId" }, "IX_Schedules_ClassId");
+                    b.Property<Guid?>("UsersId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.HasIndex(new[] { "DayId" }, "IX_Schedules_DayId");
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ClassName" }, "IX_Schedules_ClassName");
 
                     b.HasIndex(new[] { "RoomId" }, "IX_Schedules_RoomId");
 
+                    b.HasIndex(new[] { "SemesterId" }, "IX_Schedules_SemesterId");
+
                     b.HasIndex(new[] { "StudyShiftId" }, "IX_Schedules_StudyShiftId");
 
+                    b.HasIndex(new[] { "SubjectId" }, "IX_Schedules_SubjectId");
+
+                    b.HasIndex(new[] { "UsersId" }, "IX_Schedules_UsersId");
+
                     b.ToTable("Schedules");
+                });
+
+            modelBuilder.Entity("API.Models.ScheduleStudentsInfor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("SchedulesId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("StudentsUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SchedulesId");
+
+                    b.HasIndex("StudentsUserId");
+
+                    b.ToTable("ScheduleStudentsInfors");
+                });
+
+            modelBuilder.Entity("API.Models.SchedulesInDay", b =>
+                {
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DayOfWeekkId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.HasKey("ScheduleId", "DayOfWeekkId");
+
+                    b.HasIndex(new[] { "DayOfWeekkId" }, "IX_ScheduleDays_DayOfWeekkId");
+
+                    b.ToTable("SchedulesInDays");
+                });
+
+            modelBuilder.Entity("API.Models.Semester", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id")
+                        .HasName("PK_Semester");
+
+                    b.ToTable("Semesters");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            EndDate = new DateTime(2025, 4, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            Name = "SP2025",
+                            StartDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            EndDate = new DateTime(2025, 8, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = false,
+                            Name = "SM2025",
+                            StartDate = new DateTime(2025, 5, 2, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        });
                 });
 
             modelBuilder.Entity("API.Models.StudentsInfor", b =>
@@ -576,8 +672,14 @@ namespace API.Migrations
                     b.Property<int?>("NumberOfCredits")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SemesterId")
+                        .IsRequired()
+                        .HasColumnType("int");
+
                     b.Property<bool?>("Status")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("SubjectName")
                         .IsRequired()
@@ -585,12 +687,74 @@ namespace API.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Subjectcode")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id")
                         .HasName("PK__Subjects__3214EC0741AE97DC");
 
+                    b.HasIndex("SemesterId");
+
                     b.ToTable("Subjects");
+                });
+
+            modelBuilder.Entity("API.Models.TeachingRegistration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreateAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("getdate()");
+
+                    b.Property<int>("DayId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime");
+
+                    b.Property<bool?>("IsConfirmed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("SemesterId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime");
+
+                    b.Property<bool?>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("StudyShiftId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TeacherId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassId");
+
+                    b.HasIndex("DayId");
+
+                    b.HasIndex("SemesterId");
+
+                    b.HasIndex("StudyShiftId");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("TeachingRegistrations");
                 });
 
             modelBuilder.Entity("API.Models.User", b =>
@@ -662,12 +826,17 @@ namespace API.Migrations
                     b.Property<bool?>("Gender")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("SemesterId")
+                        .HasColumnType("int");
+
                     b.Property<string>("UserCode")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("UserId")
                         .HasName("PK__UserProf__1788CC4C445D0929");
+
+                    b.HasIndex("SemesterId");
 
                     b.ToTable("UserProfiles");
                 });
@@ -748,22 +917,6 @@ namespace API.Migrations
                             RoleId = 3,
                             PermissionId = 3
                         });
-                });
-
-            modelBuilder.Entity("StudentInClass", b =>
-                {
-                    b.Property<int>("ClassId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("StudentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("ClassId", "StudentId")
-                        .HasName("PK__StudentI__483575791F083B9F");
-
-                    b.HasIndex(new[] { "StudentId" }, "IX_StudentInClass_StudentId");
-
-                    b.ToTable("StudentInClass", (string)null);
                 });
 
             modelBuilder.Entity("UserRole", b =>
@@ -856,23 +1009,6 @@ namespace API.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("API.Models.Class", b =>
-                {
-                    b.HasOne("API.Models.Subject", "Subject")
-                        .WithMany("Classes")
-                        .HasForeignKey("SubjectId")
-                        .HasConstraintName("FK_Classes_Subject");
-
-                    b.HasOne("API.Models.User", "User")
-                        .WithMany("Classes")
-                        .HasForeignKey("UsersId")
-                        .HasConstraintName("FK_Classes_Users");
-
-                    b.Navigation("Subject");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("API.Models.ClassChange", b =>
                 {
                     b.HasOne("API.Models.Complaint", "Complaint")
@@ -882,21 +1018,29 @@ namespace API.Migrations
                         .IsRequired()
                         .HasConstraintName("FK__ClassChan__Compl__7A672E12");
 
-                    b.HasOne("API.Models.Class", "CurrentClass")
+                    b.HasOne("API.Models.Schedule", "CurrentClass")
                         .WithMany("ClassChangeCurrentClasses")
                         .HasForeignKey("CurrentClassId")
                         .HasConstraintName("FK__ClassChan__Curre__7B5B524B");
 
-                    b.HasOne("API.Models.Class", "RequestedClass")
+                    b.HasOne("API.Models.Schedule", "RequestedClass")
                         .WithMany("ClassChangeRequestedClasses")
                         .HasForeignKey("RequestedClassId")
                         .HasConstraintName("FK__ClassChan__Reque__7C4F7684");
+
+                    b.HasOne("API.Models.Semester", "Semester")
+                        .WithMany("ClassChanges")
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_ClassChange_Semester");
 
                     b.Navigation("Complaint");
 
                     b.Navigation("CurrentClass");
 
                     b.Navigation("RequestedClass");
+
+                    b.Navigation("Semester");
                 });
 
             modelBuilder.Entity("API.Models.Complaint", b =>
@@ -918,37 +1062,84 @@ namespace API.Migrations
 
             modelBuilder.Entity("API.Models.Schedule", b =>
                 {
-                    b.HasOne("API.Models.Class", "Class")
-                        .WithMany("Schedules")
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK__Schedules__Class__5EBF139D");
-
-                    b.HasOne("API.Models.DayOfWeekk", "Day")
-                        .WithMany("Schedules")
-                        .HasForeignKey("DayId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK__Schedules__DayId__60A75C0F");
-
                     b.HasOne("API.Models.Room", "Room")
                         .WithMany("Schedules")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK__Schedules__RoomI__5FB337D6");
+                        .HasConstraintName("FK_Schedules_RoomId");
+
+                    b.HasOne("API.Models.Semester", "Semester")
+                        .WithMany("Schedules")
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_Schedules_Semester");
 
                     b.HasOne("API.Models.StudyShift", "StudyShift")
                         .WithMany("Schedules")
                         .HasForeignKey("StudyShiftId")
                         .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK__Schedules__Study__619B8048");
+                        .HasConstraintName("FK_Schedules_StudyShiftId");
 
-                    b.Navigation("Class");
+                    b.HasOne("API.Models.Subject", "Subject")
+                        .WithMany("Classes")
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("FK_Schedules_Subject");
 
-                    b.Navigation("Day");
+                    b.HasOne("API.Models.User", "User")
+                        .WithMany("Schedules")
+                        .HasForeignKey("UsersId")
+                        .HasConstraintName("FK_Schedules_Users");
 
                     b.Navigation("Room");
 
+                    b.Navigation("Semester");
+
                     b.Navigation("StudyShift");
+
+                    b.Navigation("Subject");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("API.Models.ScheduleStudentsInfor", b =>
+                {
+                    b.HasOne("API.Models.Schedule", "Schedule")
+                        .WithMany("ScheduleStudents")
+                        .HasForeignKey("SchedulesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_ScheduleStudentsInfor_Schedule");
+
+                    b.HasOne("API.Models.StudentsInfor", "Student")
+                        .WithMany("ScheduleStudents")
+                        .HasForeignKey("StudentsUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_ScheduleStudentsInfor_Student");
+
+                    b.Navigation("Schedule");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("API.Models.SchedulesInDay", b =>
+                {
+                    b.HasOne("API.Models.DayOfWeekk", "DayOfWeekk")
+                        .WithMany("ScheduleDays")
+                        .HasForeignKey("DayOfWeekkId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.Schedule", "Schedule")
+                        .WithMany("ScheduleDays")
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DayOfWeekk");
+
+                    b.Navigation("Schedule");
                 });
 
             modelBuilder.Entity("API.Models.StudentsInfor", b =>
@@ -963,14 +1154,78 @@ namespace API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("API.Models.Subject", b =>
+                {
+                    b.HasOne("API.Models.Semester", "Semester")
+                        .WithMany("Subjects")
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Subject_Semester");
+
+                    b.Navigation("Semester");
+                });
+
+            modelBuilder.Entity("API.Models.TeachingRegistration", b =>
+                {
+                    b.HasOne("API.Models.Schedule", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.DayOfWeekk", "Day")
+                        .WithMany()
+                        .HasForeignKey("DayId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.Semester", "Semester")
+                        .WithMany("TeachingRegistrations")
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_TeachingRegistration_Semester");
+
+                    b.HasOne("API.Models.StudyShift", "StudyShift")
+                        .WithMany()
+                        .HasForeignKey("StudyShiftId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.User", "Teacher")
+                        .WithMany()
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Day");
+
+                    b.Navigation("Schedule");
+
+                    b.Navigation("Semester");
+
+                    b.Navigation("StudyShift");
+
+                    b.Navigation("Teacher");
+                });
+
             modelBuilder.Entity("API.Models.UserProfile", b =>
                 {
+                    b.HasOne("API.Models.Semester", "Semester")
+                        .WithMany("UserProfiles")
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_UserProfiles_Semester");
+
                     b.HasOne("API.Models.User", "User")
                         .WithOne("UserProfile")
                         .HasForeignKey("API.Models.UserProfile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK__UserProfi__UserI__46E78A0C");
+
+                    b.Navigation("Semester");
 
                     b.Navigation("User");
                 });
@@ -990,23 +1245,6 @@ namespace API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK__RolePermi__RoleI__3B75D760");
-                });
-
-            modelBuilder.Entity("StudentInClass", b =>
-                {
-                    b.HasOne("API.Models.Class", null)
-                        .WithMany()
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK__StudentIn__Class__5535A963");
-
-                    b.HasOne("API.Models.StudentsInfor", null)
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK__StudentIn__Stude__5629CD9C");
                 });
 
             modelBuilder.Entity("UserRole", b =>
@@ -1030,15 +1268,6 @@ namespace API.Migrations
                     b.Navigation("AttendanceDetails");
                 });
 
-            modelBuilder.Entity("API.Models.Class", b =>
-                {
-                    b.Navigation("ClassChangeCurrentClasses");
-
-                    b.Navigation("ClassChangeRequestedClasses");
-
-                    b.Navigation("Schedules");
-                });
-
             modelBuilder.Entity("API.Models.Complaint", b =>
                 {
                     b.Navigation("AttendanceDetailsComplaint");
@@ -1048,7 +1277,7 @@ namespace API.Migrations
 
             modelBuilder.Entity("API.Models.DayOfWeekk", b =>
                 {
-                    b.Navigation("Schedules");
+                    b.Navigation("ScheduleDays");
                 });
 
             modelBuilder.Entity("API.Models.Room", b =>
@@ -1061,11 +1290,34 @@ namespace API.Migrations
                     b.Navigation("AttendanceDetailsComplaints");
 
                     b.Navigation("Attendances");
+
+                    b.Navigation("ClassChangeCurrentClasses");
+
+                    b.Navigation("ClassChangeRequestedClasses");
+
+                    b.Navigation("ScheduleDays");
+
+                    b.Navigation("ScheduleStudents");
+                });
+
+            modelBuilder.Entity("API.Models.Semester", b =>
+                {
+                    b.Navigation("ClassChanges");
+
+                    b.Navigation("Schedules");
+
+                    b.Navigation("Subjects");
+
+                    b.Navigation("TeachingRegistrations");
+
+                    b.Navigation("UserProfiles");
                 });
 
             modelBuilder.Entity("API.Models.StudentsInfor", b =>
                 {
                     b.Navigation("AttendanceDetails");
+
+                    b.Navigation("ScheduleStudents");
                 });
 
             modelBuilder.Entity("API.Models.StudyShift", b =>
@@ -1086,11 +1338,11 @@ namespace API.Migrations
 
                     b.Navigation("AuditlogUsers");
 
-                    b.Navigation("Classes");
-
                     b.Navigation("ComplaintProcessedByNavigations");
 
                     b.Navigation("ComplaintStudents");
+
+                    b.Navigation("Schedules");
 
                     b.Navigation("StudentsInfor");
 

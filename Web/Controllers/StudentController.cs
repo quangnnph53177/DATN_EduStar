@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace Web.Controllers
 {
@@ -337,6 +338,114 @@ namespace Web.Controllers
 
             return RedirectToAction("Index"); // hoặc trang bạn muốn quay lại
         }
+        [HttpGet]
+        public async Task<IActionResult> ChangeRole(string username)
+        {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return RedirectToAction("Login");
+            }
+            // Gọi API để lấy dữ liệu user cũ
+            var response = await client.GetAsync($"api/User/searchuser?keyword={username}");
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonData = await response.Content.ReadAsStringAsync();
+                var users =System.Text.Json.JsonSerializer.Deserialize<List<UserDTO>>(jsonData, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
 
+                var user = users.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
+
+                if (user == null)
+                {
+                    TempData["ErrorMessage"] = "Không tìm thấy người dùng.";
+                    return RedirectToAction("Index", "Student");
+                }
+
+                return View(user);
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Không thể tải dữ liệu người dùng.";
+                return RedirectToAction("Index", "Student");
+            }
+        }
+        [HttpPost]
+        public async Task<IActionResult> ChangeRole(string username, int newRoleId)
+        {
+            try
+            {
+                var client = GetClientWithToken();
+
+                var response = await client.PutAsync($"api/User/changerole/{username}?newRoleId={newRoleId}", null);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] = "Thay đổi vai trò thành công.";
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    TempData["ErrorMessage"] = !string.IsNullOrEmpty(errorContent) ? errorContent : "Thay đổi vai trò thất bại.";
+                }
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                return RedirectToAction("Index", "Student");
+            }
+        }
+        public async Task<IActionResult> CreateSV(RegisterViewModel model, IFormFile? imgFile)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var client = GetClientWithToken();
+            using var content = new MultipartFormDataContent();
+
+            content.Add(new StringContent(model.User.UserName ?? ""), "UserName");
+            content.Add(new StringContent(model.User.PassWordHash ?? ""), "PassWordHash");
+            content.Add(new StringContent(model.User.Email ?? ""), "Email");
+            content.Add(new StringContent(model.User.PhoneNumber ?? ""), "PhoneNumber");
+            content.Add(new StringContent(model.User.FullName ?? ""), "FullName");
+            content.Add(new StringContent(model.User.Address ?? ""), "Address");
+            content.Add(new StringContent(model.User.Statuss.ToString()), "Statuss");
+
+            if (model.User.Dob.HasValue)
+                content.Add(new StringContent(model.User.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
+            content.Add(new StringContent(model.User.Gender.HasValue ? model.User.Gender.Value.ToString() : ""), "Gender");
+
+            //if (model.User.RoleIds != null && model.User.RoleIds.Any())
+            //{
+            //    foreach (var roleId in model.User.RoleIds)
+            //    {
+            //        content.Add(new StringContent(roleId.ToString()), "RoleIds");
+            //    }
+            //}
+
+            if (imgFile != null && imgFile.Length > 0)
+            {
+                var streamContent = new StreamContent(imgFile.OpenReadStream());
+                streamContent.Headers.ContentType = new MediaTypeHeaderValue(imgFile.ContentType);
+                content.Add(streamContent, "imgFile", imgFile.FileName);
+            }
+            var response = await client.PostAsync("api/User/createSv", content);
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
+                return RedirectToAction("Index", "Student");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(); // 🔥 Đọc lỗi chi tiết từ API
+                TempData["ErrorMessage"] = $"Đăng ký không thành công: {errorContent}";
+                return View(model);
+            }
+        }
     }
 }

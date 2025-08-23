@@ -1,66 +1,465 @@
 ﻿@model IEnumerable<API.ViewModel.SchedulesViewModel>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Quản lý lịch học";
 }
 
-<h1>Index</h1>
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-1">
+                <i class="bi bi-calendar-week-fill me-2"></i>
+                Quản lý lịch học
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="#">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Lịch học</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-    <a asp-action="Auto">Auto</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-          @*   <th>
-                @Html.DisplayNameFor(model => model.Id)
-            </th> *@
-            <th>
-                @Html.DisplayNameFor(model => model.ClassName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.SubjectName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.RoomCode)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.WeekDay)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.StudyShift)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-           @*  <td>
-                @Html.DisplayFor(modelItem => item.Id)
-            </td> *@
-            <td>
-                @Html.DisplayFor(modelItem => item.ClassName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.SubjectName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.RoomCode)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.WeekDay)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.StudyShift)
-            </td>
-            <td>
-                @Html.ActionLink("Edit", "Edit", new { id=item.Id }) |
-                @Html.ActionLink("Details", "Details", new { id=item.Id }) |
-                @Html.ActionLink("Delete", "Delete", new { id=item.Id })
-            </td>
-        </tr>
+    <!-- Action Buttons -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a asp-action="Create" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Tạo lịch mới
+                        </a>
+                        <a asp-action="Auto" class="btn btn-info">
+                            <i class="bi bi-magic me-1"></i>
+                            Tự động xếp lịch
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-primary" id="filterButton">
+                            <i class="bi bi-funnel me-1"></i>
+                            Bộ lọc
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-download me-1"></i>
+                                Xuất dữ liệu
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-file-excel me-2"></i>Xuất Excel</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-file-pdf me-2"></i>Xuất PDF</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-printer me-2"></i>In ấn</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div id="filterPanel" class="card shadow-sm mb-4" style="display: none;">
+        <div class="card-header bg-light">
+            <h6 class="card-title mb-0">
+                <i class="bi bi-funnel me-2"></i>
+                Bộ lọc tìm kiếm
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" asp-action="Index">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Lớp học</label>
+                        <input type="text" class="form-control" name="className" placeholder="Tìm theo tên lớp">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Môn học</label>
+                        <input type="text" class="form-control" name="subjectName" placeholder="Tìm theo môn học">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Phòng học</label>
+                        <input type="text" class="form-control" name="roomCode" placeholder="Mã phòng">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Ca học</label>
+                        <select class="form-select" name="studyShift">
+                            <option value="">Tất cả</option>
+                            <option value="Sáng">Ca sáng</option>
+                            <option value="Chiều">Ca chiều</option>
+                            <option value="Tối">Ca tối</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">
+                            <i class="bi bi-search me-1"></i>
+                            Tìm
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <i class="bi bi-calendar-check display-6 text-primary"></i>
+                    <h5 class="card-title text-primary mt-2">@Model.Count()</h5>
+                    <p class="card-text text-muted small">Tổng lịch học</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <i class="bi bi-building display-6 text-success"></i>
+                    <h5 class="card-title text-success mt-2">@Model.Select(x => x.RoomCode).Distinct().Count()</h5>
+                    <p class="card-text text-muted small">Phòng học</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <i class="bi bi-people display-6 text-info"></i>
+                    <h5 class="card-title text-info mt-2">@Model.Select(x => x.ClassName).Distinct().Count()</h5>
+                    <p class="card-text text-muted small">Lớp học</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <i class="bi bi-book display-6 text-warning"></i>
+                    <h5 class="card-title text-warning mt-2">@Model.Select(x => x.SubjectName).Distinct().Count()</h5>
+                    <p class="card-text text-muted small">Môn học</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedules Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-table me-2"></i>
+                Danh sách lịch học
+            </h5>
+            <small>Cập nhật: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</small>
+        </div>
+        <div class="card-body p-0">
+            @if (Model?.Any() == true)
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th scope="col" style="width: 60px;" class="text-center">#</th>
+                                <th scope="col" style="width: 150px;">
+                                    <i class="bi bi-people me-1"></i>
+                                    @Html.DisplayNameFor(model => model.ClassName)
+                                </th>
+                                <th scope="col" style="width: 200px;">
+                                    <i class="bi bi-book me-1"></i>
+                                    @Html.DisplayNameFor(model => model.SubjectName)
+                                </th>
+                                <th scope="col" style="width: 120px;" class="text-center">
+                                    <i class="bi bi-building me-1"></i>
+                                    @Html.DisplayNameFor(model => model.RoomCode)
+                                </th>
+                                <th scope="col" style="width: 200px;" class="text-center">
+                                    <i class="bi bi-calendar-week me-1"></i>
+                                    Thứ trong tuần
+                                </th>
+                                <th scope="col" style="width: 120px;" class="text-center">
+                                    <i class="bi bi-clock me-1"></i>
+                                    @Html.DisplayNameFor(model => model.StudyShift)
+                                </th>
+                                <th scope="col" style="width: 200px;" class="text-center">
+                                    <i class="bi bi-gear me-1"></i>
+                                    Hành động
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int index = 1;
+                            }
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="text-center text-muted">
+                                        <small>@index</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                <i class="bi bi-people text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">@Html.DisplayFor(modelItem => item.ClassName)</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                <i class="bi bi-book text-success"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium">@Html.DisplayFor(modelItem => item.SubjectName)</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info">
+                                            <i class="bi bi-building me-1"></i>
+                                            @Html.DisplayFor(modelItem => item.RoomCode)
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center flex-wrap gap-1">
+                                            @foreach (var day in item.weekdays)
+                                            {
+                                                var dayName = day switch
+                                                {
+                                                    API.ViewModel.Weekday.Monday => "T2",
+                                                    API.ViewModel.Weekday.Tuesday => "T3",
+                                                    API.ViewModel.Weekday.Wednesday => "T4",
+                                                    API.ViewModel.Weekday.Thursday => "T5",
+                                                    API.ViewModel.Weekday.Friday => "T6",
+                                                    API.ViewModel.Weekday.Saturday => "T7",
+                                                    API.ViewModel.Weekday.Sunday => "CN",
+                                                    _ => day.ToString()
+                                                };
+                                                <span class="badge bg-secondary">@dayName</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        @{
+                                            var shiftColor = item.StudyShift?.ToLower() switch
+                                            {
+                                                "sáng" => "warning",
+                                                "chiều" => "primary",
+                                                "tối" => "dark",
+                                                _ => "secondary"
+                                            };
+                                            var shiftIcon = item.StudyShift?.ToLower() switch
+                                            {
+                                                "sáng" => "bi-sun",
+                                                "chiều" => "bi-sun-fill",
+                                                "tối" => "bi-moon",
+                                                _ => "bi-clock"
+                                            };
+                                        }
+                                        <span class="badge bg-@shiftColor">
+                                            <i class="@shiftIcon me-1"></i>
+                                            @Html.DisplayFor(modelItem => item.StudyShift)
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.Id })"
+                                               class="btn btn-outline-info"
+                                               data-bs-toggle="tooltip"
+                                               title="Xem chi tiết">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.Id })"
+                                               class="btn btn-outline-primary"
+                                               data-bs-toggle="tooltip"
+                                               title="Chỉnh sửa">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger"
+                                                    data-bs-toggle="tooltip"
+                                                    title="Xóa lịch học"
+                                                    onclick="confirmDelete('@item.Id', '@item.ClassName', '@item.SubjectName')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                index++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
+                    <h5 class="text-muted">Chưa có lịch học nào</h5>
+                    <p class="text-muted mb-4">Bắt đầu bằng cách tạo lịch học mới hoặc sử dụng tính năng tự động xếp lịch.</p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <a asp-action="Create" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Tạo lịch mới
+                        </a>
+                        <a asp-action="Auto" class="btn btn-info">
+                            <i class="bi bi-magic me-1"></i>
+                            Tự động xếp lịch
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Xác nhận xóa
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Bạn có chắc chắn muốn xóa lịch học này không?</p>
+                <div class="alert alert-warning">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-people me-2"></i>
+                        <strong>Lớp học:</strong> <span id="deleteClassName"></span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-book me-2"></i>
+                        <strong>Môn học:</strong> <span id="deleteSubjectName"></span>
+                    </div>
+                </div>
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Hành động này không thể hoàn tác.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-1"></i>
+                    Hủy bỏ
+                </button>
+                <a id="deleteConfirmButton" href="#" class="btn btn-danger">
+                    <i class="bi bi-trash me-1"></i>
+                    Xóa lịch học
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-sm {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+
+    .btn-group-sm > .btn {
+        border-radius: 0;
+    }
+
+        .btn-group-sm > .btn:first-child {
+            border-top-left-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .btn-group-sm > .btn:last-child {
+            border-top-right-radius: 0.25rem;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+    .sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .table-responsive {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Filter panel toggle
+            const filterButton = document.getElementById('filterButton');
+            const filterPanel = document.getElementById('filterPanel');
+
+            if (filterButton && filterPanel) {
+                filterButton.addEventListener('click', function () {
+                    if (filterPanel.style.display === 'none' || filterPanel.style.display === '') {
+                        filterPanel.style.display = 'block';
+                        filterPanel.scrollIntoView({ behavior: 'smooth' });
+                        this.classList.add('active');
+                    } else {
+                        filterPanel.style.display = 'none';
+                        this.classList.remove('active');
+                    }
+                });
+            }
+
+            // Auto-show filter if has URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.toString() && filterPanel) {
+                filterPanel.style.display = 'block';
+                filterButton?.classList.add('active');
+            }
+        });
+
+        // Delete confirmation function
+        function confirmDelete(id, className, subjectName) {
+            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            document.getElementById('deleteClassName').textContent = className;
+            document.getElementById('deleteSubjectName').textContent = subjectName;
+            document.getElementById('deleteConfirmButton').href = '@Url.Action("Delete")' + '/' + id;
+            modal.show();
+        }
+
+        // Search functionality
+        function performSearch() {
+            const form = document.querySelector('#filterPanel form');
+            if (form) {
+                form.submit();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // Ctrl/Cmd + K to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.querySelector('#filterPanel input[name="className"]');
+                if (searchInput) {
+                    document.getElementById('filterButton')?.click();
+                    setTimeout(() => searchInput.focus(), 100);
+                }
+            }
+        });
+    </script>
 }
-    </tbody>
-</table>

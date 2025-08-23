@@ -3,23 +3,25 @@
     public class TeachingRegistration
     {
         public int Id { get; set; }
-
         public Guid TeacherId { get; set; }         // Tài khoản giảng viên
-        public int ClassId { get; set; }            // Lớp học (môn học được gán sẵn theo Class.SubjectId)
-        public int DayId { get; set; }              // Thứ trong tuần
-        public int StudyShiftId { get; set; }       // Ca học
-
-        public DateTime? StartDate { get; set; }    // Bắt đầu giảng dạy
-        public DateTime? EndDate { get; set; }      // Kết thúc giảng dạy
+        public int ScheduleID { get; set; }            // Lớp học 
         public bool? Status { get; set; }           // Có hiệu lực không
-
-        public bool? IsConfirmed { get; set; }      // Đã được xác nhận chưa?
+        //public bool? IsConfirmed { get; set; }      // Đã được xác nhận chưa?
         public DateTime CreateAt { get; set; } = DateTime.Now;
-        public int SemesterId { get; set; }
-        public Semester Semester { get; set; } = null!;
+        public ApprovedStatus? IsApproved { get; set; }       // null = chờ duyệt, true = đã duyệt, false = từ chối
+        public enum ApprovedStatus
+        {
+            Pending =0 ,
+            Approved = 1,
+            Rejected = 2,
+        }
+        public Guid? ApprovedBy { get; set; }       // Admin duyệt
+
+        public DateTime? ApprovedDate { get; set; } // Ngày duyệt
+
+        // Navigation Properties
         public virtual User Teacher { get; set; }
-        public virtual Class Class { get; set; }
-        public virtual DayOfWeekk Day { get; set; }
-        public virtual StudyShift StudyShift { get; set; }
+        public virtual Schedule Schedule { get; set; }
+        public virtual User? Approver { get; set; }
     }
 }

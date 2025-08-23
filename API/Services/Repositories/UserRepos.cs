@@ -71,7 +71,7 @@ namespace API.Services.Repositories
                 ? u.UserProfile.Dob.Value.ToDateTime(TimeOnly.MinValue)
                 : null,
                 RoleIds = u.Roles?.Select(r => r.Id).ToList() ?? new List<int>(),
-                ClassName = u.StudentsInfor?.Classes?.Select(c => c.NameClass).ToList()
+                ClassName = u.Schedules.Select(c => c.ClassName).ToList()
             };
         }
         private async Task<string> SaveAvatar(IFormFile imgFile, string? oldPath = null)
@@ -435,7 +435,7 @@ namespace API.Services.Repositories
                  .Include(u => u.UserProfile)
                  .Include(u => u.Roles)
                  .Include(u => u.StudentsInfor)
-                 .ThenInclude(s => s.Classes)
+                 .ThenInclude(s => s.ScheduleStudents)
                  .AsSplitQuery();
 ;
 
@@ -657,6 +657,171 @@ namespace API.Services.Repositories
             await _context.SaveChangesAsync();
             return "Đặt lại mật khẩu thành công.";
         }
+        public async Task<User> CreateSV(UserDTO usd, IFormFile? imgFile)
+        {
+            if (string.IsNullOrWhiteSpace(usd.UserName) || string.IsNullOrWhiteSpace(usd.PassWordHash) || string.IsNullOrWhiteSpace(usd.Email))
+            {
+                throw new Exception("Thiếu thông tin bắt buộc.");
+            }
+
+            // Kiểm tra tài khoản đã tồn tại chưa  
+            if (await _context.Users.AnyAsync(u => u.UserName == usd.UserName))
+                throw new Exception("Tên đăng nhập đã tồn tại.");
+
+            if (await _context.Users.AnyAsync(u => u.Email == usd.Email))
+                throw new Exception("Email đã được sử dụng.");
+
+            var hashedPassword = PasswordHasher.HashPassword(usd.PassWordHash);
+
+            var roles = await _context.Roles.FirstOrDefaultAsync(r => r.Id == 3);
+            if (roles == null)
+                throw new Exception("Không tìm thấy role hợp lệ để gán.");
+
+            if (imgFile != null && imgFile.Length > 0)
+            {
+                usd.Avatar = await SaveAvatar(imgFile);
+            }
+            if (usd.Dob.HasValue && usd.Dob.Value.Date >= DateTime.Now.Date)
+            {
+                throw new Exception("Ngày sinh không hợp lệ. Hãy nhập lại ngày sinh.");
+            }
+
+            string userCode;
+            int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 3));
+            userCode = $"SV{(count + 1):D5}";
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = usd.UserName,
+                PassWordHash = hashedPassword,
+                Email = usd.Email,
+                PhoneNumber = usd.PhoneNumber,
+                Roles = new List<Role> { roles },
+                Statuss = false,
+                IsConfirm = false,
+                CreateAt = DateTime.Now
+
+            };
+
+            _context.UserProfiles.Add(new UserProfile
+            {
+                UserId = user.Id,
+                FullName = usd.FullName,
+                UserCode = userCode,
+                Gender = usd.Gender,
+                Dob = usd.Dob.HasValue ? DateOnly.FromDateTime(usd.Dob.Value) : null,
+                Avatar = usd.Avatar,
+                Address = usd.Address
+            });
+            _context.StudentsInfors.Add(new StudentsInfor
+            {
+                UserId = user.Id,
+                StudentsCode = userCode,
+            });
+
+
+            // Gửi email xác nhận  
+            var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(user.Email));
+            var confirmationLink = $"https://localhost:7298/api/User/confirm?token={HttpUtility.UrlEncode(token)}";
+            string message = $@"
+                <!DOCTYPE html>
+                <html lang='vi'>
+                <head>
+                    <meta charset='UTF-8'>
+                    <title>Xác nhận email</title>
+                    <style>
+                        body {{
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            background-color: #f8f9fa;
+                            margin: 0;
+                            padding: 0;
+                        }}
+                        .email-container {{
+                            max-width: 600px;
+                            margin: 40px auto;
+                            background-color: #ffffff;
+                            padding: 30px;
+                            border-radius: 10px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                        }}
+                        h2 {{
+                            color: #333;
+                        }}
+                        p {{
+                            color: #555;
+                            font-size: 15px;
+                        }}
+                        .info-table {{
+                            width: 100%;
+                            margin: 20px 0;
+                            border-collapse: collapse;
+                        }}
+                        .info-table td {{
+                            padding: 8px 10px;
+                            border: 1px solid #ddd;
+                        }}
+                        .info-table td.label {{
+                            font-weight: bold;
+                            background-color: #f1f1f1;
+                            width: 150px;
+                        }}
+                        .btn {{
+                            display: inline-block;
+                            margin-top: 20px;
+                            padding: 12px 24px;
+                            font-size: 16px;
+                            color: #ffffff;
+                            background-color: #007bff;
+                            text-decoration: none;
+                            border-radius: 6px;
+                        }}
+                        .btn:hover {{
+                            background-color: #0056b3;
+                        }}
+                        .footer {{
+                            margin-top: 30px;
+                            font-size: 12px;
+                            color: #888;
+                            text-align: center;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class='email-container'>
+                        <h2>🎉 Yêu cầu xác nhận tài khoản để đăng nhập</h2>
+                        <p>Chúng tôi đã tạo tài khoản cho bạn trên hệ thống. Dưới đây là thông tin đăng nhập:</p>
+
+                        <table class='info-table'>
+                            <tr>
+                                <td class='label'>Tên đăng nhập:</td>
+                                <td>{user.UserName}</td>
+                            </tr>
+                            <tr>
+                                <td class='label'>Mật khẩu:</td>
+                                <td>{usd.PassWordHash}</td>
+                            </tr>
+ <tr>
+                                <td class='label'>Mật khẩu:</td>
+                                <td>{usd.Email}</td>
+                            </tr>
+                        </table>
+
+                        <p>👉 Vui lòng nhấn vào nút bên dưới để xác nhận email và kích hoạt tài khoản:</p>
+                        <a href='{confirmationLink}' class='btn'>Xác nhận tài khoản</a>
+
+                        <p class='footer'>Nếu bạn không yêu cầu hành động này, vui lòng bỏ qua email này.</p>
+                    </div>
+                </body>
+                </html>";
+
+            await _emailService.SendEmail(user.Email, "Xác nhận email", message);
+
+            _context.Users.Add(user);
+
+            await _context.SaveChangesAsync();
+            return user;
+        }
+
         //Lấy danh sách sinh viên có trong lớp của giảng viên
         //public async Task<TeacherWithClassesViewModel> GetStudentByTeacher(Guid? teacherId)
         //{

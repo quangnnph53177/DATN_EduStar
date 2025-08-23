@@ -2,163 +2,395 @@
 
 @{
     ViewData["Title"] = "Student List";
-}
-
-<h2>Danh sách sinh viên</h2>
-<a asp-action="Auditlog">Log</a>
-
-@{
     var selectedGender = Context.Request.Query["gender"].ToString();
     var selectedStatus = Context.Request.Query["status"].ToString();
 }
 
-<form asp-action="Index" method="get" class="mb-3">
-    <div class="row">
-        <div class="col-12 text-end">
-            <div class="d-inline-flex flex-wrap gap-2 justify-content-end align-items-end">
-                <!-- Mã SV -->
-                <input class="form-control form-control-sm" name="studentCode" placeholder=" Mã SV"
-                       value="@Context.Request.Query["studentCode"]" style="width: 150px;" />
-
-                <!-- Nút tìm kiếm -->
-                <button type="submit" class="btn btn-sm btn-primary">
-                     Tìm kiếm
-                </button>
-
-                <!-- Nút tìm kiếm nâng cao -->
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleAdvancedSearch">
-                     Nâng cao
-                </button>
-                 <div class="mt-4 text-center">
-                    <a asp-action="Upload" asp-controller="Users" class="btn btn-sm btn-primary">
-                        <i class="bi bi-upload"></i> Upload danh sách người dùng
-                    </a>
-                </div>
-            </div>
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-1">
+                <i class="bi bi-people-fill me-2"></i>
+                Danh sách sinh viên
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="#">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Sinh viên</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a asp-action="Auditlog" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history me-1"></i>
+                Lịch sử
+            </a>
         </div>
     </div>
 
-    <!-- 🔽 Tìm kiếm nâng cao -->
-    <div id="advancedSearch" class="card card-body mt-2" style="display: none;">
-        <div class="row g-2">
-            <div class="col-md-2">
-                <input class="form-control form-control-sm" name="fullName" placeholder="Họ tên"
-                       value="@Context.Request.Query["fullName"]" />
-            </div>
-            <div class="col-md-2">
-                <input class="form-control form-control-sm" name="username" placeholder="Username"
-                       value="@Context.Request.Query["username"]" />
-            </div>
-            <div class="col-md-2">
-                <input class="form-control form-control-sm" name="email" placeholder="Email"
-                       value="@Context.Request.Query["email"]" />
-            </div>
-            <div class="col-md-2">
-                <select name="gender" class="form-select form-select-sm">
-                    <option value="">-- Giới tính --</option>
-                    <option value="true" selected="@(selectedGender == "true")">Nam</option>
-                    <option value="false" selected="@(selectedGender == "false")">Nữ</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select name="status" class="form-select form-select-sm">
-                    <option value="">-- Trạng thái --</option>
-                    <option value="true" selected="@(selectedStatus == "true")">Hoạt động</option>
-                    <option value="false" selected="@(selectedStatus == "false")">Không hoạt động</option>
-                </select>
-            </div>
-            <div class="col-md-1 d-grid">
-                <button type="submit" class="btn btn-sm btn-success">Áp dụng</button>
-            </div>
-            <div class="col-md-1 d-grid">
-                <a href="@Url.Action("Index")" class="btn btn-sm btn-secondary">Xóa lọc</a>
-            </div>
+    <!-- Search and Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-search me-2"></i>
+                Tìm kiếm và lọc
+            </h5>
         </div>
-    </div>
-</form>
-
-
-
-<div class="mb-3 text-end">
-    <form asp-action="Export" method="post">
-        <button type="submit" class="btn btn-success">
-            📥 Xuất danh sách sinh viên
-        </button>
-    </form>
-</div>
-<table class="table table-bordered table-hover table-striped align-middle">
-    <thead class="table-dark text-center">
-        <tr>
-            @* <th>Avatar</th> *@
-            <th>Mã SV</th>
-            <th>Họ tên</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Điện thoại</th>
-            <th>Giới tính</th>
-            <th>Ngày sinh</th>
-            <th>Địa chỉ</th>
-            <th>Trạng thái</th>
-            <th>Hành động</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var student in Model)
-        {
-            <tr class="text-center">
-               @*  <td>
-                    <img src="@(string.IsNullOrEmpty(student.Avatar) ? "https://via.placeholder.com/80?text=No+Avatar" : student.Avatar)"
-                         alt="Avatar"
-                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%;" />
-                </td> *@
-                <td>@student.StudentCode</td>
-                <td class="text-start">@student.FullName</td>
-                <td>@student.UserName</td>
-                <td>@student.Email</td>
-                <td>@student.PhoneNumber</td>
-                <td>@(student.Gender.HasValue ? (student.Gender.Value ? "Nam" : "Nữ") : "Chưa rõ")</td>
-                <td>@student.Dob?.ToString("dd/MM/yyyy")</td>
-                <td class="text-start">@student.Address</td>
-                <td>
-                    <span class="badge bg-@(student.Status == true ? "success" : "secondary")">
-                        @(student.Status == true ? "Hoạt động" : "Không hoạt động")
-                    </span>
-                </td>
-                <td>
-                    <div class="d-flex justify-content-center gap-1">
-                        @Html.ActionLink("Sửa", "EditBoss", new { id = student.id }, new { @class = "btn btn-sm btn-primary" })
-                        @Html.ActionLink("Chi tiết", "Details", new { id = student.id }, new { @class = "btn btn-sm btn-info" })
-
-                        <form asp-action="Lock" asp-controller="Student" asp-route-id="@student.id" method="post" style="display:inline;">
-                            <button type="submit" class="btn btn-sm @(student.Status==true ? "btn-danger" : "btn-success")">
-                                @(student.Status == true ? "Khóa" : "Mở")
-                            </button>
-                        </form>
+        <div class="card-body">
+            <form asp-action="Index" method="get">
+                <!-- Basic Search Row -->
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-md-3">
+                        <label for="studentCode" class="form-label small text-muted">Mã sinh viên</label>
+                        <input id="studentCode"
+                               class="form-control"
+                               name="studentCode"
+                               placeholder="Nhập mã sinh viên"
+                               value="@Context.Request.Query["studentCode"]" />
                     </div>
-                </td>
-            </tr>
+                    <div class="col-md-auto">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-1"></i>
+                            Tìm kiếm
+                        </button>
+                    </div>
+                    <div class="col-md-auto">
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                id="toggleAdvancedSearch"
+                                data-bs-toggle="tooltip"
+                                title="Mở/đóng tìm kiếm nâng cao">
+                            <i class="bi bi-funnel me-1"></i>
+                            Nâng cao
+                        </button>
+                    </div>
+                    <div class="col-md-auto ms-auto">
+                        <a asp-action="Upload"
+                           asp-controller="Users"
+                           class="btn btn-success">
+                            <i class="bi bi-upload me-1"></i>
+                            Upload danh sách
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Advanced Search Panel -->
+                <div id="advancedSearch" class="collapse">
+                    <hr class="my-3">
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-3">
+                            <label for="fullName" class="form-label small text-muted">Họ và tên</label>
+                            <input id="fullName"
+                                   class="form-control"
+                                   name="fullName"
+                                   placeholder="Nhập họ tên"
+                                   value="@Context.Request.Query["fullName"]" />
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <label for="username" class="form-label small text-muted">Tên đăng nhập</label>
+                            <input id="username"
+                                   class="form-control"
+                                   name="username"
+                                   placeholder="Nhập username"
+                                   value="@Context.Request.Query["username"]" />
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <label for="email" class="form-label small text-muted">Email</label>
+                            <input id="email"
+                                   class="form-control"
+                                   name="email"
+                                   type="email"
+                                   placeholder="Nhập email"
+                                   value="@Context.Request.Query["email"]" />
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <label for="gender" class="form-label small text-muted">Giới tính</label>
+                            <select id="gender" name="gender" class="form-select">
+                                <option value="">-- Tất cả --</option>
+                                <option value="true" selected="@(selectedGender == "true")">Nam</option>
+                                <option value="false" selected="@(selectedGender == "false")">Nữ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <label for="status" class="form-label small text-muted">Trạng thái</label>
+                            <select id="status" name="status" class="form-select">
+                                <option value="">-- Tất cả --</option>
+                                <option value="true" selected="@(selectedStatus == "true")">Hoạt động</option>
+                                <option value="false" selected="@(selectedStatus == "false")">Không hoạt động</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-lg-3 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="bi bi-funnel-fill me-1"></i>
+                                Áp dụng
+                            </button>
+                            <a href="@Url.Action("Index")"
+                               class="btn btn-outline-secondary"
+                               data-bs-toggle="tooltip"
+                               title="Xóa tất cả bộ lọc">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="text-muted">
+            <i class="bi bi-info-circle me-1"></i>
+            Tổng số: <strong>@Model.Count()</strong> sinh viên
+        </div>
+        <form asp-action="Export" method="post">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-download me-1"></i>
+                Xuất Excel
+            </button>
+        </form>
+        <form asp-action="CreateSV" method="post">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-download me-1"></i>
+                Thêm sinh viên
+            </button>
+        </form>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col" class="text-center" style="width: 100px;">Mã SV</th>
+                            <th scope="col">Họ tên</th>
+                            <th scope="col" style="width: 120px;">Username</th>
+                            <th scope="col" style="width: 200px;">Email</th>
+                            <th scope="col" class="text-center" style="width: 120px;">Điện thoại</th>
+                            <th scope="col" class="text-center" style="width: 80px;">Giới tính</th>
+                            <th scope="col" class="text-center" style="width: 100px;">Ngày sinh</th>
+                            <th scope="col" style="width: 150px;">Địa chỉ</th>
+                            <th scope="col" class="text-center" style="width: 120px;">Trạng thái</th>
+                            <th scope="col" class="text-center" style="width: 200px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model?.Any() == true)
+                        {
+                            @foreach (var student in Model)
+                            {
+                                <tr>
+                                    <td class="text-center">
+                                        <code class="text-primary">@student.StudentCode</code>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                <i class="bi bi-person text-muted"></i>
+                                            </div>
+                                            <strong>@student.FullName</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@student.UserName</span>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:@student.Email" class="text-decoration-none">
+                                            @student.Email
+                                        </a>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (!string.IsNullOrEmpty(student.PhoneNumber))
+                                        {
+                                            <a href="tel:@student.PhoneNumber" class="text-decoration-none">
+                                                @student.PhoneNumber
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">--</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (student.Gender.HasValue)
+                                        {
+                                            <i class="bi bi-@(student.Gender.Value ? "gender-male text-primary" : "gender-female text-danger")"></i>
+                                            <span class="ms-1">@(student.Gender.Value ? "Nam" : "Nữ")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">--</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @(student.Dob?.ToString("dd/MM/yyyy") ?? "--")
+                                    </td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 150px;" title="@student.Address">
+                                            @(string.IsNullOrEmpty(student.Address) ? "--" : student.Address)
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge @(student.Status == true ? "bg-success" : "bg-secondary")">
+                                            <i class="bi bi-@(student.Status == true ? "check-circle" : "x-circle") me-1"></i>
+                                            @(student.Status == true ? "Hoạt động" : "Không hoạt động")
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="@Url.Action("Details", new { id = student.id })"
+                                               class="btn btn-outline-info"
+                                               data-bs-toggle="tooltip"
+                                               title="Xem chi tiết">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("EditBoss", new { id = student.id })"
+                                               class="btn btn-outline-primary"
+                                               data-bs-toggle="tooltip"
+                                               title="Chỉnh sửa">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form asp-action="Lock"
+                                                  asp-controller="Student"
+                                                  asp-route-id="@student.id"
+                                                  method="post"
+                                                  class="d-inline">
+                                                <button type="submit"
+                                                        class="btn btn-outline-@(student.Status == true ? "danger" : "success")"
+                                                        data-bs-toggle="tooltip"
+                                                        title="@(student.Status == true ? "Khóa tài khoản" : "Mở tài khoản")"
+                                                        onclick="return confirm('@(student.Status == true ? "Bạn có chắc muốn khóa tài khoản này?" : "Bạn có chắc muốn mở khóa tài khoản này?")')">
+                                                    <i class="bi bi-@(student.Status == true ? "lock" : "unlock")"></i>
+                                                </button>
+                                            </form>
+                                            <a asp-controller="Student"
+                                               asp-action="ChangeRole"
+                                               asp-route-username="@student.UserName"
+                                               class="btn btn-outline-warning"
+                                               data-bs-toggle="tooltip"
+                                               title="Đổi vai trò">
+                                                <i class="bi bi-arrow-repeat"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="10" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox display-1 d-block mb-3"></i>
+                                    <h5>Không có dữ liệu</h5>
+                                    <p class="mb-0">Không tìm thấy sinh viên nào phù hợp với điều kiện tìm kiếm.</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-sm {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+
+    .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .btn-group-sm > .btn {
+        border-radius: 0;
+    }
+
+        .btn-group-sm > .btn:first-child {
+            border-top-left-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
         }
-    </tbody>
-</table>
+
+        .btn-group-sm > .btn:last-child {
+            border-top-right-radius: 0.25rem;
+            border-bottom-right-radius: 0.25rem;
+        }
+</style>
+
 @section Scripts {
     <script>
-        document.getElementById('toggleAdvancedSearch')?.addEventListener('click', function () {
-            const advanced = document.getElementById('advancedSearch');
-            if (advanced.style.display === 'none' || advanced.style.display === '') {
-                advanced.style.display = 'block';
-            } else {
-                advanced.style.display = 'none';
-            }
-        });
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
 
-        // Tự động mở nếu có dữ liệu lọc nâng cao
-        window.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-            const fields = ['fullName', 'username', 'email', 'gender', 'status'];
-            const isUsed = fields.some(field => params.get(field));
-            if (isUsed) {
-                document.getElementById('advancedSearch').style.display = 'block';
+            // Advanced search toggle
+            const toggleButton = document.getElementById('toggleAdvancedSearch');
+            const advancedSearch = document.getElementById('advancedSearch');
+
+            if (toggleButton && advancedSearch) {
+                toggleButton.addEventListener('click', function () {
+                    const bsCollapse = new bootstrap.Collapse(advancedSearch, {
+                        toggle: true
+                    });
+
+                    // Update button text and icon
+                    const icon = this.querySelector('i');
+                    const isCollapsed = advancedSearch.classList.contains('show');
+
+                    if (isCollapsed) {
+                        icon.className = 'bi bi-funnel me-1';
+                    } else {
+                        icon.className = 'bi bi-funnel-fill me-1';
+                    }
+                });
             }
+
+            // Auto-open advanced search if has filter values
+            const urlParams = new URLSearchParams(window.location.search);
+            const advancedFields = ['fullName', 'username', 'email', 'gender', 'status'];
+            const hasAdvancedFilters = advancedFields.some(field => urlParams.get(field));
+
+            if (hasAdvancedFilters && advancedSearch) {
+                const bsCollapse = new bootstrap.Collapse(advancedSearch, {
+                    show: true
+                });
+                const icon = toggleButton?.querySelector('i');
+                if (icon) {
+                    icon.className = 'bi bi-funnel-fill me-1';
+                }
+            }
+
+            // Form validation
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function (event) {
+                    if (this.hasAttribute('data-confirm')) {
+                        if (!confirm(this.getAttribute('data-confirm'))) {
+                            event.preventDefault();
+                        }
+                    }
+                });
+            });
+
+            // Search input enhancement
+            const searchInputs = document.querySelectorAll('input[type="text"], input[type="email"]');
+            searchInputs.forEach(input => {
+                input.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        this.closest('form').submit();
+                    }
+                });
+            });
         });
     </script>
 }

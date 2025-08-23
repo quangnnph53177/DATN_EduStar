@@ -730,5 +730,45 @@ namespace API.Controllers
 
             return Ok(result);
         }
+        [HttpPost("createSV")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateSV([FromForm] UserDTO userDto, IFormFile? imgFile)
+        {
+            if (userDto == null || !ModelState.IsValid)
+                return BadRequest("Dữ liệu không hợp lệ");
+
+            try
+            {
+                var createdUser = await _userRepos.CreateSV(userDto, imgFile);
+                var newData = JsonSerializer.Serialize(new
+                {
+                    createdUser.Email,
+                    createdUser.UserName,
+                    createdUser.Statuss
+                });
+                Guid? performedByGuid = null;
+                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (Guid.TryParse(performedBy, out var userGuid))
+                {
+                    performedByGuid = userGuid;
+                }
+
+                // ✅ Kiểm tra performedBy có tồn tại trong DB  
+                var existed = await _context.Users.FindAsync(performedByGuid);
+                if (existed == null)
+                    return BadRequest("Người thực hiện không tồn tại.");
+
+                await _logRepos.LogAsync(createdUser.Id, "CreateUser", null, newData, performedByGuid);
+                return Ok(new { message = "Đăng ký thành công, vui lòng kiểm tra email để xác nhận.", userId = createdUser.Id });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    error = ex.Message,
+                    inner = ex.InnerException?.Message
+                });
+            }
+        }
     }
 }

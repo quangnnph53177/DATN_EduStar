@@ -1,66 +1,358 @@
 ﻿@model API.ViewModel.SchedulesViewModel
-
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Chi tiết lịch học";
 }
 
-<h1>Details</h1>
+<div class="container-fluid px-4 py-3">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2 text-gray-800">
+                        <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                        Chi tiết lịch học
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Quản lý</a></li>
+                            <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Lịch học</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">@Model.ClassName</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="btn-group" role="group">
+                    <a asp-action="Index1" asp-route-id="@Model.Id" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div>
-    <h4>SchedulesViewModel</h4>
-    <hr />
-    <dl class="row">
-        @* <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Id)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Id)
-        </dd> *@
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ClassName)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ClassName)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.SubjectName)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.SubjectName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.RoomCode)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.RoomCode)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.WeekDay)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.WeekDay)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.StudyShift)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.StudyShift)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.starttime)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.starttime)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.endtime)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.endtime)
-        </dd>
-    </dl>
+    <!-- Class Information Card -->
+    <div class="row mb-4">
+        <div class="col-lg-8 col-md-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Thông tin lớp học: <strong>@Model.ClassName</strong>
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="feature-icon bg-light rounded-3 p-2 me-3">
+                                    <i class="fas fa-book text-primary"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted">Môn học</small>
+                                    <div class="fw-semibold">@Model.SubjectName</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="feature-icon bg-light rounded-3 p-2 me-3">
+                                    <i class="fas fa-door-open text-success"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted">Phòng học</small>
+                                    <div class="fw-semibold">@Model.RoomCode</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="feature-icon bg-light rounded-3 p-2 me-3">
+                                    <i class="fas fa-clock text-warning"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted">Ca học</small>
+                                    <div class="fw-semibold">
+                                        @Model.StudyShift
+                                        <span class="text-muted">
+                                            (@Model.starttime?.ToString(@"hh\:mm") - @Model.endtime?.ToString(@"hh\:mm"))
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="feature-icon bg-light rounded-3 p-2 me-3">
+                                    <i class="fas fa-calendar-week text-info"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted">Thứ học</small>
+                                    <div class="fw-semibold">@string.Join(", ", Model.weekdays)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="feature-icon bg-light rounded-3 p-2 me-3">
+                                    <i class="fas fa-calendar-alt text-secondary"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted">Thời gian học</small>
+                                    <div class="fw-semibold">
+                                        @Model.startdate?.ToString("dd/MM/yyyy") - @Model.enddate?.ToString("dd/MM/yyyy")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="feature-icon bg-light rounded-3 p-2 me-3">
+                                    <i class="fas fa-flag text-danger"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted">Trạng thái</small>
+                                    <div>
+                                        <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
+                                            @Model.Status
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light py-3">
+                    <h6 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        Thao tác
+                    </h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="d-grid gap-2">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-warning">
+                            <i class="fas fa-edit me-2"></i> Chỉnh sửa lớp học
+                        </a>
+                        <a asp-action="AssignStudent" asp-route-id="@Model.Id" class="btn btn-outline-success">
+                            <i class="fas fa-user-plus me-2"></i> Gán sinh viên
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users me-2 text-primary"></i>
+                            Danh sách sinh viên
+                            @if (Model.Students != null && Model.Students.Any())
+                            {
+                                <span class="badge bg-primary-subtle text-primary ms-2">
+                                    @Model.Students.Count sinh viên
+                                </span>
+                            }
+                        </h5>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.Students != null && Model.Students.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="text-center" style="width: 60px;">STT</th>
+                                        <th style="min-width: 120px;">Mã SV</th>
+                                        <th style="min-width: 180px;">Họ và tên</th>
+                                        <th style="min-width: 140px;">Tên đăng nhập</th>
+                                        <th style="min-width: 200px;">Email</th>
+                                        <th style="min-width: 120px;">Số điện thoại</th>
+                                        <th class="text-center" style="width: 80px;">Giới tính</th>
+                                        <th style="min-width: 200px;">Địa chỉ</th>
+                                        <th class="text-center" style="width: 120px;">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Students.Count; i++)
+                                    {
+                                        var student = Model.Students[i];
+                                        <tr>
+                                            <td class="text-center fw-semibold">@(i + 1)</td>
+                                            <td>
+                                                <span class="badge bg-secondary-subtle text-secondary">
+                                                    @student.StudentCode
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-primary-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                        <i class="fas fa-user text-primary"></i>
+                                                    </div>
+                                                    <strong>@student.FullName</strong>
+                                                </div>
+                                            </td>
+                                            <td class="text-muted">@student.UserName</td>
+                                            <td>
+                                                <a href="mailto:@student.Email" class="text-decoration-none">
+                                                    @student.Email
+                                                </a>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(student.PhoneNumber))
+                                                {
+                                                    <a href="tel:@student.PhoneNumber" class="text-decoration-none">
+                                                        @student.PhoneNumber
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Chưa cập nhật</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                @if (student.Gender == true)
+                                                {
+                                                    <span class="badge bg-info-subtle text-info">
+                                                        <i class="fas fa-mars me-1"></i>Nam
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-pink-subtle text-pink">
+                                                        <i class="fas fa-venus me-1"></i>Nữ
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="text-muted small">
+                                                @(string.IsNullOrEmpty(student.Address) ? "Chưa cập nhật" : student.Address)
+                                            </td>
+                                            <td class="text-center">
+                                                <form asp-action="RemoveStudent" method="post" class="d-inline">
+                                                    <input type="hidden" name="SchedulesId" value="@Model.Id" />
+                                                    <input type="hidden" name="studentId" value="@student.id" />
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit"
+                                                            onclick="return confirm('Bạn có chắc chắn muốn xóa sinh viên @student.FullName khỏi lớp học này?');"
+                                                            class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-trash"></i> Xóa
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-users fa-3x text-muted"></i>
+                            </div>
+                            <h6 class="text-muted">Chưa có sinh viên nào trong lớp</h6>
+                            <p class="text-muted mb-3">Hãy thêm sinh viên để bắt đầu quản lý lớp học</p>
+                            <a asp-action="AssignStudent" asp-route-id="@Model.Id" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>
+                                Thêm sinh viên đầu tiên
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<div>
-    @Html.ActionLink("Edit", "Edit", new { id = Model.Id }) |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .feature-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .avatar-sm {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .bg-primary-subtle {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+    
+    .bg-success-subtle {
+        background-color: rgba(25, 135, 84, 0.1) !important;
+    }
+    
+    .bg-secondary-subtle {
+        background-color: rgba(108, 117, 125, 0.1) !important;
+    }
+    
+    .bg-info-subtle {
+        background-color: rgba(13, 202, 240, 0.1) !important;
+    }
+    
+    .bg-pink-subtle {
+        background-color: rgba(214, 51, 132, 0.1) !important;
+    }
+    
+    .text-pink {
+        color: #d63384 !important;
+    }
+    
+    .card {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .table th {
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .btn {
+        font-weight: 500;
+        border-radius: 8px;
+    }
+    
+    .badge {
+        font-weight: 500;
+        font-size: 0.75rem;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>

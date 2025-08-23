@@ -2,7 +2,7 @@
 {
     public class AssignStudentsRequest
     {
-        public int ClassId { get; set; }
+        public int SchedulesId { get; set; }
         public List<Guid> StudentIds { get; set; }
     }
 }

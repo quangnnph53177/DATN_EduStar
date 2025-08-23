@@ -19,7 +19,7 @@ public partial class User
     public bool? IsConfirm { get; set; }
     public bool? IsDeleted { get; set; } = false;
     public DateTime? CreateAt { get; set; }
-    public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
+    public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
 

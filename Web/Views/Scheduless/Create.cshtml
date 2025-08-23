@@ -3,47 +3,90 @@
 @{
     ViewData["Title"] = "Thêm lịch học";
 }
-<h2 class="text-primary mb-4">Thêm lịch học</h2>
 
-<form asp-action="Create" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="container mt-4">
+    <div class="card shadow rounded-4">
+        <div class="card-header bg-primary text-white rounded-top-4">
+            <h3 class="mb-0">📅 Thêm lịch học</h3>
+        </div>
 
-    <div class="form-group mb-3">
-        <label asp-for="ClassId" class="form-label">Lớp học</label>
-        <select asp-for="ClassId" asp-items="ViewBag.ClassList" class="form-select"></select>
-        <span asp-validation-for="ClassId" class="text-danger"></span>
-    </div>
+        <div class="card-body px-5 py-4">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-    <div class="form-group mb-3">
-        <label asp-for="RoomId" class="form-label">Phòng học</label>
-        <select asp-for="RoomId" asp-items="ViewBag.RoomList" class="form-select"></select>
-        <span asp-validation-for="RoomId" class="text-danger"></span>
-    </div>
+                <div class="row g-3">
+                    <div class="mb-3">
+                        <label asp-for="ClassName" class="form-label fw-semibold">Lớp học</label>
+                        <input asp-for="ClassName" class="form-control" placeholder="VD: Cấu trúc dữ liệu" />
+                        <span asp-validation-for="ClassName" class="text-danger"></span>
+                    </div>
 
-    <div class="form-group mb-3">
-        <label asp-for="StudyShiftId" class="form-label">Ca học</label>
-        <select asp-for="StudyShiftId" asp-items="ViewBag.ShiftList" class="form-select"></select>
-        <span asp-validation-for="StudyShiftId" class="text-danger"></span>
-    </div>
+                    <div class="col-md-6">
+                        <label asp-for="SubjectId" class="form-label">Môn học</label>
+                        <select asp-for="SubjectId" asp-items="ViewBag.SubjectList" class="form-select shadow-sm">
+                            <option value="">--Thêm cái này thì hãy chọn--</option>
+                        </select>
+                        <span asp-validation-for="SubjectId" class="text-danger"></span>
+                    </div>
 
-    <div class="form-group mb-4">
-        <label asp-for="WeekDayId" class="form-label">Thứ</label>
-        <select asp-for="WeekDayId" asp-items="ViewBag.DayList" class="form-select"></select>
-        <span asp-validation-for="WeekDayId" class="text-danger"></span>
+                    <div class="col-md-6">
+                        <label asp-for="RoomId" class="form-label">Phòng học</label>
+                        <select asp-for="RoomId" asp-items="ViewBag.RoomList" class="form-select shadow-sm">
+                            <option value="">--Thêm cái này thì hãy chọn--</option>
+                        </select>
+                        <span asp-validation-for="RoomId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="StudyShiftId" class="form-label">Ca học</label>
+                        <select asp-for="StudyShiftId" asp-items="ViewBag.ShiftList" class="form-select shadow-sm">
+                            <option value="">--Thêm cái này thì hãy chọn--</option>
+                        </select>
+                        <span asp-validation-for="StudyShiftId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label">🗓️ Chọn thứ trong tuần</label>
+                        <div class="row">
+                            @foreach (var item in (List<SelectListItem>)ViewBag.DayList)
+                            {
+                                <div class="col-md-3">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="WeekDayId"
+                                               value="@item.Value"
+                                               id="day_@item.Value" />
+                                        <label class="form-check-label" for="day_@item.Value">@item.Text</label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="WeekDayId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="startdate" class="form-label">📆 Ngày bắt đầu học</label>
+                        <input asp-for="startdate" type="date" class="form-control shadow-sm" />
+                        <span asp-validation-for="startdate" class="text-danger"></span>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="TeacherId" class="control-label">Giảng viên phụ trách</label>
+                        <select asp-for="TeacherId" asp-items="ViewBag.TeacherList" class="form-select">
+                            <option value="">--Thêm cái này thì hãy chọn--</option>
+                        </select>
+                        <span asp-validation-for="TeacherId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-between">
+                    <a asp-action="Index1" class="btn btn-outline-secondary">⬅ Quay lại</a>
+                    <button type="submit" class="btn btn-success">➕ Thêm mới</button>
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="form-group mb-3">
-        <label asp-for="startdate" class="form-label">Ngày học</label>
-        <input asp-for="startdate" type="date" class="form-control" />
-        <span asp-validation-for="startdate" class="text-danger"></span>
-    </div>
-    <div class="d-flex justify-content-between">
-        <a asp-action="Index" class="btn btn-secondary">⬅ Quay lại</a>
-        <button type="submit" class="btn btn-success">➕ Thêm mới</button>
-    </div>
-</form>
+</div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @Html.RenderPartialAsync("_ValidationScriptsPartial")
 }

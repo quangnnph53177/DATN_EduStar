@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using API.Models;
 using API.ViewModel;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol.Resources;
+using static API.Models.TeachingRegistration;
 
 namespace API.Data;
 
@@ -25,7 +27,7 @@ public partial class AduDbcontext : DbContext
 
     public virtual DbSet<Auditlog> Auditlogs { get; set; }
 
-    public virtual DbSet<Class> Classes { get; set; }
+   // public virtual DbSet<Class> Classes { get; set; }
 
     public virtual DbSet<ClassChange> ClassChanges { get; set; }
 
@@ -51,7 +53,8 @@ public partial class AduDbcontext : DbContext
     public virtual DbSet<TeachingRegistration> TeachingRegistrations { get; set; }
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
-
+    public virtual DbSet<SchedulesInDay> SchedulesInDays { get; set; }
+    public virtual DbSet<ScheduleStudentsInfor> ScheduleStudentsInfors { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     { }
 
@@ -140,45 +143,6 @@ public partial class AduDbcontext : DbContext
                 .HasConstraintName("FK__auditlog__Userid__50C3F9A6");
 
             entity.HasOne(d => d.User).WithMany(p => p.AuditlogUsers).HasForeignKey(d => d.Userid);
-        });
-
-        modelBuilder.Entity<Class>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__Classes__3214EC07EDA37A0C");
-
-            entity.HasIndex(e => e.SubjectId, "IX_Classes_SubjectId");
-
-            entity.Property(e => e.NameClass).HasMaxLength(90);
-            entity.HasOne(d => d.Semester)
-                .WithMany(s => s.Classes)
-                .HasForeignKey(d => d.SemesterId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("FK_Class_Semester");
-
-            entity.HasOne(d => d.Subject).WithMany(p => p.Classes)
-                .HasForeignKey(d => d.SubjectId)
-                .HasConstraintName("FK_Classes_Subject");
-            // ✅ Quan hệ UsersId → User
-            entity.HasOne(c => c.User)
-                .WithMany(u => u.Classes)
-                .HasForeignKey(c => c.UsersId)
-                .HasConstraintName("FK_Classes_Users");
-
-            entity.HasMany(d => d.Students).WithMany(p => p.Classes)
-                .UsingEntity<Dictionary<string, object>>(
-                    "StudentInClass",
-                    r => r.HasOne<StudentsInfor>().WithMany()
-                        .HasForeignKey("StudentId")
-                        .HasConstraintName("FK__StudentIn__Stude__5629CD9C"),
-                    l => l.HasOne<Class>().WithMany()
-                        .HasForeignKey("ClassId")
-                        .HasConstraintName("FK__StudentIn__Class__5535A963"),
-                    j =>
-                    {
-                        j.HasKey("ClassId", "StudentId").HasName("PK__StudentI__483575791F083B9F");
-                        j.ToTable("StudentInClass");
-                        j.HasIndex(new[] { "StudentId" }, "IX_StudentInClass_StudentId");
-                    });
         });
 
         modelBuilder.Entity<ClassChange>(entity =>
@@ -332,41 +296,74 @@ public partial class AduDbcontext : DbContext
 
         modelBuilder.Entity<Schedule>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Schedule__3214EC0741018C97");
-
-            entity.HasIndex(e => e.ClassId, "IX_Schedules_ClassId");
-
-            entity.HasIndex(e => e.DayId, "IX_Schedules_DayId");
-
+            entity.HasIndex(e => e.ClassName, "IX_Schedules_ClassName");
             entity.HasIndex(e => e.RoomId, "IX_Schedules_RoomId");
-
             entity.HasIndex(e => e.StudyShiftId, "IX_Schedules_StudyShiftId");
+            entity.HasIndex(e => e.SubjectId, "IX_Schedules_SubjectId");
+            entity.HasIndex(e => e.UsersId, "IX_Schedules_UsersId");
+            entity.HasIndex(e => e.SemesterId, "IX_Schedules_SemesterId"); // Add index for SemesterId
+
+            // ✅ ADD THIS: Configure Schedule → Semester relationship
             entity.HasOne(d => d.Semester)
                 .WithMany(s => s.Schedules)
                 .HasForeignKey(d => d.SemesterId)
                 .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("FK_Schedule_Semester");
-
-            entity.HasOne(d => d.Class).WithMany(p => p.Schedules)
-                .HasForeignKey(d => d.ClassId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("FK__Schedules__Class__5EBF139D");
-
-            entity.HasOne(d => d.Day).WithMany(p => p.Schedules)
-                .HasForeignKey(d => d.DayId)
-                .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__Schedules__DayId__60A75C0F");
+                .HasConstraintName("FK_Schedules_Semester");
 
             entity.HasOne(d => d.Room).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.RoomId)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__Schedules__RoomI__5FB337D6");
+                .HasConstraintName("FK_Schedules_RoomId");
 
             entity.HasOne(d => d.StudyShift).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.StudyShiftId)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__Schedules__Study__619B8048");
+                .HasConstraintName("FK_Schedules_StudyShiftId");
+
+            entity.HasOne(d => d.Subject).WithMany(p => p.Classes)
+                .HasForeignKey(d => d.SubjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Schedules_Subject");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Schedules)
+                .HasForeignKey(d => d.UsersId)
+                .HasConstraintName("FK_Schedules_Users");
+
+            entity.HasMany(d => d.ScheduleStudents)
+               .WithOne(p => p.Schedule)
+               .HasForeignKey(p => p.SchedulesId)
+               .OnDelete(DeleteBehavior.Cascade)
+               .HasConstraintName("FK_ScheduleStudentsInfor_Schedule");
         });
+        modelBuilder.Entity<ScheduleStudentsInfor>(entity =>
+        {
+
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.Student)
+                .WithMany(s => s.ScheduleStudents)
+                .HasForeignKey(e => e.StudentsUserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ScheduleStudentsInfor_Student");
+
+            entity.HasOne(e => e.Schedule)
+                .WithMany(s => s.ScheduleStudents)
+                .HasForeignKey(e => e.SchedulesId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ScheduleStudentsInfor_Schedule");
+        });
+
+        modelBuilder.Entity<SchedulesInDay>(entity =>
+        {
+            entity.HasKey(e => new { e.ScheduleId, e.DayOfWeekkId });
+
+            entity.HasIndex(e => e.DayOfWeekkId, "IX_ScheduleDays_DayOfWeekkId");
+
+            entity.HasOne(d => d.DayOfWeekk).WithMany(p => p.ScheduleDays).HasForeignKey(d => d.DayOfWeekkId);
+
+            entity.HasOne(d => d.Schedule).WithMany(p => p.ScheduleDays).HasForeignKey(d => d.ScheduleId);
+        });
+
         modelBuilder.Entity<Semester>(entity =>
         {
             // Thiết lập khóa chính
@@ -439,35 +436,24 @@ public partial class AduDbcontext : DbContext
         modelBuilder.Entity<TeachingRegistration>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.StartDate).HasColumnType("datetime");
-            entity.Property(e => e.EndDate).HasColumnType("datetime");
             entity.Property(e => e.Status).HasDefaultValue(true);
-            entity.Property(e => e.IsConfirmed).HasDefaultValue(false);
+           // entity.Property(e => e.IsConfirmed).HasDefaultValue(false);
             entity.Property(e => e.CreateAt).HasDefaultValueSql("getdate()");
-            entity.HasOne(d => d.Semester)
-                .WithMany(s => s.TeachingRegistrations)
-                .HasForeignKey(d => d.SemesterId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("FK_TeachingRegistration_Semester");
+            entity.Property(e => e.IsApproved).HasDefaultValue(ApprovedStatus.Pending);
+            entity.Property(e => e.ApprovedDate).IsRequired(false);
 
+            entity.HasOne(e => e.Approver)
+                  .WithMany()
+                  .HasForeignKey(e => e.ApprovedBy)
+                  .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.Teacher)
                   .WithMany() // hoặc .WithMany(t => t.TeachingRegistrations) nếu bạn có điều hướng ngược
                   .HasForeignKey(e => e.TeacherId)
                   .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(e => e.Class)
+            entity.HasOne(e => e.Schedule)
                   .WithMany() // hoặc .WithMany(c => c.TeachingRegistrations)
-                  .HasForeignKey(e => e.ClassId)
-                  .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.Day)
-                  .WithMany()
-                  .HasForeignKey(e => e.DayId)
-                  .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.StudyShift)
-                  .WithMany()
-                  .HasForeignKey(e => e.StudyShiftId)
+                  .HasForeignKey(e => e.ScheduleID)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 

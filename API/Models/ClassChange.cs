@@ -14,7 +14,7 @@ public partial class ClassChange
     public Semester Semester { get; set; } = null!;
     public virtual Complaint Complaint { get; set; } = null!;
 
-    public virtual Class? CurrentClass { get; set; }
+    public virtual Schedule? CurrentClass { get; set; }
 
-    public virtual Class? RequestedClass { get; set; }
+    public virtual Schedule? RequestedClass { get; set; }
 }

@@ -1,5 +1,8 @@
 ﻿using API.Data;
+using API.Models;
 using API.ViewModel;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Repositories
 {
@@ -14,7 +17,7 @@ namespace API.Services.Repositories
         //public async Task<IEnumerable<RoomStudy>> GetRoomStudies()
         //{
         //    var room = _context.Rooms
-                
+
         //        .Select(r => new RoomStudy
         //        {
         //            RoomCode = r.RoomCode,
@@ -29,7 +32,7 @@ namespace API.Services.Repositories
                 .GroupBy(p => p.Address)
                 .Select(p => new StudentByAddressDTO
                 {
-                    Address= p.Key,
+                    Address = p.Key,
                     Total = p.Count()
                 }).ToList();
             return address;
@@ -37,13 +40,15 @@ namespace API.Services.Repositories
 
         public async Task<IEnumerable<StudentByClassDTO>> GetStudentByClass()
         {
-            var students =  _context.Classes
+            var students = _context.ScheduleStudentsInfors.Include(c => c.Schedule)
+                .Include(c => c.Student)
                  .Select(c => new StudentByClassDTO
                  {
-                     ClassName = c.NameClass,
-                     Total = c.Students.Count,
+                     ClassName = c.Schedule.ClassName,
+                     Total = c.Student.ScheduleStudents.Count()
                  }).ToList();
             return students;
+
         }
 
         public async Task<IEnumerable<StudentByGenderDTO>> GetStudentByGender()
@@ -52,7 +57,7 @@ namespace API.Services.Repositories
                 .GroupBy(c => c.Gender)
                 .Select(u => new StudentByGenderDTO
                 {
-                    Gender= u.Key == true? "Nam":"Nữ",
+                    Gender = u.Key == true ? "Nam" : "Nữ",
                     Total = u.Count()
                 }).ToList();
             return gender;

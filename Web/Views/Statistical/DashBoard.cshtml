@@ -4,88 +4,609 @@
     ViewData["Title"] = "Thống kê tổng quan";
 }
 
-<h2 class="text-center mb-4">Thống kê sinh viên</h2>
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        --card-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        --card-hover-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 2rem 0;
+        margin: -15px -15px 2rem -15px;
+        border-radius: 0 0 30px 30px;
+        box-shadow: var(--card-shadow);
+        text-align: center;
+    }
+
+    .dashboard-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        margin-bottom: 0.5rem;
+    }
+
+    .dashboard-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        font-weight: 300;
+    }
+
+    .chart-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+        border: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .chart-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .chart-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
+    .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f8f9fa;
+    }
+
+    .chart-icon {
+        font-size: 1.5rem;
+        margin-right: 0.5rem;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .chart-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin: 0;
+        color: #2c3e50;
+        text-align: center;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 350px;
+        width: 100%;
+    }
+
+    .stats-summary {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--card-shadow);
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .stat-number {
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 500;
+    }
+
+    .fade-in {
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-title {
+            font-size: 2rem;
+        }
+
+        .chart-container {
+            height: 280px;
+        }
+
+        .chart-card {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<div class="dashboard-header">
+    <div class="container">
+        <h1 class="dashboard-title">
+            <i class="fas fa-chart-pie me-3"></i>
+            Thống kê sinh viên
+        </h1>
+        <p class="dashboard-subtitle">Dashboard tổng quan và phân tích dữ liệu</p>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="stats-summary fade-in">
+    <div class="row">
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <div class="stat-number">@(Model.studentByGender.Sum(x => x.Total))</div>
+                <div class="stat-label">
+                    <i class="fas fa-users me-1"></i>
+                    Tổng sinh viên
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <div class="stat-number">@Model.studentByClass.Count()</div>
+                <div class="stat-label">
+                    <i class="fas fa-graduation-cap me-1"></i>
+                    Lớp học
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <div class="stat-number">@(Model.studentByStatus.FirstOrDefault(x => x.status.Contains("Đang"))?.Total ?? 0)</div>
+                <div class="stat-label">
+                    <i class="fas fa-user-check me-1"></i>
+                    Đang học
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <div class="stat-number">@Model.studentByAddress.Count()</div>
+                <div class="stat-label">
+                    <i class="fas fa-map-marker-alt me-1"></i>
+                    Khu vực
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="row">
-    <div class="col-md-6 mb-4">
-        <h5 class="text-center">Theo Giới tính</h5>
-        <canvas id="genderChart"></canvas>
+    <!-- Gender Chart -->
+    <div class="col-lg-6 col-md-12">
+        <div class="chart-card fade-in">
+            <div class="chart-header">
+                <i class="fas fa-venus-mars chart-icon"></i>
+                <h5 class="chart-title">Phân bố theo Giới tính</h5>
+            </div>
+            <div class="chart-container">
+                <canvas id="genderChart"></canvas>
+            </div>
+        </div>
     </div>
-    <div class="col-md-6 mb-4">
-        <h5 class="text-center">Theo Trạng thái</h5>
-        <canvas id="statusChart"></canvas>
+
+    <!-- Status Chart -->
+    <div class="col-lg-6 col-md-12">
+        <div class="chart-card fade-in">
+            <div class="chart-header">
+                <i class="fas fa-user-check chart-icon"></i>
+                <h5 class="chart-title">Phân bố theo Trạng thái</h5>
+            </div>
+            <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
     </div>
-    <div class="col-md-6 mb-4">
-        <h5 class="text-center">Theo Lớp</h5>
-        <canvas id="classChart"></canvas>
+
+    <!-- Class Chart -->
+    <div class="col-lg-6 col-md-12">
+        <div class="chart-card fade-in">
+            <div class="chart-header">
+                <i class="fas fa-school chart-icon"></i>
+                <h5 class="chart-title">Phân bố theo Lớp</h5>
+            </div>
+            <div class="chart-container">
+                <canvas id="classChart"></canvas>
+            </div>
+        </div>
     </div>
-    <div class="col-md-6 mb-4">
-        <h5 class="text-center">Theo Địa chỉ</h5>
-        <canvas id="addressChart"></canvas>
+
+    <!-- Address Chart -->
+    <div class="col-lg-6 col-md-12">
+        <div class="chart-card fade-in">
+            <div class="chart-header">
+                <i class="fas fa-map-marker-alt chart-icon"></i>
+                <h5 class="chart-title">Phân bố theo Địa chỉ</h5>
+            </div>
+            <div class="chart-container">
+                <canvas id="addressChart"></canvas>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script>
-        const genderCtx = document.getElementById('genderChart');
+        // Modern color palettes
+        const colorPalettes = {
+            gender: ['#667eea', '#764ba2'],
+            status: ['#4facfe', '#00f2fe', '#43e97b', '#38f9d7', '#fa709a'],
+            class: ['#ff9a9e', '#fecfef', '#ffecd2', '#fcb69f', '#a8edea', '#fed6e3', '#d299c2', '#fef9d7'],
+            address: ['#667eea', '#764ba2', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7', '#fa709a', '#fee140']
+        };
+
+        // Chart configuration
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#666';
+
+        // Gender Chart (Doughnut with modern styling)
+        const genderCtx = document.getElementById('genderChart').getContext('2d');
         new Chart(genderCtx, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.studentByGender.Select(x => x.Gender))),
                 datasets: [{
                     data: @Html.Raw(Json.Serialize(Model.studentByGender.Select(x => x.Total))),
-                    backgroundColor: ['#36A2EB', '#FF6384']
+                    backgroundColor: colorPalettes.gender,
+                    borderWidth: 0,
+                    hoverOffset: 15,
+                    hoverBorderWidth: 3,
+                    hoverBorderColor: '#fff'
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: {
+                                size: 14,
+                                weight: '500'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#fff',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function (context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.raw / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.raw} sinh viên (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '65%',
+                animation: {
+                    animateScale: true,
+                    animateRotate: true
+                }
             }
         });
 
-        const statusCtx = document.getElementById('statusChart');
+        // Status Chart (Enhanced Bar Chart)
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
         new Chart(statusCtx, {
             type: 'bar',
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.studentByStatus.Select(x => x.status))),
                 datasets: [{
-                    label: 'Số lượng',
+                    label: 'Số lượng sinh viên',
                     data: @Html.Raw(Json.Serialize(Model.studentByStatus.Select(x => x.Total))),
-                    backgroundColor: ['#4BC0C0', '#FFCE56']
+                    backgroundColor: colorPalettes.status.slice(0, @Model.studentByStatus.Count()),
+                    borderRadius: 10,
+                    borderSkipped: false,
+                    borderWidth: 2,
+                    borderColor: 'rgba(255,255,255,0.8)',
+                    hoverBackgroundColor: colorPalettes.status.slice(0, @Model.studentByStatus.Count()).map(color => color + 'CC'),
+                    hoverBorderWidth: 3,
+                    hoverBorderColor: '#fff'
                 }]
             },
-            options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#fff',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function (context) {
+                                return `${context.label}: ${context.raw} sinh viên`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)',
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
         });
 
-        const classCtx = document.getElementById('classChart');
+        // Class Chart (Enhanced Bar Chart)
+        const classCtx = document.getElementById('classChart').getContext('2d');
         new Chart(classCtx, {
             type: 'bar',
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.studentByClass.Select(x => x.ClassName))),
                 datasets: [{
-                    label: 'Số lượng',
+                    label: 'Số lượng sinh viên',
                     data: @Html.Raw(Json.Serialize(Model.studentByClass.Select(x => x.Total))),
-                    backgroundColor: '#9966FF'
+                    backgroundColor: colorPalettes.class.slice(0, @Model.studentByClass.Count()),
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    borderWidth: 2,
+                    borderColor: 'rgba(255,255,255,0.8)',
+                    hoverBackgroundColor: colorPalettes.class.slice(0, @Model.studentByClass.Count()).map(color => color + 'CC'),
+                    hoverBorderWidth: 3,
+                    hoverBorderColor: '#fff'
                 }]
             },
-            options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#fff',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function (context) {
+                                return `${context.label}: ${context.raw} sinh viên`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)',
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 11,
+                                weight: '500'
+                            },
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
         });
 
-        const addressCtx = document.getElementById('addressChart');
+        // Address Chart (Enhanced Bar Chart)
+        const addressCtx = document.getElementById('addressChart').getContext('2d');
         new Chart(addressCtx, {
             type: 'bar',
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.studentByAddress.Select(x => x.Address))),
                 datasets: [{
-                    label: 'Số lượng',
+                    label: 'Số lượng sinh viên',
                     data: @Html.Raw(Json.Serialize(Model.studentByAddress.Select(x => x.Total))),
-                    backgroundColor: '#FF9F40'
+                    backgroundColor: colorPalettes.address.slice(0, @Model.studentByAddress.Count()),
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    borderWidth: 2,
+                    borderColor: 'rgba(255,255,255,0.8)',
+                    hoverBackgroundColor: colorPalettes.address.slice(0, @Model.studentByAddress.Count()).map(color => color + 'CC'),
+                    hoverBorderWidth: 3,
+                    hoverBorderColor: '#fff'
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#fff',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function (context) {
+                                return `${context.label}: ${context.raw} sinh viên`;
+                            }
+                        }
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, ticks: { precision: 0 } },
-                    x: { ticks: { autoSkip: false, maxRotation: 90, minRotation: 45 } }
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)',
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 45,
+                            minRotation: 0,
+                            font: {
+                                size: 11,
+                                weight: '500'
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
                 }
             }
+        });
+
+        // Add smooth animations and interactions
+        document.addEventListener('DOMContentLoaded', function () {
+            // Staggered animation for cards
+            const cards = document.querySelectorAll('.fade-in');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.15}s`;
+            });
+
+            // Enhanced hover effects
+            document.querySelectorAll('.chart-card').forEach(card => {
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'translateY(-8px)';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0px)';
+                });
+            });
+
+            // Counter animation for stats
+            const animateCounters = () => {
+                document.querySelectorAll('.stat-number').forEach(counter => {
+                    const target = parseInt(counter.textContent);
+                    const increment = target / 50;
+                    let current = 0;
+
+                    const timer = setInterval(() => {
+                        current += increment;
+                        if (current >= target) {
+                            counter.textContent = target;
+                            clearInterval(timer);
+                        } else {
+                            counter.textContent = Math.floor(current);
+                        }
+                    }, 30);
+                });
+            };
+
+            // Trigger counter animation after a delay
+            setTimeout(animateCounters, 500);
         });
     </script>
 }

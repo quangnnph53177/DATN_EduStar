@@ -15,7 +15,6 @@ namespace API.Models
         // Quan hệ ngược
         public ICollection<TeachingRegistration> TeachingRegistrations { get; set; } = new List<TeachingRegistration>();
         public ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
-        public ICollection<Class> Classes { get; set; } = new List<Class>();
         public ICollection<UserProfile> UserProfiles { get; set; } = new List<UserProfile>();
         public ICollection<ClassChange> ClassChanges { get; set; } = new List<ClassChange>();
         public ICollection<Subject> Subjects { get; set; } = new List<Subject>();

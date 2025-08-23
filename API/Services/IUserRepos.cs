@@ -1,5 +1,4 @@
-﻿
-using API.Models;
+﻿using API.Models;
 using API.ViewModel;
 
 namespace API.Services
@@ -16,6 +15,7 @@ namespace API.Services
         Task<string> ChangeRole(string userName, int newRoleId);
         Task ForgetPassword(string email);
         Task<string> ResetPassword(string token, string newPassword);
+        Task<User> CreateSV(UserDTO usd, IFormFile? imgFile);
 
     }
 }

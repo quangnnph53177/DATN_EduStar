@@ -22,16 +22,16 @@ namespace Web.Controllers
         }
         public async Task<IActionResult> IndexSession(int? classId, int? studyShiftid, int? roomid, int? subjectid)
         {
-            var queryParams= new List<string>();
+            var queryParams = new List<string>();
             if (classId.HasValue)
             {
                 queryParams.Add($"classid={classId.Value}");
             }
-            if(studyShiftid.HasValue)
+            if (studyShiftid.HasValue)
             {
                 queryParams.Add($"studyShiftid={studyShiftid.Value}");
             }
-            if(roomid.HasValue)
+            if (roomid.HasValue)
             {
                 queryParams.Add($"roomid={roomid.Value}");
             }
@@ -66,7 +66,7 @@ namespace Web.Controllers
             return View(data);
         }
 
-        
+
         [HttpPost]
         public async Task<IActionResult> Detail(CheckInDto dto)
         {
@@ -81,7 +81,7 @@ namespace Web.Controllers
                 TempData["Error"] = "❌ Điểm danh thất bại";
             }
 
-           
+
             var viewResponse = await _client.GetAsync($"api/attendance/{dto.AttendanceId}");
             if (!viewResponse.IsSuccessStatusCode)
             {
@@ -91,7 +91,7 @@ namespace Web.Controllers
             var viewData = await viewResponse.Content.ReadFromJsonAsync<IndexAttendanceViewModel>();
             return View(viewData);
         }
-        
+
         public async Task<IActionResult> History()
         {
 
@@ -109,27 +109,39 @@ namespace Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            var sche =await _context.Schedules.ToListAsync();
-            ViewBag.Schedules = sche.Select(s=> new SelectListItem
+            var sche = await _context.Schedules.ToListAsync();
+            ViewBag.Schedules = sche.Select(s => new SelectListItem
             {
-                Value= s.Id.ToString(),
+                Value = s.Id.ToString(),
                 Text = s.Id.ToString()
             }).ToList();
             return View();
-        }        
+        }
         [HttpPost]
         public async Task<IActionResult> Create(CreateAttendanceViewModel model)
         {
-            var session = await _client.PostAsJsonAsync($"api/Attendance/", model);
-            return RedirectToAction(nameof(IndexSession));
+            var response = await _client.PostAsJsonAsync("api/Attendance", model);
+
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["SuccessMessage"] = "Tạo phiên điểm danh thành công!";
+                return RedirectToAction(nameof(IndexSession));
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                TempData["ErrorMessage"] = $"Tạo phiên điểm danh thất bại. Lỗi: {error}";
+                return RedirectToAction(nameof(IndexSession));
+            }
         }
+
         public async Task LoadSelectitem()
         {
-            var classList = await _context.Classes.ToListAsync();
+            var classList = await _context.Schedules.ToListAsync();
             ViewBag.ClassList = classList.Select(c => new SelectListItem
             {
                 Value = c.Id.ToString(),
-                Text = c.NameClass
+                Text = c.ClassName
             }).ToList();
             var roomlist = await _context.Rooms.ToListAsync();
             ViewBag.RoomList = roomlist.Select(r => new SelectListItem

@@ -12,5 +12,5 @@ public partial class StudentsInfor
 
     public virtual User User { get; set; } = null!;
 
-    public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
+    public ICollection<ScheduleStudentsInfor> ScheduleStudents { get; set; } = new List<ScheduleStudentsInfor>();
 }

@@ -10,5 +10,5 @@ public partial class DayOfWeekk
    
     public Weekday Weekdays { get; set; }
 
-    public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
+    public ICollection<SchedulesInDay> ScheduleDays { get; set; } = new List<SchedulesInDay>();
 }

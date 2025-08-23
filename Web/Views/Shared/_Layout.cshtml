@@ -137,11 +137,11 @@
 
                 <li class="nav-item"><a class="nav-link @(IsActive("Student"))" asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a></li>
                 <li class="nav-item"><a class="nav-link @(IsActive("Statistical"))" asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a></li>
-                <li class="nav-item"><a class="nav-link @(IsActive("Scheduless"))" asp-controller="Scheduless" asp-action="Index">📅 Lịch học</a></li>
+                <li class="nav-item"><a class="nav-link @(IsActive("Scheduless"))" asp-controller="Scheduless" asp-action="Index1">📅 Lịch học</a></li>
                 <li class="nav-item"><a class="nav-link @(IsActive("SubjectW"))" asp-controller="SubjectW" asp-action="Index">📘 Môn học</a></li>
                 <li class="nav-item"><a class="nav-link @(IsActive("Attendance"))" asp-controller="Attendance" asp-action="IndexSession">📖 Điểm danh</a></li>
-                <li class="nav-item"><a class="nav-link @(IsActive("ClassMvc"))" asp-controller="ClassMvc" asp-action="Index">🏫 Lớp học</a></li>
-                <li class="nav-item"><a class="nav-link @(IsActive("TeachingRegistrations"))" asp-controller="TeachingRegistrations" asp-action="Index">🗓️ Đăng ký giảng dạy</a></li>
+                @* <li class="nav-item"><a class="nav-link @(IsActive("ClassMvc"))" asp-controller="ClassMvc" asp-action="Index">🏫 Lớp học</a></li> *@
+                <li class="nav-item"><a class="nav-link @(IsActive("TeachingRegistrations"))" asp-controller="TeachingRegistrations" asp-action="AllSchedules">🗓️ Đăng ký giảng dạy</a></li>
                 <li class="nav-item"><a class="nav-link @(IsActive("Complaint"))" asp-controller="Complaint" asp-action="Index">⚠️ Khiếu nại</a></li>
 
                 @if (User.HasClaim("Permission", "Create"))

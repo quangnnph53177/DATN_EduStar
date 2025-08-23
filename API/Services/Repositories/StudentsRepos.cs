@@ -15,8 +15,8 @@ namespace API.Services.Repositories
         private readonly AduDbcontext _context;
         private readonly IHttpContextAccessor _accessor;
         private readonly IEmailRepos _email;
-        
-        public StudentsRepos(AduDbcontext context, IHttpContextAccessor accessor, IEmailRepos emailRepos )
+
+        public StudentsRepos(AduDbcontext context, IHttpContextAccessor accessor, IEmailRepos emailRepos)
         {
             _context = context;
             _accessor = accessor;
@@ -32,8 +32,8 @@ namespace API.Services.Repositories
             var sv = await _context.Users
                 .Include(u => u.UserProfile)
                 .Include(u => u.StudentsInfor)
-                .ThenInclude(si => si.Classes)
-                .Include(r=>r.Roles)
+                .Include(si => si.Schedules)
+                .Include(r => r.Roles)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
             if (sv == null)
@@ -55,7 +55,7 @@ namespace API.Services.Repositories
                 return false;
             }
 
-            if (sv.StudentsInfor?.Classes != null && sv.StudentsInfor.Classes.Any())
+            if (sv.Schedules != null && sv.Schedules.Any())
             {
                 Console.WriteLine("Người dùng đã được phân lớp, không thể xóa.");
                 return false;
@@ -66,7 +66,7 @@ namespace API.Services.Repositories
 
             if (sv.StudentsInfor != null)
                 _context.StudentsInfors.Remove(sv.StudentsInfor);
-            
+
             _context.Users.Remove(sv);
             await _context.SaveChangesAsync();
 
@@ -107,111 +107,126 @@ namespace API.Services.Repositories
             return package.GetAsByteArray();
         }
 
-
         public async Task<List<StudentViewModels>> GetAllStudents()
         {
-            var users = await _context.Users
-                .Where(u => u.IsDeleted == false &&
-                                 u.Roles.Any(r => r.Id == 3) &&         // Role sinh viên
-                                 u.StudentsInfor != null)
-                .Include(u => u.UserProfile)
-                .Include(u => u.Roles)
-                .Include(u => u.StudentsInfor)
-                    .ThenInclude(s => s.Classes)
+            var lstSv = await _context.StudentsInfors
+                .Include(s => s.User)
+                    .ThenInclude(u => u.UserProfile)
+                .Include(s => s.User)
+                    .ThenInclude(u => u.Roles)
+                .Where(s => s.User.Roles.Any(r => r.Id == 3))
                 .AsSplitQuery()
                 .ToListAsync();
-
-            var result = users
-                .OrderByDescending(u => u.Statuss ?? false)
-                .ThenBy(u => u.UserProfile?.FullName)
-                .Select(u => new StudentViewModels
-                {
-                    id = u.Id,
-                    FullName = u.UserProfile?.FullName ?? "N/A",
-                    UserName = u.UserName ?? "N/A",
-                    Email = u.Email ?? "N/A",
-                    PhoneNumber = u.PhoneNumber ?? "N/A",
-                    StudentCode = u.StudentsInfor?.StudentsCode ?? "N/A",
-                    Gender = u.UserProfile?.Gender ?? false,
-                    Avatar = u.UserProfile?.Avatar ?? "N/A",
-                    Address = u.UserProfile?.Address ?? "N/A",
-                    Dob = u.UserProfile?.Dob,
-                    Status = u.Statuss ?? false
-                })
-                .ToList(); // ✅ Bổ sung ToList()
-
-            return result;
+            var student = lstSv.Select(u => new StudentViewModels
+            {
+                id = u.UserId,
+                FullName = u.User?.UserProfile?.FullName ?? "N/A",
+                UserName = u.User?.UserName ?? "N/A",
+                Email = u.User?.Email ?? "N/A",
+                PhoneNumber = u.User?.PhoneNumber ?? "N/A",
+                StudentCode = u.StudentsCode ?? "N/A",
+                Gender = u.User?.UserProfile?.Gender ?? false,
+                Avatar = u.User?.UserProfile?.Avatar ?? "N/A",
+                Address = u.User?.UserProfile?.Address ?? "N/A",
+                Dob = u.User?.UserProfile?.Dob,
+                Status = u.User?.Statuss ?? false
+            }).ToList();
+            return student;
         }
-
 
         public async Task<StudentViewModels> GetById(Guid Id)
         {
-            var inforvs = await _context.Users
-                .Include(r=>r.Roles)
-                .Include(u => u.UserProfile)
-                .Include(p => p.StudentsInfor)
-                .ThenInclude(c => c.Classes)
-                .ThenInclude(s => s.Subject)
-                .FirstOrDefaultAsync(d => d.Id == Id);
+            var inforsv = await _context.StudentsInfors
+                 .Include(c => c.User)
+                     .ThenInclude(c => c.UserProfile)
+                 .Include(c => c.User)
+                     .ThenInclude(c => c.Roles)
+                 .Include(c => c.ScheduleStudents)
+                     .ThenInclude(c => c.Schedule)
+                         .ThenInclude(c => c.Subject)
+                 .Include(c => c.ScheduleStudents)
+                     .ThenInclude(c => c.Schedule)
+                         .ThenInclude(c => c.Room)
+                 .Include(c => c.ScheduleStudents)
+                     .ThenInclude(c => c.Schedule)
+                         .ThenInclude(c => c.StudyShift)
+                 .Include(c => c.ScheduleStudents)
+                     .ThenInclude(c => c.Schedule)
+                         .ThenInclude(c => c.ScheduleDays)
+                             .ThenInclude(c => c.DayOfWeekk)
+                 .FirstOrDefaultAsync(d => d.UserId == Id);
 
-            var model = new StudentViewModels()
+            if (inforsv == null)
+                throw new Exception("Không tìm thấy thông tin sinh viên");
+
+            var model = new StudentViewModels
             {
-
-                id = inforvs.Id,
-                FullName = inforvs.UserProfile.FullName,
-                UserName = inforvs.UserName,
-                Email = inforvs.Email,
-                PhoneNumber = inforvs.PhoneNumber,
-                StudentCode = inforvs.StudentsInfor.StudentsCode,
-                Gender = inforvs.UserProfile.Gender,
-                Avatar = inforvs.UserProfile.Avatar,
-                Address = inforvs.UserProfile.Address,
-                Dob = inforvs.UserProfile.Dob,
-                RoleId = inforvs.Roles.FirstOrDefault().Id,
-                Status = inforvs.Statuss.GetValueOrDefault(),
-                CVMs = inforvs.StudentsInfor.Classes?.Select(u => new ClassViewModel
-                {
-                    ClassName = u.NameClass,
-                    SubjectName = u.Subject.SubjectName,
-                    Semester = u.SemesterId,
-                    YearSchool = u.YearSchool ?? 0,
-                    NumberOfCredits = u.Subject.NumberOfCredits ?? 0
-                }).ToList()
+                id = inforsv.UserId,
+                FullName = inforsv.User?.UserProfile?.FullName ?? "N/A",
+                UserName = inforsv.User?.UserName ?? "N/A",
+                Email = inforsv.User?.Email ?? "N/A",
+                PhoneNumber = inforsv.User?.PhoneNumber ?? "N/A",
+                StudentCode = inforsv.StudentsCode ?? "N/A",
+                Gender = inforsv.User?.UserProfile?.Gender,
+                Avatar = inforsv.User?.UserProfile?.Avatar,
+                Address = inforsv.User?.UserProfile?.Address,
+                Dob = inforsv.User?.UserProfile?.Dob,
+                RoleId = inforsv.User?.Roles?.FirstOrDefault()?.Id ?? 0,
+                Status = inforsv.User?.Statuss ?? false,
+                CVMs = inforsv.ScheduleStudents?
+                    .Where(ss => ss.Schedule != null)
+                    .Select(ss => new ClassViewModel
+                    {
+                        schedulesId = ss.Schedule.Id,
+                        ClassName = ss.Schedule.ClassName ?? "N/A",
+                        SubjectName = ss.Schedule.Subject?.SubjectName ?? "N/A",
+                        RoomCode = ss.Schedule.Room?.RoomCode ?? "N/A",
+                        StudyShiftName = ss.Schedule.StudyShift?.StudyShiftName ?? "N/A",
+                        starttime = ss.Schedule.StudyShift?.StartTime,
+                        endtime = ss.Schedule.StudyShift?.EndTime,
+                        WeekDay = ss.Schedule.ScheduleDays != null
+                            ? string.Join(", ", ss.Schedule.ScheduleDays
+                                    .Where(sd => sd.DayOfWeekk != null)
+                                    .Select(sd => sd.DayOfWeekk.Weekdays.ToString()))
+                            : "N/A",
+                        TeacherName = ss.Schedule.User?.UserProfile?.FullName ?? "N/A"
+                    }).ToList()
             };
+
             return model;
+
         }
+
+
 
         public async Task<List<StudentViewModels>> GetStudentsByClass(int Id)
         {
 
-            var classEntity = await _context.Classes
-            .Include(c => c.Students)
+            var classEntity = await _context.ScheduleStudentsInfors
+            .Include(c => c.Student)
             .ThenInclude(si => si.User)
             .ThenInclude(u => u.UserProfile)
-            .FirstOrDefaultAsync(c => c.Id == Id);
+            .Where(ss => ss.Schedule.Id == Id).ToListAsync();
 
-            if (classEntity == null || classEntity.Students == null)
-                return new List<StudentViewModels>();
-
-            var students = classEntity.Students.Select(s => new StudentViewModels
+            var students = classEntity.Select(ss => new StudentViewModels
             {
-                id = s.UserId,
-                UserName = s.User?.UserName,
-                StudentCode = s.StudentsCode,
-                FullName = s.User?.UserProfile?.FullName,
-                Email = s.User?.Email,
-                PhoneNumber = s.User?.PhoneNumber,
-                Gender = s.User?.UserProfile?.Gender,
-                Address = s.User?.UserProfile?.Address,
-                Dob = s.User?.UserProfile?.Dob,
-                Status = s.User?.Statuss ?? false,
+                id = ss.Student.UserId,
+                UserName = ss.Student.User?.UserName,
+                StudentCode = ss.Student.StudentsCode,
+                FullName = ss.Student.User?.UserProfile?.FullName,
+                Email = ss.Student.User?.Email,
+                PhoneNumber = ss.Student.User?.PhoneNumber,
+                Gender = ss.Student.User?.UserProfile?.Gender,
+                Address = ss.Student.User?.UserProfile?.Address,
+                Dob = ss.Student.User?.UserProfile?.Dob,
+                Status = ss.Student.User?.Statuss ?? false,
                 CVMs = new List<ClassViewModel>
-                {
-                    new ClassViewModel
-                    {
-                        ClassName = classEntity.NameClass
-                    }
-                }
+        {
+            new ClassViewModel
+            {
+                ClassName = ss.Schedule.ClassName
+            }
+        }
             }).ToList();
 
             return students;
@@ -246,31 +261,31 @@ namespace API.Services.Repositories
                 query = query.Where(f => f.Email.ToLower().Contains(email));
             }
             if (gender.HasValue)
-            { 
-                query =query.Where(g=>g.UserProfile.Gender==gender.Value);
+            {
+                query = query.Where(g => g.UserProfile.Gender == gender.Value);
             }
-            if (status.HasValue) 
+            if (status.HasValue)
             {
                 query = query.Where(s => s.Statuss == status.Value);
             }
 
-                var result = await query.OrderBy(s => s.StudentsInfor.StudentsCode).Select(u => new StudentViewModels
-                {
-                    id = u.Id,
-                    UserName = u.UserName,
-                    Email = u.Email,
-                    PhoneNumber = u.PhoneNumber,
-                    StudentCode = u.StudentsInfor.StudentsCode,
-                    FullName = u.UserProfile.FullName,
-                    Gender = u.UserProfile.Gender,
-                    Avatar = u.UserProfile.Avatar,
-                    Address = u.UserProfile.Address,
-                    Dob = u.UserProfile.Dob,
-                    Status = u.Statuss ?? true
+            var result = await query.OrderBy(s => s.StudentsInfor.StudentsCode).Select(u => new StudentViewModels
+            {
+                id = u.Id,
+                UserName = u.UserName,
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                StudentCode = u.StudentsInfor.StudentsCode,
+                FullName = u.UserProfile.FullName,
+                Gender = u.UserProfile.Gender,
+                Avatar = u.UserProfile.Avatar,
+                Address = u.UserProfile.Address,
+                Dob = u.UserProfile.Dob,
+                Status = u.Statuss ?? true
 
-                }).ToListAsync();
-                return result;
-            } 
+            }).ToListAsync();
+            return result;
+        }
 
         public async Task UpdateByBeast(StudentViewModels model)
         {
@@ -278,7 +293,7 @@ namespace API.Services.Repositories
                 .Include(p => p.UserProfile)
                 .FirstOrDefaultAsync(d => d.Id == model.id);
 
-           
+
 
             var olddata = JsonConvert.SerializeObject(new
             {
@@ -335,18 +350,28 @@ namespace API.Services.Repositories
             await Validate(model, isupdate: true);
             var inforvs = await _context.Users
                  .Include(u => u.UserProfile)
-                 .Include(r=> r.Roles)
+                 .Include(r => r.Roles)
                  .Include(p => p.StudentsInfor)
-                 .ThenInclude(c => c.Classes)
-                 .ThenInclude(s => s.Subject)
+                 .ThenInclude(c => c.ScheduleStudents).Include(c => c.Schedules)
+
+                .ThenInclude(s => s.Subject)
+                .ThenInclude(S => S.Classes).ThenInclude(r => r.Room)
+                .ThenInclude(S => S.Schedules).ThenInclude(r => r.StudyShift)
+                .ThenInclude(S => S.Schedules).ThenInclude(s => s.ScheduleDays).ThenInclude(r => r.DayOfWeekk)
                  .FirstOrDefaultAsync(d => d.Id == model.id);
-            var olddataClass = inforvs.StudentsInfor.Classes.Select(u => new ClassViewModel
+            var olddataClass = inforvs.Schedules.Select(u => new ClassViewModel
             {
-                ClassName = u.NameClass,
+                ClassName = u.ClassName,
                 SubjectName = u.Subject.SubjectName,
-                Semester = u.SemesterId,
-                YearSchool = u.YearSchool ?? 0,
-                NumberOfCredits = u.Subject.NumberOfCredits ?? 0
+                //SemesterId = u.Semester,
+                //YearSchool = u.YearSchool ?? 0,
+                NumberOfCredits = u.Subject.NumberOfCredits ?? 0,
+                RoomCode = u.Room.RoomCode,
+                StudyShiftName = u.StudyShift.StudyShiftName,
+                starttime = u.StudyShift.StartTime,
+                endtime = u.StudyShift?.EndTime,
+                WeekDay = u.ScheduleDays.FirstOrDefault().DayOfWeekk.Weekdays.ToString(),
+                TeacherName = u.User.UserProfile.FullName
             }).ToList();
             var olddata = JsonConvert.SerializeObject(new
             {
@@ -367,24 +392,36 @@ namespace API.Services.Repositories
             inforvs.UserProfile.FullName = model.FullName;
             inforvs.UserProfile.Gender = model.Gender;
             inforvs.UserProfile.Address = model.Address;
-            inforvs.UserProfile.Avatar =model.Avatar;
+            inforvs.UserProfile.Avatar = model.Avatar;
             inforvs.UserProfile.Dob = model.Dob;
-            inforvs.StudentsInfor.Classes?.Select(u => new ClassViewModel
+            inforvs.Schedules.Select(u => new ClassViewModel
             {
-                ClassName = u.NameClass,
+                ClassName = u.ClassName,
                 SubjectName = u.Subject.SubjectName,
-                Semester = u.SemesterId,
-                YearSchool = u.YearSchool ?? 0,
-                NumberOfCredits = u.Subject.NumberOfCredits ?? 0
+                //SemesterId = u.Semester,
+                //YearSchool = u.YearSchool ?? 0,
+                NumberOfCredits = u.Subject?.NumberOfCredits ?? 0,
+                RoomCode = u.Room?.RoomCode,
+                StudyShiftName = u.StudyShift?.StudyShiftName,
+                starttime = u.StudyShift?.StartTime,
+                endtime = u.StudyShift?.EndTime,
+                WeekDay = u.ScheduleDays.FirstOrDefault().DayOfWeekk?.Weekdays.ToString(),
+                TeacherName = u.User?.UserProfile?.FullName
             }).ToList();
             _context.Users.Update(inforvs);
-            var newataClass = inforvs.StudentsInfor.Classes.Select(u => new ClassViewModel
+            var newataClass = inforvs.Schedules.Select(u => new ClassViewModel
             {
-                ClassName = u.NameClass,
+                ClassName = u.ClassName,
                 SubjectName = u.Subject.SubjectName,
-                Semester = u.SemesterId,
-                YearSchool = u.YearSchool ?? 0,
-                NumberOfCredits = u.Subject.NumberOfCredits ?? 0
+                //SemesterId = u.Semester,
+                //YearSchool = u.YearSchool ?? 0,
+                NumberOfCredits = u.Subject?.NumberOfCredits ?? 0,
+                RoomCode = u.Room?.RoomCode,
+                StudyShiftName = u.StudyShift?.StudyShiftName,
+                starttime = u.StudyShift?.StartTime,
+                endtime = u.StudyShift?.EndTime,
+                WeekDay = u.ScheduleDays.FirstOrDefault().DayOfWeekk?.Weekdays.ToString(),
+                TeacherName = u.User?.UserProfile?.FullName
             }).ToList();
             var newData = JsonConvert.SerializeObject(new
             {
@@ -416,46 +453,139 @@ namespace API.Services.Repositories
 
         public async Task<List<Auditlog>> GetAuditLogs()
         {
-            var audit = _context.Auditlogs.Include(a=>a.PerformeByNavigation).Include(x => x.User).ToList();
+            var audit = _context.Auditlogs.Include(a => a.PerformeByNavigation).Include(x => x.User).ToList();
             return audit;
-        } 
+        }
         public async Task SendNotificationtoClass(int classId, string subject)
         {
-            var in4class = await _context.Classes
+            var in4class = await _context.Schedules
                  .Include(s => s.Subject)
+                 .Include(s => s.Room)
+                 .Include(s => s.StudyShift)
+                 .Include(s => s.ScheduleDays)
+                 .ThenInclude(s => s.DayOfWeekk)
                  .FirstOrDefaultAsync(c => c.Id == classId);
-            var lststudeninclass =await _context.Classes
+            var lststudeninclass = await _context.Schedules
                 .Where(c => c.Id == classId)
-                 .Include(s => s.Students)
+                 .Include(s => s.ScheduleStudents).ThenInclude(c => c.Student)
                  .ThenInclude(u => u.User)
-                 .Select(d => d.Students.FirstOrDefault().User.Email).ToListAsync();
-            string message = $"Xin chào các bạn sinh viên,\n\n" +
-                     $"Đây là thông báo về lớp học:\n" +
-                     $"- Tên lớp: {in4class.NameClass}\n" +
-                     $"- Môn học: {in4class.Subject.SubjectName}\n" + 
-                     $"- Học kỳ: {in4class.Semester}\n" +
-                     $"- Năm học: {in4class.YearSchool}\n\n" +
-                     $"Vui lòng theo dõi thông tin và chuẩn bị học tập.\n\n" +
-                     $"Trân trọng,\n Bố của chúng mày";
-            
+                 .Select(d => d.User.Email).ToListAsync();
+            string message = $@"
+<!DOCTYPE html>
+<html lang='vi'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Thông báo lớp học</title>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }}
+        .container {{
+            max-width: 650px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }}
+        h2 {{
+            color: #2c3e50;
+        }}
+        p {{
+            font-size: 15px;
+            color: #555;
+            margin-bottom: 10px;
+        }}
+        .info-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }}
+        .info-table td {{
+            padding: 10px;
+            border: 1px solid #e1e1e1;
+        }}
+        .info-table td.label {{
+            background-color: #f9f9f9;
+            font-weight: bold;
+            width: 160px;
+        }}
+        .footer {{
+            margin-top: 30px;
+            font-size: 13px;
+            color: #888;
+            text-align: center;
+        }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <h2>📚 Thông báo lịch học lớp {in4class.ClassName}</h2>
+        <p>Xin chào các bạn sinh viên,</p>
+        <p>Dưới đây là thông tin chi tiết về lớp học sắp tới:</p>
+
+        <table class='info-table'>
+            <tr>
+                <td class='label'>Tên lớp:</td>
+                <td>{in4class.ClassName}</td>
+            </tr>
+            <tr>
+                <td class='label'>Môn học:</td>
+                <td>{in4class.Subject.SubjectName}</td>
+            </tr>
+         
+            <tr>
+                <td class='label'>Phòng học:</td>
+                <td>{in4class.Room.RoomCode}</td>
+            </tr>
+            <tr>
+                <td class='label'>Ca học:</td>
+                <td>{in4class.StudyShift.StudyShiftName} 
+                ({in4class.StudyShift.StartTime:hh\\:mm} - {in4class.StudyShift.EndTime:hh\\:mm})</td>
+            </tr>
+            <tr>
+                <td class='label'>Thứ:</td>
+                <td>{in4class.ScheduleDays.FirstOrDefault().DayOfWeekk.Weekdays}</td>
+            </tr>
+            <tr>
+                <td class='label'>Giảng viên phụ trách:</td>
+                <td>{in4class.User?.UserProfile?.FullName}</td>
+            </tr>
+        </table>
+
+        <p>📌 Vui lòng theo dõi kỹ lịch học và chuẩn bị học tập đầy đủ.</p>
+        <p>Chúc các bạn học tốt và đạt kết quả cao!</p>
+
+        <div class='footer'>
+            Trân trọng,<br>
+            Ban quản lý đào tạo
+        </div>
+    </div>
+</body>
+</html>";
+
+
             foreach (var email in lststudeninclass)
             {
                 await _email.SendEmail(email, subject, message);
             }
         }
-        public async Task SendAsync(string subject,string message,Guid id)
+        public async Task SendAsync(string subject, string message, Guid id)
         {
-            var lststudent= await _context.Users.FirstOrDefaultAsync(c=>c.Id==id);
-           
-          await _email.SendEmail(lststudent.Email, subject, message );
+            var lststudent = await _context.Users.FirstOrDefaultAsync(c => c.Id == id);
+
+            await _email.SendEmail(lststudent.Email, subject, message);
         }
-        public async Task Validate(StudentViewModels model , bool isupdate= false)
+        public async Task Validate(StudentViewModels model, bool isupdate = false)
         {
             if (string.IsNullOrWhiteSpace(model.UserName))
             {
                 throw new ArgumentNullException("Tên đăng nhập không được để trống");
             }
-            if (string.IsNullOrWhiteSpace(model.Email)|| !model.Email.Contains("@gmail.com"))
+            if (string.IsNullOrWhiteSpace(model.Email) || !model.Email.Contains("@gmail.com"))
             {
                 throw new ArgumentNullException("Email không hợp lệ ");
             }
@@ -477,22 +607,22 @@ namespace API.Services.Repositories
             }
             if (!isupdate)
             {
-                if(await _context.Users.AllAsync(c => c.UserName == model.UserName))
+                if (await _context.Users.AllAsync(c => c.UserName == model.UserName))
                 {
                     throw new ArgumentException("Tên đăng nhập đã tồn tại");
                 }
-                if(await _context.Users.AllAsync(e=> e.Email == model.Email))
+                if (await _context.Users.AllAsync(e => e.Email == model.Email))
                 {
                     throw new ArgumentException("Email đã tồn tại");
                 }
             }
             else
             {
-                if(await _context.Users.AnyAsync(u=> u.UserName==model.UserName && u.Id != model.id))
+                if (await _context.Users.AnyAsync(u => u.UserName == model.UserName && u.Id != model.id))
                 {
                     throw new ArgumentException("Tên đăng nhập đã tồn tại");
                 }
-                if(await _context.Users.AnyAsync(e=>e.Email == model.Email && e.Id != model.id))
+                if (await _context.Users.AnyAsync(e => e.Email == model.Email && e.Id != model.id))
                 {
                     throw new ArgumentException("Email đã tồn tại");
                 }

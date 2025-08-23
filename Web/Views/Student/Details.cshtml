@@ -53,53 +53,60 @@
         <dd class="col-sm-10">
             @(Model.Status == true ? "Đang hoạt động" : "Đã khóa")
         </dd>
-        @if(Model.RoleId==3){
-        <dt class="col-sm-2">Danh sách lớp</dt>
-        <dd class="col-sm-10">
-            @if (Model.CVMs != null && Model.CVMs.Any())
-            {
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Tên lớp</th>
-                            <th>Môn học</th>
-                            <th>Học kỳ</th>
-                            <th>Năm học</th>
-                            <th>Số tín chỉ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model.CVMs)
-                        {
+        @if (Model.RoleId == 3)
+        {
+            <dt class="col-sm-2">Danh sách lớp</dt>
+            <dd class="col-sm-10">
+                @if (Model.CVMs != null && Model.CVMs.Any())
+                {
+                    <table class="table table-bordered">
+                        <thead>
                             <tr>
-                                <td>@item.ClassName</td>
-                                <td>@item.SubjectName</td>
-                                <td>@item.Semester</td>
-                                <td>@item.YearSchool</td>
-                                <td>@item.NumberOfCredits</td>
+                                <th>Tên lớp</th>
+                                <th>Môn học</th>
+                                <th>Tín chỉ</th>
+                                <th>Ca</th>
+                                <th>Phòng</th>
+                                <th>Bắt đầu</th>
+                                <th>Kết thúc</th>
+                                <th>Ngày học</th>
+                                <th>Giảng viên</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            }
-            else
-            {
-                <span>Sinh viên chưa tham gia lớp học nào.</span>
-                  
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.CVMs)
+                            {
+                                <tr>
+                                    <td>@item.ClassName</td>
+                                    <td>@item.SubjectName</td>
+                                    <td>@item.NumberOfCredits</td>
+                                    <td>@item.StudyShiftName</td>
+                                    <td>@item.RoomCode</td>
+                                    <td>@item.starttime</td>
+                                    <td>@item.endtime</td>
+                                    <td>@item.WeekDay.ToString()</td>
+                                    <td>@item.TeacherName</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
                     <video controls autoplay muted width="640" height="360">
-                    <source src="/uploads/Recording 2025-02-12 193630.mp4" type="video/mp4" />
-                    Trình duyệt không hỗ trợ video.
+                        <source src="/uploads/Recording 2025-02-12 193630.mp4" type="video/mp4" />
+                        Trình duyệt không hỗ trợ video.
                     </video>
-                 
-            }
+
+                }
             </dd>
         }
-        else if(Model.RoleId==1)
+        else if (Model.RoleId == 1)
         {
-             @* <video controls autoplay muted width="640" height="360">
-                <source src="/uploads/Recording 2025-02-12 193630.mp4" type="video/mp4" />
-                Trình duyệt không hỗ trợ video.
-                </video> *@
+            @* <video controls autoplay muted width="640" height="360">
+        <source src="/uploads/Recording 2025-02-12 193630.mp4" type="video/mp4" />
+        Trình duyệt không hỗ trợ video.
+        </video> *@
         }
     </dl>
 </div>

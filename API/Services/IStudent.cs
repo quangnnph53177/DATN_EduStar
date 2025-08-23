@@ -12,7 +12,7 @@ namespace API.Services
         Task<bool> KhoaMoSinhVienAsync(Guid Id);
         Task<bool> DeleteStudent(Guid Id);
         Task SendNotificationtoClass(int classId, string subject);
-        Task<List<StudentViewModels>> Search(string? Studencode, string? fullName, string? username, string? email,bool? gender, bool? status);
+        Task<List<StudentViewModels>> Search(string? Studencode, string? fullName, string? username, string? email, bool? gender, bool? status);
         Task<List<StudentViewModels>> GetStudentsByClass(int Id);
         Task<byte[]> ExportStudentsToExcel(List<StudentViewModels> model);
         Task<List<Auditlog>> GetAuditLogs();

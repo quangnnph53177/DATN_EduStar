@@ -19,5 +19,5 @@ public partial class Subject
     public int? SemesterId { get; set; }
     public Semester Semester { get; set; } = null!;
 
-    public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
+    public virtual ICollection<Schedule> Classes { get; set; } = new List<Schedule>();
 }
