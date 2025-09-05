@@ -1,70 +1,358 @@
 ﻿@using API.ViewModel
 @model List<IndexAttendanceViewModel>
 
-<h2>Danh sách phiên điểm danh</h2>
-<p>
-    <a asp-action="Create" class="btn btn-success">Tạo phiên điểm danh</a>
-</p>
-<form asp-action="IndexSession" method="post" class="row mb-3">
-    <div class="col-md-2">
-        <select asp-items=" ViewBag.ClassList" name="classId" class="form-control">
-            <option value="">-- Lớp học --</option>
-        </select>
-    </div>
-    <div class="col-md-2">
-        <select asp-items="ViewBag.ShiftList" name="studyShiftid" class="form-control">
-            <option value="">-- Ca học --</option>
-        </select>
-    </div>
-    <div class="col-md-2">
-        <select asp-items="ViewBag.RoomList" name="roomid" class="form-control">
-            <option value="">-- Phòng học --</option>
-        </select>
-    </div>
-    <div class="col-md-2">
-        <select asp-items="ViewBag.SubjectList" name="subjectid" class="form-control">
-            <option value="">-- Môn học --</option>
-        </select>
-    </div>
-    <div class="col-md-2">
-        <button type="submit" class="btn btn-primary">🔍 Tìm kiếm</button>
-    </div>
-</form>
+<style>
+    .index-header {
+        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        color: white;
+        padding: 2.5rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+    }
 
-@if (ViewBag.Error != null)
-{
-    <div class="alert alert-danger">@ViewBag.Error</div>
-}
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Mã phiên</th>
-            <th>Lớp</th>
-            <th>Môn học</th>
-            <th>Ca học</th>
-            <th>Thứ</th>
-            <th>Phòng</th>
-            <th>Bắt đầu</th>
-            <th>Kết thúc</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.SessionCode</td>
-                <td>@item.ClassName</td>
-                <td>@item.SubjectName</td>
-                <td>@item.ShiftStudy</td>
-                <td>@item.WeekDay</td>
-                <td>@item.RoomCode</td>
-                <td>@item.StartTime?.ToString("HH:mm")</td>
-                <td>@item.EndTime?.ToString("HH:mm")</td>
-                <td>
-                    <a asp-action="Detail" asp-route-id="@item.AttendanceId" class="btn btn-info btn-sm">Chi tiết</a>
-                </td>
-            </tr>
+    .action-bar {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .filter-form .form-control,
+    .filter-form .form-select {
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+    }
+
+        .filter-form .form-control:focus,
+        .filter-form .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
-    </tbody>
-</table>
+
+    .btn-search {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+        .btn-search:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            color: white;
+        }
+
+    .btn-create-new {
+        background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+        .btn-create-new:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+    .sessions-table {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .session-code {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-block;
+    }
+
+    .class-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .class-name {
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .subject-name {
+        color: var(--gray-600);
+        font-size: 0.9rem;
+    }
+
+    .schedule-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .schedule-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .time-range {
+        background: var(--gray-100);
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+
+    .btn-detail {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+        .btn-detail:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--gray-600);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+</style>
+
+<div class="container-fluid px-4">
+    <div class="index-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-3">
+                    <i class="bi bi-list-check me-3"></i>
+                    Quản lý phiên điểm danh
+                </h2>
+                <p class="lead mb-0 opacity-90">Tạo và theo dõi các phiên điểm danh cho lớp học</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a asp-action="Create" class="btn btn-create-new">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Tạo phiên mới
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="action-bar">
+        <form asp-action="IndexSession" method="post" class="filter-form">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold text-muted">LỚP HỌC</label>
+                    <select asp-items="ViewBag.ClassList" name="classId" class="form-select">
+                        <option value="">🏫 Tất cả lớp</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold text-muted">CA HỌC</label>
+                    <select asp-items="ViewBag.ShiftList" name="studyShiftid" class="form-select">
+                        <option value="">⏰ Tất cả ca</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold text-muted">PHÒNG HỌC</label>
+                    <select asp-items="ViewBag.RoomList" name="roomid" class="form-select">
+                        <option value="">🏢 Tất cả phòng</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold text-muted">MÔN HỌC</label>
+                    <select asp-items="ViewBag.SubjectList" name="subjectid" class="form-select">
+                        <option value="">📚 Tất cả môn</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-search w-100">
+                        <i class="bi bi-search me-2"></i>
+                        Tìm kiếm
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Error Alert -->
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            @ViewBag.Error
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Sessions Table -->
+    @if (Model.Any())
+    {
+        <div class="sessions-table">
+            <table class="table table-hover mb-0">
+                <thead class="table-header">
+                    <tr>
+                        <th style="width: 15%;">
+                            <i class="bi bi-qr-code me-1"></i>
+                            Mã phiên
+                        </th>
+                        <th style="width: 25%;">
+                            <i class="bi bi-mortarboard me-1"></i>
+                            Thông tin lớp
+                        </th>
+                        <th style="width: 20%;">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            Lịch học
+                        </th>
+                        <th style="width: 15%;">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            Phòng học
+                        </th>
+                        <th style="width: 15%;">
+                            <i class="bi bi-clock me-1"></i>
+                            Thời gian
+                        </th>
+                        <th style="width: 10%;" class="text-center">
+                            <i class="bi bi-gear me-1"></i>
+                            Thao tác
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="session-code">@item.SessionCode</span>
+                            </td>
+                            <td>
+                                <div class="class-info">
+                                    <div class="class-name">@item.ClassName</div>
+                                    <div class="subject-name">
+                                        <i class="bi bi-book me-1"></i>
+                                        @item.SubjectName
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="schedule-info">
+                                    <div class="schedule-item">
+                                        <span class="badge bg-info">@item.ShiftStudy</span>
+                                    </div>
+                                    <div class="schedule-item">
+                                        <i class="bi bi-calendar3 text-muted"></i>
+                                        <span>@item.WeekDay</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary px-3 py-2">
+                                    <i class="bi bi-door-open me-1"></i>
+                                    @item.RoomCode
+                                </span>
+                            </td>
+                            <td>
+                                @if (item.StartTime.HasValue && item.EndTime.HasValue)
+                                {
+                                    <span class="time-range">
+                                        @item.StartTime.Value.ToString("HH:mm") - @item.EndTime.Value.ToString("HH:mm")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">--</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="Detail" asp-route-id="@item.AttendanceId" class="btn btn-detail">
+                                    <i class="bi bi-eye me-1"></i>
+                                    Chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-calendar-x"></i>
+            <h4>Không có phiên điểm danh nào</h4>
+            <p class="mb-4">Hiện tại chưa có phiên điểm danh nào được tạo hoặc không tìm thấy kết quả phù hợp với bộ lọc.</p>
+            <a asp-action="Create" class="btn btn-create-new">
+                <i class="bi bi-plus-circle me-2"></i>
+                Tạo phiên điểm danh đầu tiên
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Enhance table interactions
+            $('.table tbody tr').hover(
+                function () {
+                    $(this).addClass('table-active');
+                },
+                function () {
+                    $(this).removeClass('table-active');
+                }
+            );
+
+            // Add loading state to search button
+            $('.filter-form').on('submit', function () {
+                const submitBtn = $(this).find('button[type="submit"]');
+                const originalText = submitBtn.html();
+
+                submitBtn.prop('disabled', true).html(`
+                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            Đang tìm...
+                        `);
+
+                // Re-enable after 3 seconds (fallback)
+                setTimeout(() => {
+                    submitBtn.prop('disabled', false).html(originalText);
+                }, 3000);
+            });
+        });
+    </script>
+}

@@ -1,65 +1,288 @@
-﻿
-@model API.ViewModel.IndexAttendanceViewModel
+﻿@model API.ViewModel.IndexAttendanceViewModel
 
-<h3 class="my-3">Chi tiết phiên điểm danh: @Model.SessionCode</h3>
+<style>
+    .detail-header {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+    }
 
-<table class="table table-bordered align-middle">
-    <thead class="table-light">
-        <tr>
-            <th>Mã SV</th>
-            <th>Họ tên</th>
-            <th>Email</th>
-            <th>Trạng thái</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var sv in Model.stinclass)
-        {
-            var selectId = $"status-{sv.StudentId}";
-            <tr>
-                <td>@sv.StudentCode</td>
-                <td>@sv.FullName</td>
-                <td>@sv.Email</td>
-                <td>
-                    <select class="form-select attendance-dropdown" id="@selectId"
-                            data-student="@sv.StudentId"
-                            data-attendance="@Model.AttendanceId">
-                        <option value="0" selected="@(sv.Status == "Absent" ? "selected" : null)">❌ Vắng</option>
-                        <option value="1" selected="@(sv.Status == "Present" ? "selected" : null)">✅ Có mặt</option>
-                        <option value="2" selected="@(sv.Status == "Late" ? "selected" : null)">⏰ Đi muộn</option>
-                    </select>
-                </td>
-            </tr>
+    .session-info {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .attendance-table {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        border: none;
+    }
+
+    .table-header {
+        background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+        border: none;
+    }
+
+        .table-header th {
+            border: none;
+            padding: 1.25rem 1rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-    </tbody>
-</table>
 
-<!-- Snackbar -->
-<div id="snackbar" class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
-    <div id="snackbar-alert" class="toast align-items-center text-white bg-success border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body" id="snackbar-message">Đã cập nhật điểm danh</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    .table tbody tr {
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+        .table tbody tr:hover {
+            background: var(--gray-50);
+            transform: translateX(5px);
+        }
+
+    .table tbody td {
+        border: none;
+        padding: 1.25rem 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .student-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .student-details h6 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .student-details p {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+
+    .attendance-select {
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        padding: 0.5rem 0.75rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        min-width: 140px;
+    }
+
+        .attendance-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+    .status-present {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-absent {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-late {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .snackbar-container {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 9999;
+    }
+
+    .custom-toast {
+        background: white;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        min-width: 300px;
+    }
+
+    .toast-success {
+        border-left: 4px solid var(--success-color);
+    }
+
+    .toast-error {
+        border-left: 4px solid var(--danger-color);
+    }
+</style>
+
+<div class="container-fluid px-4">
+    <div class="detail-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-3">
+                    <i class="bi bi-clipboard-check me-3"></i>
+                    Chi tiết phiên điểm danh
+                </h2>
+                <div class="session-info">
+                    <h4 class="mb-0">
+                        <i class="bi bi-qr-code me-2"></i>
+                        Mã phiên: @Model.SessionCode
+                    </h4>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="d-flex flex-column align-items-end">
+                    <span class="badge bg-light text-dark px-3 py-2 mb-2">
+                        <i class="bi bi-people me-1"></i>
+                        @Model.stinclass.Count() sinh viên
+                    </span>
+                    <small class="opacity-75">
+                        <i class="bi bi-calendar me-1"></i>
+                        @DateTime.Now.ToString("dd/MM/yyyy")
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="attendance-table">
+        <table class="table table-hover mb-0">
+            <thead class="table-header">
+                <tr>
+                    <th style="width: 15%;">
+                        <i class="bi bi-hash me-1"></i>
+                        Mã SV
+                    </th>
+                    <th style="width: 35%;">
+                        <i class="bi bi-person me-1"></i>
+                        Thông tin sinh viên
+                    </th>
+                    <th style="width: 30%;">
+                        <i class="bi bi-envelope me-1"></i>
+                        Email
+                    </th>
+                    <th style="width: 20%;">
+                        <i class="bi bi-check2-square me-1"></i>
+                        Trạng thái
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var sv in Model.stinclass)
+                {
+                    var selectId = $"status-{sv.StudentId}";
+                    <tr>
+                        <td>
+                            <span class="badge bg-primary px-3 py-2">@sv.StudentCode</span>
+                        </td>
+                        <td>
+                            <div class="student-info">
+                                <div class="student-avatar">
+                                    @sv.FullName.Substring(0, 1).ToUpper()
+                                </div>
+                                <div class="student-details">
+                                    <h6>@sv.FullName</h6>
+                                    <p>ID: @sv.StudentId</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <i class="bi bi-envelope text-muted me-2"></i>
+                            @sv.Email
+                        </td>
+                        <td>
+                            <select class="form-select attendance-select attendance-dropdown @($"status-{sv.Status?.ToLower()}")"
+                                    id="@selectId"
+                                    data-student="@sv.StudentId"
+                                    data-attendance="@Model.AttendanceId">
+                                <option value="0" selected="@(sv.Status == "Absent" ? "selected" : null)">
+                                    ❌ Vắng mặt
+                                </option>
+                                <option value="1" selected="@(sv.Status == "Present" ? "selected" : null)">
+                                    ✅ Có mặt
+                                </option>
+                                <option value="2" selected="@(sv.Status == "Late" ? "selected" : null)">
+                                    ⏰ Đi muộn
+                                </option>
+                            </select>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Enhanced Snackbar -->
+<div class="snackbar-container">
+    <div id="attendance-toast" class="toast custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header border-0">
+            <i id="toast-icon" class="bi bi-check-circle-fill text-success me-2"></i>
+            <strong class="me-auto" id="toast-title">Thông báo</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toast-message">
+            Cập nhật điểm danh thành công!
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        function showSnackbar(message, isSuccess) {
-            const alertBox = $('#snackbar-alert');
-            const messageBox = $('#snackbar-message');
-            messageBox.text(message);
-            alertBox.removeClass('bg-success bg-danger');
-            alertBox.addClass(isSuccess ? 'bg-success' : 'bg-danger');
-            new bootstrap.Toast(alertBox[0]).show();
+        function showAttendanceToast(message, isSuccess) {
+            const toast = document.getElementById('attendance-toast');
+            const icon = document.getElementById('toast-icon');
+            const title = document.getElementById('toast-title');
+            const messageElement = document.getElementById('toast-message');
+
+            // Update content
+            messageElement.textContent = message;
+            title.textContent = isSuccess ? 'Thành công' : 'Lỗi';
+
+            // Update styling
+            toast.className = `toast custom-toast ${isSuccess ? 'toast-success' : 'toast-error'}`;
+            icon.className = `bi ${isSuccess ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'} me-2`;
+
+            // Show toast
+            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+            bsToast.show();
         }
 
         $(document).ready(function () {
             $('.attendance-dropdown').change(function () {
-                const status = $(this).val();
-                const studentId = $(this).data('student');
-                const attendanceId = $(this).data('attendance');
+                const $select = $(this);
+                const status = $select.val();
+                const studentId = $select.data('student');
+                const attendanceId = $select.data('attendance');
+
+                // Add loading state
+                $select.prop('disabled', true);
 
                 $.ajax({
                     url: '/Attendance/Detail',
@@ -70,12 +293,31 @@
                         Status: status
                     },
                     success: function () {
-                        showSnackbar("✅ Cập nhật thành công", true);
+                        showAttendanceToast("Cập nhật điểm danh thành công!", true);
+
+                        // Update select styling based on status
+                        $select.removeClass('status-present status-absent status-late');
+                        if (status == '1') $select.addClass('status-present');
+                        else if (status == '0') $select.addClass('status-absent');
+                        else if (status == '2') $select.addClass('status-late');
                     },
                     error: function () {
-                        showSnackbar("❌ Cập nhật thất bại", false);
+                        showAttendanceToast("Cập nhật thất bại. Vui lòng thử lại!", false);
+                    },
+                    complete: function () {
+                        $select.prop('disabled', false);
                     }
                 });
+            });
+
+            // Initialize select styling on page load
+            $('.attendance-dropdown').each(function () {
+                const $select = $(this);
+                const value = $select.val();
+                $select.removeClass('status-present status-absent status-late');
+                if (value == '1') $select.addClass('status-present');
+                else if (value == '0') $select.addClass('status-absent');
+                else if (value == '2') $select.addClass('status-late');
             });
         });
     </script>

@@ -1,28 +1,156 @@
 ﻿@model API.ViewModel.CreateAttendanceViewModel
-
 @{
     ViewData["Title"] = "Tạo phiên điểm danh";
 }
 
-<h3 class="my-3">Tạo phiên điểm danh</h3>
+<style>
+    :root {
+        --primary-color: #2563eb;
+        --primary-light: #dbeafe;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-600: #475569;
+        --gray-800: #1e293b;
+    }
 
-<form asp-action="Create" method="post" class="border p-4 rounded bg-light">
-    <div class="mb-3">
-        <label asp-for="SchedulesId" class="form-label">Chọn lịch học</label>
-        <select asp-for="SchedulesId" class="form-select" asp-items="ViewBag.Schedules">
-            <option value="">-- Chọn lịch học --</option>
-        </select>
-        <span asp-validation-for="SchedulesId" class="text-danger"></span>
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
+        color: white;
+        padding: 2.5rem 0;
+        margin-bottom: 2rem;
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+        }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .form-container {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--gray-200);
+    }
+
+    .form-group {
+        margin-bottom: 2rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid var(--gray-200);
+        border-radius: 12px;
+        padding: 0.875rem 1.25rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: var(--gray-50);
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            background: white;
+        }
+
+    .btn-create {
+        background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+        border: none;
+        padding: 1rem 2.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+        .btn-create:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+            color: white;
+        }
+
+    .form-icon {
+        color: var(--primary-color);
+    }
+</style>
+
+<div class="container-fluid px-4">
+    <div class="page-header text-center">
+        <div class="container">
+            <h1 class="page-title">
+                <i class="bi bi-calendar-plus me-3"></i>
+                Tạo phiên điểm danh mới
+            </h1>
+            <p class="lead mb-0 opacity-90">Thiết lập phiên điểm danh cho lớp học của bạn</p>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="SessionCode" class="form-label">Mã phiên điểm danh</label>
-        <input asp-for="SessionCode" class="form-control" />
-        <span asp-validation-for="SessionCode" class="text-danger"></span>
-    </div>
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="form-container">
+                <form asp-action="Create" method="post">
+                    <div class="form-group">
+                        <label asp-for="SchedulesId" class="form-label">
+                            <i class="bi bi-calendar-event form-icon"></i>
+                            Chọn lịch học
+                        </label>
+                        <select asp-for="SchedulesId" class="form-select" asp-items="ViewBag.Schedules">
+                            <option value="">🎯 -- Chọn lịch học phù hợp --</option>
+                        </select>
+                        <span asp-validation-for="SchedulesId" class="text-danger mt-2 d-block"></span>
+                    </div>
 
-    <button type="submit" class="btn btn-primary">Tạo phiên</button>
-</form>
+                    <div class="form-group">
+                        <label asp-for="SessionCode" class="form-label">
+                            <i class="bi bi-qr-code form-icon"></i>
+                            Mã phiên điểm danh
+                        </label>
+                        <input asp-for="SessionCode" class="form-control" placeholder="Nhập mã phiên điểm danh..." />
+                        <span asp-validation-for="SessionCode" class="text-danger mt-2 d-block"></span>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-create">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Tạo phiên điểm danh
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

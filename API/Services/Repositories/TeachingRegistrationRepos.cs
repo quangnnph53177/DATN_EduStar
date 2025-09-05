@@ -19,243 +19,350 @@ namespace API.Services.Repositories
             _context = context;
             _semesterRepos = semesterRepos;
         }
+
         //duyệt đăng ký
-        public async Task<string> ApproveRegistration(int registrationId,ApprovedStatus approve, Guid adminId)
+        public async Task<string> ApproveRegistration(int registrationId, ApprovedStatus approve, Guid adminId)
         {
-            var reg = await _context.TeachingRegistrations
-                .Include(s=>s.Schedule)
-                .FirstOrDefaultAsync(tr=> tr.Id==registrationId);
-            if (reg == null)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                return "Ko tìm thấy đơn đăng ký";
-            }
-            if(reg.IsApproved != ApprovedStatus.Pending)
-            {
-                return "Đơn đã được xử lý";
-            }
-            if (approve == ApprovedStatus.Approved)
-            {
-                var canApprove = await CanRegister(reg.TeacherId, reg.ScheduleID);
-                if(canApprove != "OK")
+                var reg = await _context.TeachingRegistrations
+                    .Include(s => s.Schedule)
+                    .FirstOrDefaultAsync(tr => tr.Id == registrationId);
+
+                if (reg == null)
                 {
-                    return $"Không thể duyệt:{canApprove}";
+                    return "Ko tìm thấy đơn đăng ký";
                 }
-                var schedules = reg.Schedule;
-                schedules.UsersId = reg.TeacherId;
-                schedules.Status = SchedulesStatus.Sapdienra; 
+
+                if (reg.IsApproved != ApprovedStatus.Pending)
+                {
+                    return "Đơn đã được xử lý";
+                }
+
+                if (approve == ApprovedStatus.Approved)
+                {
+                    var canApprove = await CanRegister(reg.TeacherId, reg.ScheduleID);
+                    if (canApprove != "OK")
+                    {
+                        return $"Không thể duyệt: {canApprove}";
+                    }
+
+                    var schedule = reg.Schedule;
+                    schedule.UsersId = reg.TeacherId;
+                    schedule.Status = SchedulesStatus.Sapdienra;
+                    _context.Schedules.Update(schedule);
+                }
+
+                reg.IsApproved = approve;
+                reg.ApprovedBy = adminId;
+                reg.ApprovedDate = DateTime.Now;
+                _context.TeachingRegistrations.Update(reg);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return approve == ApprovedStatus.Approved ? "Duyệt đăng ký thành công" : "Đã từ chối đăng ký";
             }
-            reg.IsApproved = approve;
-            reg.ApprovedBy = adminId;
-            reg.ApprovedDate = DateTime.Now;
-            await _context.SaveChangesAsync();
-            return approve == ApprovedStatus.Approved ? "Duyệt đăng ký thành công" : "đã từ chối đăng ký"; 
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception($"Lỗi khi duyệt đăng ký: {ex.Message}", ex);
+            }
         }
+
         //từ chối 
         public async Task<string> CancelRegistration(int registrationId, Guid teacherId)
         {
-            var reg = await _context.TeachingRegistrations
-                .Include(s => s.Schedule).FirstOrDefaultAsync(s => s.Id == registrationId && s.TeacherId == teacherId);
-            if (reg ==null) 
+            try
             {
-                return "Không thấy đơn đăng ký";
+                var reg = await _context.TeachingRegistrations
+                    .Include(s => s.Schedule)
+                    .FirstOrDefaultAsync(s => s.Id == registrationId && s.TeacherId == teacherId);
+
+                if (reg == null)
+                {
+                    return "Không thấy đơn đăng ký";
+                }
+
+                if (reg.IsApproved == ApprovedStatus.Approved)
+                {
+                    return "Không thể từ chối đơn đã duyệt";
+                }
+
+                reg.Status = false;
+                _context.TeachingRegistrations.Update(reg);
+                await _context.SaveChangesAsync();
+
+                return "Từ chối đơn đăng ký thành công";
             }
-            if (reg.IsApproved== ApprovedStatus.Approved)
+            catch (Exception ex)
             {
-                return "Không thể từ chối đơn đã duyệt";
+                throw new Exception($"Lỗi khi hủy đăng ký: {ex.Message}", ex);
             }
-            reg.Status = false;
-            await _context.SaveChangesAsync() ;
-            return "từ chối đơn đăng ký thành công";
-             
         }
+
         //check 
-        // Fixed CanRegister method
         public async Task<string> CanRegister(Guid teacherId, int schedulesID)
         {
-            var schedules = await _context.Schedules
-                .Include(s => s.ScheduleDays)
-                .FirstOrDefaultAsync(s => s.Id == schedulesID);
-            if (schedules == null)
+            try
             {
-                return "Lịch học ko tồn tại";
-            }
-            if (schedules.Status != SchedulesStatus.Sapdienra)
-            {
-                return "Lịch học không còn đăng ký đc";
-            }
-            if (schedules.UsersId != null)
-            {
-                return "Lịch học đã có giáo viên phụ trách";
-            }
+                var schedule = await _context.Schedules
+                    .Include(s => s.ScheduleDays)
+                    .FirstOrDefaultAsync(s => s.Id == schedulesID);
 
-            // Fixed: Check existing registration logic
-            var exitstingRegistration = await _context.TeachingRegistrations
-                .FirstOrDefaultAsync(tr => tr.TeacherId == teacherId && tr.ScheduleID == schedulesID
-                && tr.Status == true);
-
-            if (exitstingRegistration != null)
-            {
-                if (exitstingRegistration.IsApproved == ApprovedStatus.Pending)
+                if (schedule == null)
                 {
-                    return "Bạn đã đăng ký lịch học này rồi đang chờ duyệt";
+                    return "Lịch học không tồn tại";
                 }
-                if (exitstingRegistration.IsApproved == ApprovedStatus.Approved)
-                {
-                    return "bạn đã đc phân vào lịch học này";
-                }
-                // If rejected, allow re-registration (continue with conflict check)
-            }
 
-            var checktrung = await _context.TeachingRegistrations.Include(s => s.Schedule).ThenInclude(s => s.ScheduleDays)
-                .Where(tr => tr.TeacherId == teacherId &&
-                                tr.Status == true && tr.IsApproved == ApprovedStatus.Approved).ToListAsync();
-            foreach (var registration in checktrung)
-            {
-                var regschedule = registration.Schedule;
-                if (schedules.StartDate < regschedule.EndDate && schedules.EndDate > regschedule.StartDate)
+                // Sửa lỗi: Kiểm tra status đúng cho lịch có thể đăng ký
+                if (schedule.Status != SchedulesStatus.Sapdienra || schedule.UsersId != null)
                 {
-                    if (schedules.StudyShiftId == regschedule.StudyShiftId)
+                    return "Lịch học không còn có thể đăng ký";
+                }
+
+                // Kiểm tra đăng ký đã tồn tại
+                var existingRegistration = await _context.TeachingRegistrations
+                    .FirstOrDefaultAsync(tr => tr.TeacherId == teacherId
+                                            && tr.ScheduleID == schedulesID
+                                            && (tr.Status == true || tr.Status == null)); // Bao gồm cả Status null
+
+                if (existingRegistration != null)
+                {
+                    if (existingRegistration.IsApproved == ApprovedStatus.Pending)
                     {
-                        var schedulesDay = schedules.ScheduleDays.Select(s => s.DayOfWeekkId).ToList();
-                        var regDays = regschedule.ScheduleDays.Select(s => s.DayOfWeekkId).ToList();
-                        if (schedulesDay.Any(sd => regDays.Contains(sd)))
+                        return "Bạn đã đăng ký lịch học này rồi, đang chờ duyệt";
+                    }
+                    if (existingRegistration.IsApproved == ApprovedStatus.Approved)
+                    {
+                        return "Bạn đã được phân vào lịch học này";
+                    }
+                }
+
+                // Kiểm tra trung lịch dạy
+                var approvedRegistrations = await _context.TeachingRegistrations
+                    .Include(s => s.Schedule)
+                        .ThenInclude(s => s.ScheduleDays)
+                    .Where(tr => tr.TeacherId == teacherId &&
+                               (tr.Status == true || tr.Status == null) &&
+                               tr.IsApproved == ApprovedStatus.Approved)
+                    .ToListAsync();
+
+                foreach (var registration in approvedRegistrations)
+                {
+                    var regSchedule = registration.Schedule;
+
+                    // Kiểm tra trung thời gian
+                    if (schedule.StartDate < regSchedule.EndDate && schedule.EndDate > regSchedule.StartDate)
+                    {
+                        // Kiểm tra trung ca học
+                        if (schedule.StudyShiftId == regSchedule.StudyShiftId)
                         {
-                            return $"Bạn có lịch dạy trùng với lớp {regschedule.ClassName}";
+                            var scheduleDays = schedule.ScheduleDays?.Select(s => s.DayOfWeekkId).ToList() ?? new List<int>();
+                            var regDays = regSchedule.ScheduleDays?.Select(s => s.DayOfWeekkId).ToList() ?? new List<int>();
+
+                            if (scheduleDays.Any(sd => regDays.Contains(sd)))
+                            {
+                                return $"Bạn có lịch dạy trùng với lớp {regSchedule.ClassName}";
+                            }
                         }
                     }
                 }
+
+                return "OK";
             }
-            return "OK";
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi kiểm tra đăng ký: {ex.Message}", ex);
+            }
         }
+
         // danh sách đăng ký
         public async Task<List<AdminResgistration>> GetAllRegistration(string? Status = null)
         {
-            var query = _context.TeachingRegistrations
-                                .Include(s => s.Schedule).ThenInclude(s => s.Subject)
-                                .Include(s => s.Schedule).ThenInclude(s => s.Room)
-                                .Include(s => s.Schedule).ThenInclude(s => s.StudyShift)
-                                .Include(s => s.Schedule).ThenInclude(s => s.ScheduleDays).ThenInclude(s => s.DayOfWeekk)
-                                .Include(tr => tr.Approver)
-                                .Where(tr => tr.Status == true)
-                                .AsQueryable();
-            if (!string.IsNullOrEmpty(Status))
+            try
             {
-                query = Status.ToLower() switch
+                var query = _context.TeachingRegistrations
+                    .Include(s => s.Teacher)
+                    .Include(s => s.Schedule).ThenInclude(s => s.Subject)
+                    .Include(s => s.Schedule).ThenInclude(s => s.Room)
+                    .Include(s => s.Schedule).ThenInclude(s => s.StudyShift)
+                    .Include(s => s.Schedule).ThenInclude(s => s.ScheduleDays).ThenInclude(s => s.DayOfWeekk)
+                    .Include(tr => tr.Approver)
+                    .Where(tr => tr.Status == true || tr.Status == null) // Bao gồm cả null
+                    .AsQueryable();
+
+                if (!string.IsNullOrEmpty(Status))
                 {
-                    "Chờ duyệt" => query.Where(s => s.IsApproved == ApprovedStatus.Pending),
-                    "Đã duyệt" => query.Where(s=> s.IsApproved == ApprovedStatus.Approved),
-                    "Hủy" => query.Where (s=> s.IsApproved == ApprovedStatus.Rejected),
-                    _=> query
-                };
+                    query = Status.ToLower() switch
+                    {
+                        "chờ duyệt" => query.Where(s => s.IsApproved == ApprovedStatus.Pending),
+                        "đã duyệt" => query.Where(s => s.IsApproved == ApprovedStatus.Approved),
+                        "hủy" => query.Where(s => s.IsApproved == ApprovedStatus.Rejected),
+                        _ => query
+                    };
+                }
+
+                var model = await query.Select(s => new AdminResgistration
+                {
+                    TeacherName = s.Teacher.UserName ?? "",
+                    TeacherEmail = s.Teacher.Email ?? "",
+                    ClassName = s.Schedule.ClassName ?? "",
+                    SujectName = s.Schedule.Subject.SubjectName ?? "",
+                    RoomName = s.Schedule.Room.RoomCode ?? "",
+                    ShiftName = s.Schedule.StudyShift.StudyShiftName ?? "",
+                    starttime = s.Schedule.StudyShift.StartTime,
+                    endtime = s.Schedule.StudyShift.EndTime,
+                    DayNames = s.Schedule.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays).ToList(),
+                    CreateAt = s.CreateAt,
+                    Status = s.IsApproved == ApprovedStatus.Pending ? "Chờ duyệt" :
+                            s.IsApproved == ApprovedStatus.Approved ? "Đã duyệt" : "Từ chối",
+                    StatusColor = s.IsApproved == ApprovedStatus.Pending ? "warning" :
+                                 s.IsApproved == ApprovedStatus.Approved ? "success" : "danger",
+                    ApprovedBy = s.Approver != null ? s.Approver.UserName : "",
+                    ApprovedDate = s.ApprovedDate ?? DateTime.MinValue,
+                })
+                .OrderBy(s => s.Status == "Chờ duyệt" ? 0 : 1)
+                .ThenByDescending(s => s.CreateAt)
+                .ToListAsync();
+
+                return model;
             }
-            var model =await query.Select(s => new AdminResgistration
+            catch (Exception ex)
             {
-                TeacherName = s.Teacher.UserName,
-                TeacherEmail = s.Teacher.Email,
-                ClassName = s.Schedule.ClassName,
-                SujectName = s.Schedule.Subject.SubjectName,
-                RoomName = s.Schedule.Room.RoomCode,
-                ShiftName = s.Schedule.StudyShift.StudyShiftName,
-                starttime = s.Schedule.StudyShift.StartTime,
-                endtime = s.Schedule.StudyShift.EndTime,
-                DayNames = s.Schedule.ScheduleDays.Select(s=> s.DayOfWeekk.Weekdays).ToList(),
-                CreateAt = s.CreateAt,
-                Status = s.IsApproved == ApprovedStatus.Pending ? "Chờ duyệt" :
-                                                    s.IsApproved == ApprovedStatus.Approved ? "Đã duyệt" : "Từ chối",
-                StatusColor = s.IsApproved == null ? "warning" :
-                                                    s.IsApproved == ApprovedStatus.Approved ? "success" : "danger",
-                ApprovedBy = s.Approver.UserName,
-                ApprovedDate = (DateTime)s.ApprovedDate,
-            }).OrderBy(s=>s.Status==null ? 0:1).ThenByDescending(s=>s.CreateAt).ToListAsync();
-            return model;
+                throw new Exception($"Lỗi khi lấy danh sách đăng ký: {ex.Message}", ex);
+            }
         }
+
         //lịch có thể đăng ký
         public async Task<List<SchedulesViewModel>> GetAvailableSchedules(Guid? teacherID = null)
         {
-            var schedules = _context.Schedules
-                .Include(s => s.Subject)
-                .Include(s => s.Room)
-                .Include(s => s.StudyShift)
-                .Include(s => s.ScheduleDays).ThenInclude(s => s.DayOfWeekk)
-                .Include(s => s.Semester)
-                .Where(s => s.Status == SchedulesStatus.Sapdienra && s.UsersId == null)
-                .AsQueryable();
-            if (teacherID.HasValue)
+            try
             {
-                var registerSchedulesId = await _context.TeachingRegistrations
-                    .Where(tr => tr.TeacherId == teacherID && tr.Status == true
-                    && tr.IsApproved != ApprovedStatus.Rejected).Select(tr => tr.ScheduleID).ToListAsync();
-                 schedules = schedules.Where(s => !registerSchedulesId.Contains(s.Id));
+                var schedules = _context.Schedules
+                    .Include(s => s.Subject)
+                    .Include(s => s.Room)
+                    .Include(s => s.StudyShift)
+                    .Include(s => s.ScheduleDays).ThenInclude(s => s.DayOfWeekk)
+                    .Include(s => s.Semester)
+                    .Where(s => s.Status == SchedulesStatus.Sapdienra && s.UsersId == null)
+                    .AsQueryable();
+
+                if (teacherID.HasValue)
+                {
+                    var registeredScheduleIds = await _context.TeachingRegistrations
+                        .Where(tr => tr.TeacherId == teacherID &&
+                                   (tr.Status == true || tr.Status == null) &&
+                                   tr.IsApproved != ApprovedStatus.Rejected)
+                        .Select(tr => tr.ScheduleID)
+                        .ToListAsync();
+
+                    schedules = schedules.Where(s => !registeredScheduleIds.Contains(s.Id));
+                }
+
+                var model = await schedules.Select(s => new SchedulesViewModel
+                {
+                    Id = s.Id,
+                    ClassName = s.ClassName ?? "",
+                    SubjectName = s.Subject.SubjectName ?? "",
+                    RoomCode = s.Room.RoomCode ?? "",
+                    StudyShift = s.StudyShift.StudyShiftName ?? "",
+                    starttime = s.StudyShift.StartTime,
+                    endtime = s.StudyShift.EndTime,
+                    startdate = s.StartDate,
+                    enddate = s.EndDate,
+                    weekdays = s.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays).ToList(),
+                    Status = s.Status.ToString(),
+                })
+                .OrderBy(s => s.startdate)
+                .ToListAsync();
+
+                return model;
             }
-            var model =await schedules.Select(s => new SchedulesViewModel
+            catch (Exception ex)
             {
-                Id = s.Id,
-                ClassName = s.ClassName,
-                SubjectName = s.Subject.SubjectName,
-                RoomCode = s.Room.RoomCode,
-                StudyShift = s.StudyShift.StudyShiftName,
-                starttime = s.StudyShift.StartTime,
-                endtime = s.StudyShift.EndTime,
-                startdate = s.StartDate,
-                enddate = s.EndDate,
-                weekdays = s.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays).ToList(),
-                Status =s.Status.ToString(),
-            }).OrderBy(s=> s.startdate).ToListAsync();
-            return model;
+                throw new Exception($"Lỗi khi lấy lịch có thể đăng ký: {ex.Message}", ex);
+            }
         }
-        //giảng viên đăng ký cái j rồi
+
+        //giảng viên đăng ký cái gì rồi
         public async Task<List<TeachingRegistrationVM>> GetTeacherRegistrations(Guid teacherId)
         {
-            var teacherRe = await _context.TeachingRegistrations
-                                             .Include(s => s.Schedule).ThenInclude(s => s.Subject)
-                                             .Include(s => s.Schedule).ThenInclude(s => s.Room)
-                                             .Include(s => s.Schedule).ThenInclude(s => s.StudyShift)
-                                             .Include(s => s.Schedule).ThenInclude(s => s.ScheduleDays).ThenInclude(s => s.DayOfWeekk)
-                                             .Include(s => s.Approver)
-                                             .Where(s => s.TeacherId == teacherId && s.Status == true)
-                                             .Select(s => new TeachingRegistrationVM
-                                             {
-                                                 regisID = s.Id,
-                                                 SchedulesId = s.ScheduleID,
-                                                 ClassName = s.Schedule.ClassName,
-                                                 SujectName = s.Schedule.Subject.SubjectName,
-                                                 RoomName = s.Schedule.Room.RoomCode,
-                                                 ShiftName = s.Schedule.StudyShift.StudyShiftName,
-                                                 starttime = s.Schedule.StudyShift.StartTime,
-                                                 endtime = s.Schedule.StudyShift.EndTime,
-                                                 DayNames = s.Schedule.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays).ToList(),
-                                                 CreateAt = s.CreateAt,
-                                                 Status = s.IsApproved == ApprovedStatus.Pending ? "Chờ duyệt" :
-                                                    s.IsApproved == ApprovedStatus.Approved ? "Đã duyệt" : "Từ chối",
-                                                 StatusColor = s.IsApproved == null ? "warning" :
-                                                    s.IsApproved == ApprovedStatus.Approved ? "success" : "danger",
-                                                 ApprovedBy = s.Approver.UserName,
-                                                 ApprovedDate = (DateTime)s.ApprovedDate,
-                                             }).OrderByDescending(s => s.CreateAt)
-                                             .ToListAsync();
-            return teacherRe;
-                                            
+            try
+            {
+                var teacherRegistrations = await _context.TeachingRegistrations
+                    .Include(s => s.Schedule).ThenInclude(s => s.Subject)
+                    .Include(s => s.Schedule).ThenInclude(s => s.Room)
+                    .Include(s => s.Schedule).ThenInclude(s => s.StudyShift)
+                    .Include(s => s.Schedule).ThenInclude(s => s.ScheduleDays).ThenInclude(s => s.DayOfWeekk)
+                    .Include(s => s.Approver)
+                    .Where(s => s.TeacherId == teacherId && (s.Status == true || s.Status == null))
+                    .Select(s => new TeachingRegistrationVM
+                    {
+                        regisID = s.Id,
+                        SchedulesId = s.ScheduleID,
+                        ClassName = s.Schedule.ClassName ?? "",
+                        SujectName = s.Schedule.Subject.SubjectName ?? "",
+                        RoomName = s.Schedule.Room.RoomCode ?? "",
+                        ShiftName = s.Schedule.StudyShift.StudyShiftName ?? "",
+                        starttime = s.Schedule.StudyShift.StartTime,
+                        endtime = s.Schedule.StudyShift.EndTime,
+                        DayNames = s.Schedule.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays).ToList(),
+                        CreateAt = s.CreateAt,
+                        Status = s.IsApproved == ApprovedStatus.Pending ? "Chờ duyệt" :
+                                s.IsApproved == ApprovedStatus.Approved ? "Đã duyệt" : "Từ chối",
+                        StatusColor = s.IsApproved == ApprovedStatus.Pending ? "warning" :
+                                     s.IsApproved == ApprovedStatus.Approved ? "success" : "danger",
+                        ApprovedBy = s.Approver != null ? s.Approver.UserName : "",
+                        ApprovedDate = s.ApprovedDate ?? DateTime.MinValue,
+                    })
+                    .OrderByDescending(s => s.CreateAt)
+                    .ToListAsync();
+
+                return teacherRegistrations;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy đăng ký của giảng viên: {ex.Message}", ex);
+            }
         }
+
         //đăng ký
         public async Task<string> TeacherRegistration(Guid teacherId, int schedulesID)
         {
-            var check = await CanRegister(teacherId, schedulesID);
-            if (check != "OK")
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                return check;
+                var check = await CanRegister(teacherId, schedulesID);
+                if (check != "OK")
+                {
+                    return check;
+                }
+
+                var register = new TeachingRegistration()
+                {
+                    TeacherId = teacherId,
+                    ScheduleID = schedulesID,
+                    CreateAt = DateTime.Now,
+                    Status = true, // Đặt Status = true thay vì null
+                    IsApproved = ApprovedStatus.Pending,
+                };
+
+                _context.TeachingRegistrations.Add(register);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return "Đăng ký thành công";
             }
-            var register = new TeachingRegistration()
+            catch (Exception ex)
             {
-                TeacherId = teacherId,
-                ScheduleID = schedulesID,
-                CreateAt = DateTime.Now,
-                Status = null,
-                IsApproved = ApprovedStatus.Pending,
-            };
-            _context.TeachingRegistrations.Add(register);
-            await _context.SaveChangesAsync();
-            return "Đăng ký thành công";
+                await transaction.RollbackAsync();
+                throw new Exception($"Lỗi khi đăng ký: {ex.Message}", ex);
+            }
         }
+    }
+}
 
         //public async Task<List<Class>> GetClasses(string userName)
         //{
@@ -481,5 +588,5 @@ namespace API.Services.Repositories
 
         //    return $"✅ Đăng ký thành công! Đã xếp lớp vào phòng: {roomId} (ID: {roomId.ToString()})";
         //}
-    }
-}
+//    }
+//}

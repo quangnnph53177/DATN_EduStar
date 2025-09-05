@@ -36,7 +36,7 @@ namespace API.Controllers
         }
         // giảng viên đăng ký
         [HttpPost("register")]
-        [Authorize(Roles = "Teacher")]
+       // [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> RegisterTeaching(int schedulesID)
         {
             try
@@ -59,7 +59,7 @@ namespace API.Controllers
         }
         //lịch giáo viên đã đăng ký
         [HttpGet("my-registrations")]
-        [Authorize(Roles = "Teacher")]
+        //[Authorize(Roles = "Teacher")]
         public async Task<IActionResult> GetMyRegistrations()
         {
             try
@@ -75,7 +75,7 @@ namespace API.Controllers
         }
         //tất cả lịch đã đăng ký
         [HttpGet("admin/all-registrations")]
-        [Authorize(Roles = "Admin")]
+     //   [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllRegistrations([FromQuery] string? status = null)
         {
             try

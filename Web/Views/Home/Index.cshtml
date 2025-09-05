@@ -1,12 +1,331 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-   @*  <video controls autoplay muted width="640" height="360">
-        <source src="/uploads/Recording 2025-02-12 193630.mp4" type="video/mp4" />
-        Trình duyệt không hỗ trợ video.
-    </video> *@
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="0.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+        animation: float 20s ease-in-out infinite;
+    }
+
+    .hero-content {
+        text-align: center;
+        color: white;
+        z-index: 10;
+        position: relative;
+        padding: 2rem;
+        max-width: 800px;
+    }
+
+    .hero-title {
+        font-size: 4rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        background: linear-gradient(45deg, #fff, #f0f8ff, #e6f3ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: fadeInUp 1s ease-out 0.2s both;
+        text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .hero-subtitle {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+        animation: fadeInUp 1s ease-out 0.4s both;
+    }
+
+    .cta-button {
+        display: inline-block;
+        padding: 15px 30px;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        color: white;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        animation: fadeInUp 1s ease-out 0.6s both;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cta-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .cta-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    .cta-button:hover::before {
+        left: 100%;
+    }
+
+    .video-container {
+        margin-top: 3rem;
+        position: relative;
+        animation: slideInFromLeft 1s ease-out 0.8s both;
+    }
+
+    .video-wrapper {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        transition: all 0.3s ease;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        padding: 10px;
+    }
+
+    .video-wrapper:hover {
+        transform: scale(1.02);
+        box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    }
+
+    .video-wrapper video {
+        width: 100%;
+        height: auto;
+        border-radius: 15px;
+        display: block;
+    }
+
+    .floating-elements {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .floating-circle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.1);
+        animation: floatRandom 15s infinite ease-in-out;
+    }
+
+    .floating-circle:nth-child(1) {
+        width: 80px;
+        height: 80px;
+        top: 10%;
+        left: 10%;
+        animation-delay: 0s;
+    }
+
+    .floating-circle:nth-child(2) {
+        width: 120px;
+        height: 120px;
+        top: 70%;
+        right: 10%;
+        animation-delay: -5s;
+    }
+
+    .floating-circle:nth-child(3) {
+        width: 60px;
+        height: 60px;
+        top: 30%;
+        right: 20%;
+        animation-delay: -10s;
+    }
+
+    .floating-circle:nth-child(4) {
+        width: 100px;
+        height: 100px;
+        bottom: 20%;
+        left: 20%;
+        animation-delay: -7s;
+    }
+
+    .particles {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .particle {
+        position: absolute;
+        background: rgba(255,255,255,0.6);
+        border-radius: 50%;
+        animation: particle-float 8s infinite ease-in-out;
+    }
+
+  }
+    }
+    .glass-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 2rem;
+        margin-top: 2rem;
+        animation: fadeInUp 1s ease-out 1s both;
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .feature-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(5px);
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+</style>
+
+<div class="hero-section">
+    <!-- Floating background elements -->
+    <div class="floating-elements">
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+    </div>
+
+    <!-- Particle effect -->
+    <div class="particles" id="particles"></div>
+
+    <div class="hero-content">
+        <h1 class="hero-title">Chào mừng đến với ASP.NET Core</h1>
+        <p class="hero-subtitle">Khám phá sức mạnh của việc xây dựng ứng dụng web hiện đại với công nghệ tiên tiến nhất</p>
+        
+        <a href="https://learn.microsoft.com/aspnet/core" class="cta-button" target="_blank">
+            🚀 Bắt đầu học ngay
+        </a>
+
+        <div class="glass-card">
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Hiệu suất cao</h3>
+                    <p>Tối ưu hóa cho tốc độ và hiệu suất tuyệt vời</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Bảo mật</h3>
+                    <p>Tích hợp các tính năng bảo mật hiện đại</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Đa nền tảng</h3>
+                    <p>Chạy trên Windows, macOS và Linux</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="video-container">
+            <div class="video-wrapper">
+               @*  <video controls autoplay muted>
+                    <source src="/uploads/Recording 2025-02-12 193630.mp4" type="video/mp4" />
+                    Trình duyệt không hỗ trợ video.
+                </video> *@
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    // Create floating particles
+    function createParticles() {
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 50;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            
+            // Random size between 2-8px
+            const size = Math.random() * 6 + 2;
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            
+            // Random horizontal position
+            particle.style.left = Math.random() * 100 + '%';
+            
+            // Random animation delay
+            particle.style.animationDelay = Math.random() * 8 + 's';
+            
+            // Random animation duration
+            particle.style.animationDuration = (Math.random() * 4 + 6) + 's';
+            
+            particlesContainer.appendChild(particle);
+        }
+    }
+
+    // Initialize particles when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        createParticles();
+        
+        // Add smooth scrolling for any anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    });
+
+    // Add parallax effect on scroll
+    window.addEventListener('scroll', function() {
+        const scrolled = window.pageYOffset;
+        const parallaxElements = document.querySelectorAll('.floating-circle');
+        const speed = 0.5;
+
+        parallaxElements.forEach(element => {
+            const yPos = -(scrolled * speed);
+            element.style.transform = `translateY(${yPos}px)`;
+        });
+    });
+</script>

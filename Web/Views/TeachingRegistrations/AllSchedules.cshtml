@@ -1,0 +1,235 @@
+﻿@model List<API.ViewModel.SchedulesViewModel>
+@{
+    ViewData["Title"] = "Đăng ký giảng dạy";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary fw-bold">📅 Đăng ký giảng dạy</h2>
+                    <p class="text-muted">Chọn lịch học phù hợp để đăng ký giảng dạy</p>
+                </div>
+                <div>
+                    <a asp-action="TeacherRegistrations" class="btn btn-success">
+                        <i class="bi bi-list-check"></i> Xem đơn đăng ký của tôi
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-calendar-check"></i> 
+                Danh sách lịch học khả dụng (@Model.Count lịch)
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Lớp học</th>
+                                <th>Môn học</th>
+                                <th>Phòng học</th>
+                                <th>Ca học</th>
+                                <th>Thời gian</th>
+                                <th>Ngày học</th>
+                                <th>Thời gian diễn ra</th>
+                                <th class="text-center">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var schedule in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong class="text-primary">@schedule.ClassName</strong>
+                                    </td>
+                                    <td>@schedule.SubjectName</td>
+                                    <td>
+                                        <span class="badge bg-info">@schedule.RoomCode</span>
+                                    </td>
+                                    <td>@schedule.StudyShift</td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @(schedule.starttime.HasValue ? schedule.starttime.Value.ToString(@"hh\:mm") : "")
+                                            @(schedule.endtime.HasValue ? schedule.endtime.Value.ToString(@"hh\:mm") : "")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        @foreach (var day in schedule.weekdays)
+                                        {
+                                            <span class="badge bg-secondary me-1">@day</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small>
+                                            <strong>Từ:</strong> @((schedule.startdate as DateTime?)?.ToString("dd/MM/yyyy"))<br>
+                                            <strong>Đến:</strong> @((schedule.enddate as DateTime?)?.ToString("dd/MM/yyyy"))
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-success btn-sm register-btn" 
+                                                data-schedule-id="@schedule.Id"
+                                                data-class-name="@schedule.ClassName">
+                                            <i class="bi bi-plus-circle"></i> Đăng ký
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-calendar-x" style="font-size: 4rem; color: #6c757d;"></i>
+                    </div>
+                    <h5 class="text-muted">Không có lịch học nào khả dụng</h5>
+                    <p class="text-muted">Hiện tại không có lịch học nào mà bạn có thể đăng ký.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận đăng ký -->
+<div class="modal fade" id="registerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-primary">
+                    <i class="bi bi-question-circle"></i> Xác nhận đăng ký
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn đăng ký giảng dạy lớp <strong id="className"></strong>?</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Sau khi đăng ký, đơn của bạn sẽ được gửi đến admin để duyệt.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="confirmRegister">
+                    <i class="bi bi-check-circle"></i> Xác nhận đăng ký
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let selectedScheduleId = null;
+
+            // Xử lý click đăng ký
+            $('.register-btn').click(function() {
+                selectedScheduleId = $(this).data('schedule-id');
+                const className = $(this).data('class-name');
+                
+                $('#className').text(className);
+                $('#registerModal').modal('show');
+            });
+
+            // Xử lý xác nhận đăng ký
+            $('#confirmRegister').click(function() {
+                if (!selectedScheduleId) return;
+
+                const btn = $(this);
+                btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i>Đang xử lý...');
+
+                $.ajax({
+                    url: '@Url.Action("RegisterSchedule")',
+                    type: 'POST',
+                    data: { schedulesID: selectedScheduleId },
+                    success: function(response) {
+                        $('#registerModal').modal('hide');
+                        
+                        if (response.success) {
+                            showAlert('success', response.message);
+                            // Reload trang sau 2 giây
+                            setTimeout(() => location.reload(), 2000);
+                        } else {
+                            showAlert('danger', response.message);
+                        }
+                    },
+                    error: function() {
+                        $('#registerModal').modal('hide');
+                        showAlert('danger', 'Có lỗi xảy ra, vui lòng thử lại!');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html('<i class="bi bi-check-circle"></i> Xác nhận đăng ký');
+                    }
+                });
+            });
+
+            function showAlert(type, message) {
+                const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                $('.container-fluid .row:first').after(alertHtml);
+                
+                // Auto dismiss after 5 seconds
+                setTimeout(() => {
+                    $('.alert').alert('close');
+                }, 5000);
+            }
+        });
+    </script>
+}
+
+<style>
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .register-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+    
+    .table-responsive {
+        border-radius: 8px;
+    }
+</style>

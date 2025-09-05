@@ -1,0 +1,511 @@
+﻿@model List<API.ViewModel.AdminResgistration>
+@{
+    ViewData["Title"] = "Quản lý đơn đăng ký";
+    var currentStatus = ViewBag.CurrentStatus as string;
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary fw-bold">🛠️ Quản lý đơn đăng ký</h2>
+                    <p class="text-muted">Duyệt hoặc từ chối các đơn đăng ký giảng dạy</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bộ lọc trạng thái -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a asp-action="AllRegistrations"
+                           class="btn @(string.IsNullOrEmpty(currentStatus) ? "btn-primary" : "btn-outline-primary")">
+                            <i class="bi bi-list"></i> Tất cả (@Model.Count)
+                        </a>
+                        <a asp-action="AllRegistrations" asp-route-status="Chờ duyệt"
+                           class="btn @(currentStatus == "Chờ duyệt" ? "btn-warning" : "btn-outline-warning")">
+                            <i class="bi bi-clock"></i> Chờ duyệt (@Model.Count(x => x.Status == "Chờ duyệt"))
+                        </a>
+                        <a asp-action="AllRegistrations" asp-route-status="Đã duyệt"
+                           class="btn @(currentStatus == "Đã duyệt" ? "btn-success" : "btn-outline-success")">
+                            <i class="bi bi-check-circle"></i> Đã duyệt (@Model.Count(x => x.Status == "Đã duyệt"))
+                        </a>
+                        <a asp-action="AllRegistrations" asp-route-status="Từ chối"
+                           class="btn @(currentStatus == "Từ chối" ? "btn-danger" : "btn-outline-danger")">
+                            <i class="bi bi-x-circle"></i> Từ chối (@Model.Count(x => x.Status == "Từ chối"))
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thống kê nhanh -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                    <h4 class="mt-2">@Model.Count(x => x.Status == "Chờ duyệt")</h4>
+                    <p class="mb-0">Chờ duyệt</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                    <h4 class="mt-2">@Model.Count(x => x.Status == "Đã duyệt")</h4>
+                    <p class="mb-0">Đã duyệt</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle" style="font-size: 2rem;"></i>
+                    <h4 class="mt-2">@Model.Count(x => x.Status == "Từ chối")</h4>
+                    <p class="mb-0">Từ chối</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-list-ul" style="font-size: 2rem;"></i>
+                    <h4 class="mt-2">@Model.Count</h4>
+                    <p class="mb-0">Tổng đơn</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-file-text"></i>
+                Danh sách đơn đăng ký
+                @if (!string.IsNullOrEmpty(currentStatus))
+                {
+                    <span class="ms-2 badge bg-light text-dark">@currentStatus</span>
+                }
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Giảng viên</th>
+                                <th>Email</th>
+                                <th>Lớp học</th>
+                                <th>Môn học</th>
+                                <th>Phòng</th>
+                                <th>Ca học</th>
+                                <th>Thời gian</th>
+                                <th>Ngày học</th>
+                                <th>Ngày đăng ký</th>
+                                <th>Trạng thái</th>
+                                <th>Người duyệt</th>
+                                <th>Ngày duyệt</th>
+                                <th class="text-center">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var registration in Model)
+                            {
+                                <tr data-registration-id="@registration.regisID">
+                                    <td>
+                                        <strong>@registration.TeacherName</strong>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@registration.TeacherEmail</small>
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">@registration.ClassName</strong>
+                                    </td>
+                                    <td>@registration.SujectName</td>
+                                    <td>
+                                        <span class="badge bg-info">@registration.RoomName</span>
+                                    </td>
+                                    <td>@registration.ShiftName</td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @(registration.starttime.HasValue ? registration.starttime.Value.ToString(@"hh\:mm") : "")
+                                            @(registration.endtime.HasValue ? registration.endtime.Value.ToString(@"hh\:mm") : "")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        @foreach (var day in registration.DayNames)
+                                        {
+                                            <span class="badge bg-secondary me-1">@day</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small>@registration.CreateAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        @if (registration.Status == "Chờ duyệt")
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-clock"></i> @registration.Status
+                                            </span>
+                                        }
+                                        else if (registration.Status == "Đã duyệt")
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> @registration.Status
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle"></i> @registration.Status
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(registration.ApprovedBy))
+                                        {
+                                            <small class="text-muted">@registration.ApprovedBy</small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">-</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (registration.ApprovedDate != DateTime.MinValue)
+                                        {
+                                            <small>@registration.ApprovedDate.ToString("dd/MM/yyyy HH:mm")</small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">-</small>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (registration.Status == "Chờ duyệt")
+                                        {
+                                            <div class="btn-group" role="group">
+                                                <button class="btn btn-success btn-sm approve-btn"
+                                                        data-registration-id="@registration.regisID"
+                                                        data-teacher-name="@registration.TeacherName"
+                                                        data-class-name="@registration.ClassName"
+                                                        data-action="approve">
+                                                    <i class="bi bi-check"></i>
+                                                </button>
+                                                <button class="btn btn-danger btn-sm reject-btn"
+                                                        data-registration-id="@registration.regisID"
+                                                        data-teacher-name="@registration.TeacherName"
+                                                        data-class-name="@registration.ClassName"
+                                                        data-action="reject">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">
+                                                <i class="bi bi-lock"></i> Đã xử lý
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-file-earmark-x" style="font-size: 4rem; color: #6c757d;"></i>
+                    </div>
+                    <h5 class="text-muted">Không có đơn đăng ký nào</h5>
+                    <p class="text-muted">
+                        @if (!string.IsNullOrEmpty(currentStatus))
+                        {
+                            <span>Không có đơn đăng ký nào có trạng thái "@currentStatus".</span>
+                        }
+                        else
+                        {
+                            <span>Chưa có đơn đăng ký nào từ giảng viên.</span>
+                        }
+                    </p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận duyệt -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-success">
+                    <i class="bi bi-check-circle"></i> Xác nhận duyệt đơn
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn <strong class="text-success">duyệt</strong> đơn đăng ký của:</p>
+                <div class="alert alert-info">
+                    <strong>Giảng viên:</strong> <span id="approveTeacherName"></span><br>
+                    <strong>Lớp học:</strong> <span id="approveClassName"></span>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Sau khi duyệt, giảng viên sẽ được phân công vào lớp học này và không thể thay đổi.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-success" id="confirmApprove">
+                    <i class="bi bi-check-circle"></i> Xác nhận duyệt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận từ chối -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="bi bi-x-circle"></i> Xác nhận từ chối đơn
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn <strong class="text-danger">từ chối</strong> đơn đăng ký của:</p>
+                <div class="alert alert-info">
+                    <strong>Giảng viên:</strong> <span id="rejectTeacherName"></span><br>
+                    <strong>Lớp học:</strong> <span id="rejectClassName"></span>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Sau khi từ chối, giảng viên có thể đăng ký lại lớp học này.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmReject">
+                    <i class="bi bi-x-circle"></i> Xác nhận từ chối
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            let selectedRegistrationId = null;
+            let selectedAction = null;
+
+            // Xử lý click duyệt
+            $('.approve-btn').click(function () {
+                selectedRegistrationId = $(this).data('registration-id');
+                selectedAction = 'approve';
+
+                const teacherName = $(this).data('teacher-name');
+                const className = $(this).data('class-name');
+
+                $('#approveTeacherName').text(teacherName);
+                $('#approveClassName').text(className);
+                $('#approveModal').modal('show');
+            });
+
+            // Xử lý click từ chối
+            $('.reject-btn').click(function () {
+                selectedRegistrationId = $(this).data('registration-id');
+                selectedAction = 'reject';
+
+                const teacherName = $(this).data('teacher-name');
+                const className = $(this).data('class-name');
+
+                $('#rejectTeacherName').text(teacherName);
+                $('#rejectClassName').text(className);
+                $('#rejectModal').modal('show');
+            });
+
+            // Xử lý xác nhận duyệt
+            $('#confirmApprove').click(function () {
+                processRegistration(1); // ApprovedStatus.Approved = 1
+            });
+
+            // Xử lý xác nhận từ chối
+            $('#confirmReject').click(function () {
+                processRegistration(2); // ApprovedStatus.Rejected = 2
+            });
+
+            function processRegistration(approveStatus) {
+                if (!selectedRegistrationId) return;
+
+                const btn = selectedAction === 'approve' ? $('#confirmApprove') : $('#confirmReject');
+                const modal = selectedAction === 'approve' ? $('#approveModal') : $('#rejectModal');
+
+                btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i>Đang xử lý...');
+
+                $.ajax({
+                    url: '@Url.Action("ApproveRegistration")',
+                    type: 'POST',
+                    data: {
+                        registrationId: selectedRegistrationId,
+                        approve: approveStatus
+                    },
+                    success: function (response) {
+                        modal.modal('hide');
+
+                        if (response.success) {
+                            showAlert('success', response.message);
+
+                            // Update the row in table
+                            updateRowStatus(selectedRegistrationId, approveStatus);
+
+                            // Update statistics
+                            updateStatistics();
+
+                            // Reload page after 2 seconds
+                            setTimeout(() => location.reload(), 2000);
+                        } else {
+                            showAlert('danger', response.message);
+                        }
+                    },
+                    error: function () {
+                        modal.modal('hide');
+                        showAlert('danger', 'Có lỗi xảy ra, vui lòng thử lại!');
+                    },
+                    complete: function () {
+                        const originalText = selectedAction === 'approve' ?
+                            '<i class="bi bi-check-circle"></i> Xác nhận duyệt' :
+                            '<i class="bi bi-x-circle"></i> Xác nhận từ chối';
+                        btn.prop('disabled', false).html(originalText);
+                    }
+                });
+            }
+
+            function updateRowStatus(registrationId, status) {
+                const row = $(`tr[data-registration-id="${registrationId}"]`);
+                const statusCell = row.find('td:nth-child(10)'); // Status column
+                const actionCell = row.find('td:nth-child(13)'); // Action column
+
+                let statusBadge = '';
+                if (status === 1) { // Approved
+                    statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Đã duyệt</span>';
+                } else if (status === 2) { // Rejected
+                    statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Từ chối</span>';
+                }
+
+                statusCell.html(statusBadge);
+                actionCell.html('<span class="text-muted"><i class="bi bi-lock"></i> Đã xử lý</span>');
+            }
+
+            function updateStatistics() {
+                // This would be more complex in real implementation
+                // For now, we'll just reload the page to get fresh statistics
+            }
+
+            function showAlert(type, message) {
+                const alertHtml = `
+                            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                                ${message}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        `;
+                $('.container-fluid .row:first').after(alertHtml);
+
+                // Auto dismiss after 5 seconds
+                setTimeout(() => {
+                    $('.alert').alert('close');
+                }, 5000);
+            }
+
+            // Auto refresh for pending registrations
+            const hasPending = $('.badge:contains("Chờ duyệt")').length > 0;
+            if (hasPending) {
+                setInterval(function () {
+                    location.reload();
+                }, 60000); // Refresh every minute
+            }
+
+            // Add tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}
+
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+
+        .card.bg-warning,
+        .card.bg-success,
+        .card.bg-danger,
+        .card.bg-info {
+            transition: transform 0.2s;
+        }
+
+            .card.bg-warning:hover,
+            .card.bg-success:hover,
+            .card.bg-danger:hover,
+            .card.bg-info:hover {
+                transform: translateY(-2px);
+            }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+
+    .table-responsive {
+        border-radius: 8px;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .btn-group .btn {
+        border-radius: 4px !important;
+        margin: 0 1px;
+    }
+
+    .approve-btn:hover {
+        transform: scale(1.1);
+        transition: transform 0.2s;
+    }
+
+    .reject-btn:hover {
+        transform: scale(1.1);
+        transition: transform 0.2s;
+    }
+
+    .alert {
+        border: none;
+        border-radius: 8px;
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 12px;
+    }
+</style>

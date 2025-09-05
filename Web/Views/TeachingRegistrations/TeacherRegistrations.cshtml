@@ -1,0 +1,234 @@
+﻿@model List<API.ViewModel.TeachingRegistrationVM>
+@{
+    ViewData["Title"] = "Đơn đăng ký của tôi";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary fw-bold">📋 Đơn đăng ký của tôi</h2>
+                    <p class="text-muted">Theo dõi trạng thái các đơn đăng ký giảng dạy</p>
+                </div>
+                <div>
+                    <a asp-action="AllSchedules" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Đăng ký lịch mới
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thống kê nhanh -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                    <h4 class="mt-2">@Model.Count(x => x.Status == "Chờ duyệt")</h4>
+                    <p class="mb-0">Chờ duyệt</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                    <h4 class="mt-2">@Model.Count(x => x.Status == "Đã duyệt")</h4>
+                    <p class="mb-0">Đã duyệt</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle" style="font-size: 2rem;"></i>
+                    <h4 class="mt-2">@Model.Count(x => x.Status == "Từ chối")</h4>
+                    <p class="mb-0">Từ chối</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-list-ul" style="font-size: 2rem;"></i>
+                    <h4 class="mt-2">@Model.Count</h4>
+                    <p class="mb-0">Tổng đơn</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-file-text"></i>
+                Danh sách đơn đăng ký (@Model.Count đơn)
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Lớp học</th>
+                                <th>Môn học</th>
+                                <th>Phòng học</th>
+                                <th>Ca học</th>
+                                <th>Thời gian</th>
+                                <th>Ngày học</th>
+                                <th>Ngày đăng ký</th>
+                                <th>Trạng thái</th>
+                                <th>Người duyệt</th>
+                                <th>Ngày duyệt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var registration in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong class="text-primary">@registration.ClassName</strong>
+                                    </td>
+                                    <td>@registration.SujectName</td>
+                                    <td>
+                                        <span class="badge bg-info">@registration.RoomName</span>
+                                    </td>
+                                    <td>@registration.ShiftName</td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @(registration.starttime.HasValue ? registration.starttime.Value.ToString(@"hh\:mm") : "")
+                                            @(registration.endtime.HasValue ? registration.endtime.Value.ToString(@"hh\:mm") : "")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        @foreach (var day in registration.DayNames)
+                                        {
+                                            <span class="badge bg-secondary me-1">@day</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small>@registration.CreateAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        @if (registration.Status == "Chờ duyệt")
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-clock"></i> @registration.Status
+                                            </span>
+                                        }
+                                        else if (registration.Status == "Đã duyệt")
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> @registration.Status
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle"></i> @registration.Status
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(registration.ApprovedBy))
+                                        {
+                                            <small class="text-muted">@registration.ApprovedBy</small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">-</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (registration.ApprovedDate != DateTime.MinValue)
+                                        {
+                                            <small>@registration.ApprovedDate.ToString("dd/MM/yyyy HH:mm")</small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">-</small>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-file-earmark-x" style="font-size: 4rem; color: #6c757d;"></i>
+                    </div>
+                    <h5 class="text-muted">Chưa có đơn đăng ký nào</h5>
+                    <p class="text-muted">Bạn chưa đăng ký lịch giảng dạy nào.</p>
+                    <a asp-action="AllSchedules" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Đăng ký lịch giảng dạy
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Auto refresh page every 30 seconds to update status
+            setInterval(function () {
+                // Only refresh if there are pending registrations
+                const hasPending = $('.badge:contains("Chờ duyệt")').length > 0;
+                if (hasPending) {
+                    location.reload();
+                }
+            }, 30000);
+
+            // Add tooltip for status badges
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}
+
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+
+        .card.bg-warning,
+        .card.bg-success,
+        .card.bg-danger,
+        .card.bg-info {
+            transition: transform 0.2s;
+        }
+
+            .card.bg-warning:hover,
+            .card.bg-success:hover,
+            .card.bg-danger:hover,
+            .card.bg-info:hover {
+                transform: translateY(-2px);
+            }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+
+    .table-responsive {
+        border-radius: 8px;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+</style>
