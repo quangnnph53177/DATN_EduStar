@@ -7,8 +7,7 @@
         public string? Description { get; set; }
         public string? SubjectName { get; set; }
         public int? SemesterId { get; set; }
-        public int YearSchool { get; set; }
-        public int NumberOfCredits { get; set; }
+        public int? NumberOfCredits { get; set; }
         //Thêm 2 trường này
         public string? RoomCode { get; set; }
         public string? StudyShiftName { get; set; }

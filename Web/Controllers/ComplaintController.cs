@@ -1,7 +1,9 @@
-﻿using API.ViewModel;
+﻿using API.Data;
+using API.ViewModel;
 using Azure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -10,9 +12,11 @@ namespace Web.Controllers
     public class ComplaintController : Controller
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        public ComplaintController(IHttpClientFactory httpClientFactory)
+        private readonly AduDbcontext _context;
+        public ComplaintController(IHttpClientFactory httpClientFactory, AduDbcontext aduDbcontext)
         {
             _httpClientFactory = httpClientFactory;
+            _context = aduDbcontext;
         }
 
         // Hàm helper lấy HttpClient có set Authorization header từ cookie token
@@ -36,41 +40,19 @@ namespace Web.Controllers
             try
             {
                 var response = await client.GetAsync("api/complaints/complaints");
-
-                if (response.IsSuccessStatusCode)
+                var complaintList = await response.Content.ReadFromJsonAsync<List<ComplaintDTO>>();
+                if (!response.IsSuccessStatusCode)
                 {
-                    var complaints = await response.Content.ReadFromJsonAsync<IEnumerable<ComplaintDTO>>();
-                    return View(complaints);
-                }
-                else
-                {
-                    // Đọc nội dung lỗi từ server (nếu có)
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    var statusCode = (int)response.StatusCode;
-
-                    TempData["ErrorMessage"] = $"Lỗi API: {(int)response.StatusCode} - {response.ReasonPhrase}";
-                    TempData["ApiErrorDetail"] = errorContent;
-
-                    return View(new List<ComplaintDTO>());
+                    TempData["ErrorMessage"] = errorContent;
                 }
-            }
-            catch (HttpRequestException httpEx)
-            {
-                TempData["ErrorMessage"] = "Không thể kết nối tới API. Kiểm tra mạng hoặc server.";
-                TempData["ApiErrorDetail"] = httpEx.Message;
-                return View(new List<ComplaintDTO>());
-            }
-            catch (TaskCanceledException)
-            {
-                TempData["ErrorMessage"] = "Yêu cầu tới API bị timeout.";
-                return View(new List<ComplaintDTO>());
+                return View(complaintList);
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Lỗi không xác định.";
-                TempData["ApiErrorDetail"] = ex.Message;
-                return View(new List<ComplaintDTO>());
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
             }
+            return View(new List<ComplaintDTO>());
         }
         [HttpGet]
         public async Task<IActionResult> ClassChangeComplaint()
@@ -80,49 +62,17 @@ namespace Web.Controllers
 
             try
             {
-                var classlstresponse = await client.GetAsync("api/Complaints/GetstudentinClass");
-                var reponse = await client.GetAsync("/api/Class/GetOtherClasses/{currentClassId}");
-
-                if (!classlstresponse.IsSuccessStatusCode || !reponse.IsSuccessStatusCode)
-                {
-                    var errorContent = await classlstresponse.Content.ReadAsStringAsync();
-                    TempData["ErrorMessage"] = $"Không thể lấy danh sách lớp. Lỗi: {classlstresponse.StatusCode}, Nội dung: {errorContent}";
-                    return View();
-                }
-                var classlst = await classlstresponse.Content.ReadAsStringAsync();
-                var responseContent = await reponse.Content.ReadAsStringAsync();
-
-                var classList = JsonSerializer.Deserialize<List<ClassCreateViewModel>>(responseContent, new JsonSerializerOptions{PropertyNameCaseInsensitive = true});
-                var result = JsonSerializer.Deserialize<List<ClassCreateViewModel>>(classlst,new JsonSerializerOptions{PropertyNameCaseInsensitive = true});
-
-                // Gán vào ViewBag dạng SelectList
-                ViewBag.ClassList = result.Select(c => new SelectListItem
-                {
-                    Value = c.SubjectId.ToString(), // hoặc c.Id nếu bạn có ID lớp
-                    Text = c.ClassName
-                }).ToList();
-                ViewBag.RequestedClassList = classList.Select(c => new SelectListItem
-                {
-                    Value = c.SubjectId.ToString(), // hoặc c.Id nếu bạn có ID lớp
-                    Text = $"{c.ClassName} - {c.SemesterId}"
-                }).ToList();
-
-                return View();
+                await LoadClassSelectLists();
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                return View(new List<ClassCreateViewModel>());
             }
+            return View(new ClassChangeComplaintDTO());
         }
         [HttpPost]
         public async Task<IActionResult> ClassChangeComplaint(ClassChangeComplaintDTO dto)
         {
-            if (dto == null || dto.CurrentClassId == 0 || dto.RequestedClassId == 0 || string.IsNullOrWhiteSpace(dto.Reason))
-            {
-                TempData["ErrorMessage"] = "Dữ liệu không hợp lệ.";
-                return View(dto);
-            }
             var client = GetClientWithToken();
             if (client == null) return RedirectToAction("Login", "Account");
             try
@@ -137,8 +87,11 @@ namespace Web.Controllers
                 {
                     var error = await response.Content.ReadAsStringAsync();
                     TempData["ErrorMessage"] = $"Lỗi khi đăng ký khiếu nại: {error}";
-                    return View(dto);
+                   
                 }
+                await LoadClassSelectLists();
+                return View(dto);
+
             }
             catch (Exception ex)
             {
@@ -151,19 +104,13 @@ namespace Web.Controllers
         {
             var model = new ProcessComplaintDTO
             {
-                ComplaintId = id // 👈 Gán đúng ID vào model
+                ComplaintId = id 
             };
             return View(model);
         }
         [HttpPost]
         public async Task<IActionResult> ProcessClassComplaint(ProcessComplaintDTO dto)
         {
-            Console.WriteLine($"Gửi xử lý complaintId = {dto.ComplaintId}");
-            if (!ModelState.IsValid)
-            {
-                TempData["ErrorMessage"] = "Dữ liệu không hợp lệ.";
-                return RedirectToAction("ComplaintDetail", new { id = dto.ComplaintId });
-            }
             var client = GetClientWithToken();
             if (client == null) return RedirectToAction("Login", "Account");
             try
@@ -186,6 +133,57 @@ namespace Web.Controllers
                 TempData["ErrorMessage"] = $"Lỗi khi xử lý khiếu nại: {ex.Message}";
             }
             return View(dto);
+        }
+        [HttpGet]
+        public async Task<IActionResult> ComplaintDetail(int id)
+        {
+            var client = GetClientWithToken();
+            if (client == null) return RedirectToAction("Login", "Users");
+            try
+            {
+                var response = await client.GetAsync($"api/Complaints/chiTietKhieuNai/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var complaintDetails = await response.Content.ReadFromJsonAsync<List<ComplaintDTO>>();
+                    return View(complaintDetails);
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    TempData["ErrorMessage"] = errorContent;
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+            }
+            return View(new List<ComplaintDTO>());
+        }
+        private async Task LoadClassSelectLists()
+        {
+            var client = GetClientWithToken();
+
+            // Lấy lớp hiện tại của học sinh
+            var classlstresponse = await client.GetAsync("api/Complaints/GetClassesOfStudent");
+            if (classlstresponse.IsSuccessStatusCode)
+            {
+                var classlst = await classlstresponse.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<List<ClassViewModel>>(classlst, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                ViewBag.ClassList = result.Select(c => new SelectListItem
+                {
+                    Value = c.schedulesId.ToString(),
+                    Text = $"{c.ClassName} - {c.SubjectName}"
+                }).ToList();
+            }
+
+            // Lớp muốn chuyển đến (toàn bộ lớp)
+            var getclass = await _context.Schedules.Include(c => c.Subject).ToListAsync();
+            ViewBag.RequestedClassList = getclass.Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = $"{c.ClassName} - {c.Subject.SubjectName}"
+            }).ToList();
         }
     }
 }

@@ -35,7 +35,7 @@ builder.Services.AddScoped<ISubject ,SubjectRepos > ();
 builder.Services.AddScoped<IRoleRepos, RoleRepos>();
 builder.Services.AddScoped<IPermissionRepos, PermissionRepos>();
 builder.Services.AddScoped<IAttendance , AttendanceRepos>();
-//builder.Services.AddScoped<IComplaintRepos, ComplaintRepos>();
+builder.Services.AddScoped<IComplaintRepos, ComplaintRepos>();
 builder.Services.AddScoped<IRoom, RoomRepos>();
 builder.Services.AddScoped<ITeachingRegistrationRepos, TeachingRegistrationRepos>();
 builder.Services.AddScoped<ISemesterRepos, SemesterRepos>();
@@ -146,7 +146,12 @@ using (var scope = app.Services.CreateScope())
         };
 
         user.PassWordHash = UserRepos.PasswordHasher.HashPassword("string");
-
+        user.UserProfile = new UserProfile
+        {
+            UserId = user.Id,
+            FullName = user.UserName,
+            UserCode = "AD00001"
+        };
         context.Users.Add(user);
         context.SaveChanges();
     }

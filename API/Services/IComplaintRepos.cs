@@ -6,10 +6,9 @@ namespace API.Services
     public interface IComplaintRepos
     {
         Task<IEnumerable<ComplaintDTO>> GetAllComplaints(List<int> currentUserRoleIds, string? currentUsername);
-        Task<string> SubmitClassChangeComplaint(ClassChangeComplaintDTO dto,Guid studentId);
-        Task<List<ClassCreateViewModel>> GetClassesOfStudent(Guid studentId);
-        Task<List<Schedule>> GetClassesInSameSubject(int currentClassId);
-
-        Task<bool> ProcessClassChangeComplaint(int complaintId, ProcessComplaintDTO dto,Guid handlerId);
+        Task<string> SubmitClassChangeComplaint(ClassChangeComplaintDTO dto, string userCode);
+        Task<List<ClassViewModel>> ClassesOfStudent(string userCode);
+        Task<bool> ProcessClassChangeComplaint(int complaintId, ProcessComplaintDTO dto, Guid handlerId);
+        Task<IEnumerable<ComplaintDTO>> ChiTietKhieuNai(int complaintId);
     }
 }

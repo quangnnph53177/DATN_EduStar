@@ -12,5 +12,9 @@
         public DateTime? CreateAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
         public string? ResponseNote { get; set; }
+        public int? CurrentClassId { get; set; }
+        public int? RequestedClassId { get; set; }
+        public string? CurrentClassName { get; set; }
+        public string? RequestedClassName { get; set; }
     }
 }

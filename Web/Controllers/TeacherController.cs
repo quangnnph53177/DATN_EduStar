@@ -287,7 +287,7 @@ namespace Web.Controllers
             {
                 var result = await response.Content.ReadFromJsonAsync<object>();
                 TempData["SuccessMessage"] = "Tạo tài khoản thành công.";
-                return RedirectToAction("Index", "Users");
+                return RedirectToAction("Index", "Teacher");
             }
             else
             {
@@ -383,6 +383,22 @@ namespace Web.Controllers
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
                 return RedirectToAction("Index", "Teacher");
             }
+        }
+        public async Task<IActionResult> Export()
+        {
+            var client = GetClientWithToken();
+            var response = await client.GetAsync("api/User/excelTeacher");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["Message"] = "❌ Không xuất được file.";
+                return RedirectToAction("Index");
+            }
+
+            var content = await response.Content.ReadAsByteArrayAsync();
+            var fileName = $"DanhSach_GiangVien_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+
+            return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
     }
 }

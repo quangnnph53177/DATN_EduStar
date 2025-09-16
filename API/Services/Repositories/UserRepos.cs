@@ -5,6 +5,7 @@ using Humanizer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OfficeOpenXml;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -103,17 +104,17 @@ namespace API.Services.Repositories
         {
             if (roles.Any(r => r.Id == 1)) // Admin
             {
-                int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 1));
+                int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 1) && u.IsDeleted == false);
                 return $"AD{(count + 1):D5}";
             }
             if (roles.Any(r => r.Id == 2)) // Giảng viên
             {
-                int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 2));
+                int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 2) && u.IsDeleted == false);
                 return $"GV{(count + 1):D5}";
             }
             if (roles.Any(r => r.Id == 3)) // Sinh viên
             {
-                int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 3));
+                int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 3) && u.IsDeleted == false);
                 return $"SV{(count + 1):D5}";
             }
             return $"US{Guid.NewGuid().ToString()[..5].ToUpper()}";
@@ -356,6 +357,7 @@ namespace API.Services.Repositories
                 throw new Exception("Tên đăng nhập hoặc mật khẩu không được để trống.");
 
             var user = await _context.Users
+                .Include(u => u.UserProfile)
                 .Include(u => u.Roles)
                 .ThenInclude(r => r.Permissions)
                 .FirstOrDefaultAsync(u => u.UserName == userName);
@@ -366,7 +368,7 @@ namespace API.Services.Repositories
                 throw new Exception("Tên đăng nhập không tồn tại.");
 
             // Kiểm tra trạng thái tài khoản
-            if (user.Statuss != true)
+            if (user.Statuss != true || user.IsConfirm != true)
                 throw new Exception("Tài khoản đang bị khóa hoặc không hoạt động.");
 
             bool isPasswordValid = PasswordHasher.Verify(password, user.PassWordHash);
@@ -407,11 +409,9 @@ namespace API.Services.Repositories
                  new Claim("UserId", user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName)
             };
-            claims.AddRange(user.Roles.Select(r => new Claim("RoleName", r.RoleName) /* Tên vai trò*/ ));
-            // Thêm RoleId (sử dụng roleId để kiểm tra quyền nhanh gọn)
+            claims.AddRange(user.Roles.Select(r => new Claim("RoleName", r.RoleName) ));
             claims.AddRange(user.Roles.Select(r => new Claim(ClaimTypes.Role, r.Id.ToString())));
-
-            // Thêm Permission
+            claims.Add(new Claim("UserCode", user.UserProfile.UserCode));
             claims.AddRange(permissions.Select(p => new Claim("Permission", p)));
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -454,19 +454,57 @@ namespace API.Services.Repositories
                 .ThenBy(u => u.User?.UserProfile?.FullName)
                 .Select(u => MapToUserDTO(u.User));
         }
-        public async Task<string> LockUser(string userName, Guid currentUserId)
+        public async Task<byte[]> ExportToExcel(List<UserDTO> model)
+        {
+            using var package = new ExcelPackage();
+            var worksheet = package.Workbook.Worksheets.Add("Students");
+            worksheet.Cells[1, 1].Value = "STT";
+            worksheet.Cells[1, 2].Value = "Họ tên";
+            worksheet.Cells[1, 3].Value = "Tên đăng nhập";
+            worksheet.Cells[1, 4].Value = "Mã sinh viên";
+            worksheet.Cells[1, 5].Value = "Email";
+            worksheet.Cells[1, 6].Value = "Số điện thoại";
+            worksheet.Cells[1, 7].Value = "Ngày sinh";
+            worksheet.Cells[1, 8].Value = "Giới tính";
+            worksheet.Cells[1, 9].Value = "Địa chỉ";
+            worksheet.Cells[1, 10].Value = "Trạng thái";
+            int row = 2;
+            int stt = 1;
+            foreach (var item in model)
+            {
+                worksheet.Cells[row, 1].Value = stt++;
+                worksheet.Cells[row, 2].Value = item.FullName;
+                worksheet.Cells[row, 3].Value = item.UserName;
+                worksheet.Cells[row, 4].Value = item.UserCode;
+                worksheet.Cells[row, 5].Value = item.Email;
+                worksheet.Cells[row, 6].Value = item.PhoneNumber;
+                worksheet.Cells[row, 7].Value = item.Dob;
+                worksheet.Cells[row, 8].Value = item.Gender;
+                worksheet.Cells[row, 9].Value = item.Address;
+                worksheet.Cells[row, 10].Value = item.Statuss;
+                row++;
+            }
+            return package.GetAsByteArray();
+        }
+        public async Task<(bool Success, bool? NewStatus, string Message)> LockUser(string userName, Guid currentUserId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
             if (user == null)
-                return "Không tìm thấy người dùng với tên đăng nhập đã cho.";
+                return (false, null, "Không tìm thấy người dùng với tên đã cho.");
+
             if (user.Id == currentUserId)
-                return "Không thể khóa hoặc mở khóa chính tài khoản của bạn.";
-            user.Statuss = !(user.Statuss ?? false); // Đảo trạng thái
+            {
+                var actionText = (user.Statuss ?? false) ? "khóa" : "mở khóa";
+                return (false, user.Statuss, $"Không thể {actionText} chính tài khoản của bạn.");
+            }
+            if (user.IsConfirm == false)
+                return (false, user.Statuss, "Tài khoản chưa được xác nhận. Không thể khóa hoặc mở khóa.");
+
+            user.Statuss = !(user.Statuss ?? false);
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
-            return user.Statuss == true ? "Mở khóa thành công" : "Khóa thành công";
-
+            return (true, user.Statuss, user.Statuss == true ? "Mở khóa thành công" : "Khóa thành công");
         }
         public async Task UpdateUser(UserDTO userDto, IFormFile? imgFile)
         {
@@ -537,7 +575,7 @@ namespace API.Services.Repositories
             // Gán role mới (chỉ giữ 1 vai trò)
             user.Roles = new List<Role> { newRole };
 
-            if (currentRoleId == 3 && (newRoleId == 1 || newRoleId == 2)) // Sinh viên → Admin/Giảng viên
+            if (currentRoleId == 3 && (newRoleId == 1 || newRoleId == 2)) 
             {
                 if (user.StudentsInfor != null)
                     _context.StudentsInfors.Remove(user.StudentsInfor);
@@ -555,17 +593,18 @@ namespace API.Services.Repositories
                     };
                 }
             }
-            else if ((currentRoleId == 1 || currentRoleId == 2) && newRoleId == 3) // Admin/Giảng viên → Sinh viên
+            else if ((currentRoleId == 1 || currentRoleId == 2) && newRoleId == 3)
             {
                 if (user.UserProfile != null)
                     _context.UserProfiles.Remove(user.UserProfile);
 
                 if (user.StudentsInfor == null)
                 {
+                    int count = await _context.Users.CountAsync(u => u.Roles.Any(r => r.Id == 3) && u.IsDeleted == false);
                     user.StudentsInfor = new StudentsInfor
                     {
                         UserId = user.Id,
-                        StudentsCode = "SV" + DateTime.Now.Ticks.ToString().Substring(10)
+                        StudentsCode = $"SV{(count + 1):D5}"
                     };
                 }
             }
@@ -821,51 +860,11 @@ namespace API.Services.Repositories
             await _context.SaveChangesAsync();
             return user;
         }
-
-        //Lấy danh sách sinh viên có trong lớp của giảng viên
-        //public async Task<TeacherWithClassesViewModel> GetStudentByTeacher(Guid? teacherId)
-        //{
-        //    // 🔎 Truy vấn tên giảng viên
-        //    var teacher = await _context.Users
-        //        .Include(u => u.UserProfile)
-        //        .FirstOrDefaultAsync(u => u.Id == teacherId);
-
-        //    if (teacher == null)
-        //        throw new Exception("Không tìm thấy giảng viên.");
-        //    var teacherName = teacher.UserProfile?.FullName ?? "Không rõ";
-        //    // Lấy các lớp của giảng viên  
-        //    var classList = await _context.Classes
-        //        .Where(c => c.UsersId == teacherId)
-        //        .Include(c => c.Students)
-        //            .ThenInclude(s => s.User)
-        //                .ThenInclude(u => u.UserProfile)
-        //        .Include(c => c.Students)
-        //            .ThenInclude(s => s.User)
-        //                .ThenInclude(u => u.Roles)
-        //        .ToListAsync();
-
-        //    var result = new TeacherWithClassesViewModel
-        //    {
-        //        TeacherId = teacher.Id,
-        //        TeacherName = teacher.UserProfile?.FullName ?? "Không rõ",
-        //        Classes = classList.Select(c => new ClassWithStudentsViewModel
-        //        {
-        //            ClassId = c.Id,
-        //            ClassName = c.NameClass,
-        //            StudentsInfor = c.Students
-        //                .Where(s => s.UserId != null && s.User != null)
-        //                .Select(s => MapToUserDTO(s.User))
-        //                .ToList()
-        //        }).ToList()
-        //    };
-
-        //    return result;
-        //}
-        public static class PasswordHasher
+                public static class PasswordHasher
         {
-            private const int SaltSize = 16; // 128-bit salt
-            private const int Iterations = 100000; // Số lần lặp (nên >= 100,000)
-            private const int HashSize = 32; // 256-bit hash
+            private const int SaltSize = 16; 
+            private const int Iterations = 100000; 
+            private const int HashSize = 32; 
 
             public static string HashPassword(string password)
             {

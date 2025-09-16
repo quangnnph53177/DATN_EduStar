@@ -2,6 +2,7 @@
 using API.ViewModel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Net.Http.Headers;
@@ -296,7 +297,7 @@ namespace Web.Controllers
                 return RedirectToAction("Upload");
             }
 
-            TempData["SuccessMessage"] = "Tạo tài khoản thành công!";
+            TempData["SuccessMessage"] = $"Tạo tài khoản thành công! :{result}";
             return RedirectToAction("Index", "Student");
         }
 
@@ -511,16 +512,16 @@ namespace Web.Controllers
                 var client = GetClientWithToken();
                 // Gọi API với phương thức POST (đã đổi trên API)
                 var response = await client.PostAsync($"https://localhost:7298/api/User/lock/{username}", null);
-                var content = await response.Content.ReadAsStringAsync();
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ApiResult>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
 
-                if (response.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Cập nhật trạng thái người dùng thành công.";
-                }
+                if (result?.Success == true)
+                    TempData["SuccessMessage"] = result.Message;
                 else
-                {
-                    TempData["ErrorMessage"] = !string.IsNullOrEmpty(content) ? content : "Thao tác thất bại.";
-                }
+                    TempData["ErrorMessage"] = result?.Message ?? "Thao tác thất bại.";
             }
             catch (Exception ex)
             {
@@ -701,6 +702,27 @@ namespace Web.Controllers
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
                 return View();
             }
+        }
+        public async Task<IActionResult> Export()
+        {
+            var client = GetClientWithToken();
+            var response = await client.GetAsync("api/User/excelAdmin");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["Message"] = "❌ Không xuất được file.";
+                return RedirectToAction("Index");
+            }
+
+            var content = await response.Content.ReadAsByteArrayAsync();
+            var fileName = $"DanhSach_QuanTri_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+
+            return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+        public class ApiResult
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; }
         }
     }
 }

@@ -11,11 +11,12 @@ namespace API.Services
         Task<LoginResult> Login(string userName, string passWord);
         Task UpdateUser(UserDTO userd, IFormFile imgFile);
         Task<string> ConfirmEmail(string token);
-        Task<string> LockUser(string userName, Guid currentUserId);
+        Task<(bool Success, bool? NewStatus, string Message)> LockUser(string userName, Guid currentUserId);
         Task<string> ChangeRole(string userName, int newRoleId);
         Task ForgetPassword(string email);
         Task<string> ResetPassword(string token, string newPassword);
         Task<User> CreateSV(UserDTO usd, IFormFile? imgFile);
+        Task<byte[]> ExportToExcel(List<UserDTO> model);
 
     }
 }

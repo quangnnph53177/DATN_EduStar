@@ -40,7 +40,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
         [HttpPost("class-change-complaint")]
@@ -54,62 +54,46 @@ namespace API.Controllers
             try
             {
                 // Lấy StudentId từ token
-                var studentId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                var studentId = User.FindFirstValue("UserCode");
 
                 var result = await _repos.SubmitClassChangeComplaint(dto, studentId);
                 return Ok(new { Message = "Đăng ký khiếu nại thành công.", ComplaintId = result });
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Lỗi khi đăng ký khiếu nại: {ex.Message}");
+                return BadRequest(ex.Message);
             }
         }
-        [HttpGet("GetstudentinClass")]
+        [HttpGet("GetClassesOfStudent")]
         [Authorize]
-        public async Task<IActionResult> GetStudentInClass()
+        public async Task<IActionResult> GetClassesOfStudent([FromQuery] string? userCode = null)
         {
             try
             {
-                // Lấy userId từ token JWT
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-                if (userIdClaim == null)
-                    return Unauthorized("Không tìm thấy thông tin người dùng.");
+                var role = User.FindFirst(ClaimTypes.Role)?.Value;
+                string usercodes;
 
-                var userId = Guid.Parse(userIdClaim.Value);
-                var classes = await _repos.GetClassesOfStudent(userId);
+                if (role == "3")
+                {
+                    usercodes = User.FindFirstValue("UserCode");
+                    if (string.IsNullOrEmpty(usercodes))
+                        return Unauthorized("Không tìm thấy mã sinh viên trong token.");
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(userCode))
+                        return BadRequest("Mã sinh viên không được để trống.");
+                    usercodes = userCode;
+                }
+
+                var classes = await _repos.ClassesOfStudent(usercodes);
                 return Ok(classes);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
-
-        [HttpGet("GetOtherClasses/{currentClassId}")]
-        [Authorize]
-        public async Task<IActionResult> GetOtherClasses(int currentClassId)
-        {
-            try
-            {
-                var result = await _repos.GetClassesInSameSubject(currentClassId);
-
-                // Nếu dùng DTO:
-                var classDtos = result.Select(c => new ClassCreateViewModel
-                {
-                    ClassName = c.ClassName,
-                    SemesterId = c.SemesterId,
-                    SubjectId = c.SubjectId ?? 0,
-                   
-                }).ToList();
-
-                return Ok(classDtos);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
 
         [Authorize(Policy = "ProcessComplaintUS")]
         [HttpPut("process/{id}")]
@@ -129,9 +113,22 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
-        
+        [HttpGet("chiTietKhieuNai/{id}")]
+        public async Task<IActionResult> ChiTietKhieuNai(int id)
+        {
+            try
+            {
+                var result = await _repos.ChiTietKhieuNai(id);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+
+            }
+        }
     }
 }

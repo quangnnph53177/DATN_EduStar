@@ -105,7 +105,47 @@ namespace API.Controllers
                 permissions
             });
         }
+        [Authorize]
+        [HttpGet("excelAdmin")]
+        public async Task<IActionResult> excelfile()
+        {
+            // Lấy role hiện tại từ Claims
+            var currentUserRoleIds = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => int.Parse(c.Value))
+                .ToList();
 
+            var currentUserName = User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUserName))
+                return Unauthorized("Không tìm thấy thông tin người dùng");
+
+            // Lấy danh sách users (giống GetAdminView)
+            var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+
+            // Lọc ra RoleId = 1
+            var filteredUsers = users.Where(u => u.RoleIds.Contains(1)).ToList();
+
+            // chuyển sang StudentViewModels
+            var studentModels = filteredUsers.Select(u => new UserDTO
+            {
+                FullName = u.FullName,
+                UserName = u.UserName,
+                UserCode = u.UserCode,   // nếu model User của bạn có thuộc tính này
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                Dob = u.Dob,
+                Gender = u.Gender,
+                Address = u.Address,
+                Statuss = u.Statuss
+            }).ToList();
+
+            var excelBytes = await _userRepos.ExportToExcel(studentModels);
+
+            var fileName = $"DanhSach_Admin_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+            return File(excelBytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
+        }
         [Authorize(Policy = "CreateUS")]
         [HttpPost("preview-upload")]
         public async Task<IActionResult> Upload(IFormFile file)
@@ -408,7 +448,47 @@ namespace API.Controllers
             }
             return Ok(filteredUsers);
         }
+        [Authorize]
+        [HttpGet("excelTeacher")]
+        public async Task<IActionResult> excelfileTeacher()
+        {
+            // Lấy role hiện tại từ Claims
+            var currentUserRoleIds = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => int.Parse(c.Value))
+                .ToList();
 
+            var currentUserName = User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUserName))
+                return Unauthorized("Không tìm thấy thông tin người dùng");
+
+            // Lấy danh sách users (giống GetAdminView)
+            var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
+
+            // Lọc ra RoleId = 1
+            var filteredUsers = users.Where(u => u.RoleIds.Contains(2)).ToList();
+
+            // chuyển sang StudentViewModels
+            var studentModels = filteredUsers.Select(u => new UserDTO
+            {
+                FullName = u.FullName,
+                UserName = u.UserName,
+                UserCode = u.UserCode,   // nếu model User của bạn có thuộc tính này
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                Dob = u.Dob,
+                Gender = u.Gender,
+                Address = u.Address,
+                Statuss = u.Statuss
+            }).ToList();
+
+            var excelBytes = await _userRepos.ExportToExcel(studentModels);
+
+            var fileName = $"DanhSach_Teacher_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+            return File(excelBytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
+        }
         [HttpGet("student")]
         [Authorize(Roles = "1,2,3")]
         public async Task<IActionResult> GetStudentView()
@@ -560,50 +640,56 @@ namespace API.Controllers
         {
             try
             {
-                // Ghi log
-                Guid? performedByGuid = null;
+                // Xác định người thực hiện
                 var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (Guid.TryParse(performedBy, out var userGuid))
-                {
-                    performedByGuid = userGuid;
-                }
+                if (!Guid.TryParse(performedBy, out var performedByGuid))
+                    return BadRequest(new { success = false, message = "Không xác định được người thực hiện." });
 
-                // Kiểm tra performedBy có tồn tại trong DB  
-                var existed = await _context.Users.FindAsync(performedByGuid);
-                if (existed == null)
-                    return BadRequest("Người thực hiện không tồn tại.");
+                var performer = await _context.Users.FindAsync(performedByGuid);
+                if (performer == null)
+                    return BadRequest(new { success = false, message = "Người thực hiện không tồn tại." });
 
-                // Lấy thông tin user bị khóa để log
-                var lockedUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
+                // Lấy thông tin trước khi thay đổi
+                var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
+                if (targetUser == null)
+                    return NotFound(new { success = false, message = $"Không tìm thấy tài khoản \"{username}\"." });
+
                 var oldData = JsonSerializer.Serialize(new
                 {
-                    lockedUser.Email,
-                    lockedUser.UserName,
-                    Status = lockedUser.Statuss
+                    targetUser.Email,
+                    targetUser.UserName,
+                    Status = targetUser.Statuss
                 });
 
-                // Gọi xử lý Lock/Unlock
-                var resultMessage = await _userRepos.LockUser(username, performedByGuid.Value);
+                // Gọi service để đổi trạng thái
+                var (success, newStatus, message) = await _userRepos.LockUser(username, performedByGuid);
 
-                // Lấy lại thông tin mới sau khi cập nhật
-                var updatedUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
-                var description = (bool)updatedUser.Statuss ? $"Mở khóa tài khoản \"{username}\"" : $"Khóa tài khoản \"{username}\"";
+                if (!success)
+                    return BadRequest(new { success, message });
+
+                var description = (newStatus ?? false)
+                    ? $"Mở khóa tài khoản \"{username}\""
+                    : $"Khóa tài khoản \"{username}\"";
+                var action = (newStatus ?? false) ? "Unlock" : "Lock";
+
                 var newData = JsonSerializer.Serialize(new
                 {
-                    updatedUser.Email,
-                    updatedUser.UserName,
-                    Status = updatedUser.Statuss,
+                    targetUser.Email,
+                    targetUser.UserName,
+                    Status = newStatus,
                     description
                 });
-                var action = (bool)updatedUser.Statuss ? "Unlock" : "Lock";
+
+                // Ghi log
                 await _logRepos.LogAsync(
-                    updatedUser.Id,
+                    targetUser.Id,
                     action,
                     oldData,
                     newData,
                     performedByGuid
                 );
-                return Ok(new { success = true, message = resultMessage });
+
+                return Ok(new { success, message });
             }
             catch (Exception ex)
             {

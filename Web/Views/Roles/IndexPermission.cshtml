@@ -1,70 +1,65 @@
 ﻿@model List<API.Models.Permission>
-
 @{
     ViewData["Title"] = "Danh sách quyền hệ thống";
 }
 
 <div class="container mt-5">
-    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-        <div class="card-header bg-dark text-white py-3">
-            <h4 class="mb-0">
-                <i class="bi bi-list-check me-2"></i>@ViewData["Title"]
-            </h4>
+    <!-- Thông báo -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            <strong>@TempData["ErrorMessage"]</strong>
         </div>
+    }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            <strong>@TempData["SuccessMessage"]</strong>
+        </div>
+    }
 
-        <div class="card-body px-4 py-4">
+    <h2 class="mb-3 text-primary">
+        <i class="bi bi-list-check me-2"></i>@ViewData["Title"]
+    </h2>
 
-            <!-- Thông báo lỗi -->
-            @if (TempData["ErrorMessage"] != null)
+    <!-- Bảng danh sách quyền -->
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th style="width:60px;" class="text-center">#</th>
+                <th>Tên quyền</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
             {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    @TempData["ErrorMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+                int index = 1;
+                foreach (var perm in Model)
+                {
+                    <tr>
+                        <td class="text-center">@index</td>
+                        <td class="fw-semibold">@perm.PermissionName</td>
+                    </tr>
+                    index++;
+                }
             }
+            else
+            {
+                <tr>
+                    <td colspan="2" class="text-center py-4 text-muted">
+                        <i class="bi bi-shield-exclamation fs-4 d-block mb-2"></i>
+                        Không có quyền nào được khai báo.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 
-            <!-- Bảng danh sách quyền -->
-            <div class="table-responsive">
-                <table class="table table-hover align-middle table-borderless">
-                    <thead class="bg-light text-uppercase small text-secondary border-bottom border-2">
-                        <tr>
-                            <th style="width: 60px;" class="text-center">#</th>
-                            <th>Tên quyền</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model != null && Model.Any())
-                        {
-                            int i = 1;
-                            foreach (var perm in Model)
-                            {
-                                <tr class="border-bottom">
-                                    <td class="text-center text-muted fw-semibold">@i</td>
-                                    <td class="fw-semibold fs-6">@perm.PermissionName</td>
-                                </tr>
-                                i++;
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="2" class="text-center py-4 text-muted">
-                                    <i class="bi bi-shield-exclamation fs-4 d-block mb-2"></i>
-                                    Không có quyền nào được khai báo.
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Nút quay lại -->
-            <div class="mt-4">
-                <a asp-action="Index" asp-controller="Roles" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Quay lại danh sách vai trò
-                </a>
-            </div>
-        </div>
+    <!-- Nút quay lại -->
+    <div class="mt-3">
+        <a asp-action="Index" asp-controller="Roles" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại danh sách vai trò
+        </a>
     </div>
 </div>
 

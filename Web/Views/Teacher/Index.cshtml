@@ -4,43 +4,52 @@
     ViewData["Title"] = "Danh sách giảng viên";
 }
 
-<div class="container mt-5">
-    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-        <div class="card-header bg-white text-white py-3">
-            <h2 class="text-primary mb-4">
-                <i class="bi bi-people-fill me-2"></i> @ViewData["Title"]
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-1">
+                <i class="bi bi-people-fill me-2"></i>
+                Danh sách giảng viên
             </h2>
         </div>
-
-        <div class="card-body px-4 py-4">
-            <!-- Thông báo -->
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    @TempData["SuccessMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    @TempData["ErrorMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            }
-
-            <!-- Tìm kiếm + Tạo -->
-            <div class="d-flex justify-content-between flex-wrap mb-4 gap-2">
+        <div>
+            <a asp-action="IndexLog" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history me-1"></i>
+                Lịch sử
+            </a>
+        </div>
+    </div>
+    <!-- Thông báo -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    <div class="card shadow-sm mb-4">
+        <!-- Header: Tìm kiếm + Tạo -->
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 @if (User.HasClaim("Permission", "Search"))
                 {
-                    <form method="get" asp-action="SearchUS" class="d-flex flex-grow-1 gap-2">
+                    <form method="get" asp-action="SearchUS" class="d-flex gap-2 mb-0">
                         <input type="text" name="keyword" class="form-control" placeholder="🔍 Tìm kiếm người dùng..." />
                         <button type="submit" class="btn btn-outline-primary">
-                            <i class="bi bi-search"></i>
+                            <i class="bi bi-search me-1"></i>
                         </button>
                         <a asp-action="Index" class="btn btn-outline-secondary">Làm mới</a>
                     </form>
                 }
+
                 @if (User.HasClaim("Permission", "Create"))
                 {
                     <a asp-controller="Teacher" asp-action="Register" class="btn btn-success">
@@ -48,17 +57,33 @@
                     </a>
                 }
             </div>
+        </div>
+    </div>
 
-            <!-- Bảng -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="text-muted">
+            <i class="bi bi-info-circle me-1"></i>
+            Tổng số: <strong>@Model.TotalCount</strong> tài khoản
+        </div>
+        <form asp-action="Export" asp-controller="Teacher" method="post">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-download me-1"></i>
+                Xuất Excel
+            </button>
+        </form>
+    </div>
+    <!-- Bảng -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered align-middle table-hover">
-                    <thead class="table-light text-center">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
                         <tr>
-                            <th style="width: 60px;">#</th>
-                            <th>Người dùng</th>
-                            <th>Vai trò</th>
-                            <th>Trạng thái</th>
-                            <th>Thao tác</th>
+                            <th scope="col" style="width: 60px;">#</th>
+                            <th scope="col">Người dùng</th>
+                            <th scope="col">Vai trò</th>
+                            <th scope="col">Trạng thái</th>
+                            <th scope="col">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>

@@ -1,107 +1,86 @@
 ﻿@model List<API.Models.Role>
-
 @{
-    ViewData["Title"] = " Danh sách vai trò & quyền";
+    ViewData["Title"] = "Danh sách vai trò & quyền";
 }
 
 <div class="container mt-5">
-    <div class="card shadow-sm rounded-4">
-        <div class="card-body">
-            <h2 class="text-primary mb-4">
-                <i class="bi bi-shield-lock-fill"></i> @ViewData["Title"]
-            </h2>
-
-            <!-- Nút hành động -->
-            <div class="mb-4 d-flex gap-2 flex-wrap">
-                <a asp-action="IndexPermission" asp-controller="Roles" class="btn btn-outline-primary">
-                    <i class="bi bi-list-check"></i> Danh sách quyền
-                </a>
-                <a asp-action="AssignPermissions" asp-controller="Roles" class="btn btn-outline-success">
-                    <i class="bi bi-person-check-fill"></i> Phân quyền
-                </a>
-            </div>
-
-            <!-- Thông báo -->
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-            }
-
-            <div class="container mt-5">
-                <div class="card shadow-lg border-0 rounded-4">
-                    <div class="card-body px-4 py-4">
-                        <!-- Thông báo -->
-                        @if (TempData["SuccessMessage"] != null)
-                        {
-                            <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-                        }
-                        @if (TempData["ErrorMessage"] != null)
-                        {
-                            <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-                        }
-
-                        <!-- Bảng -->
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle table-borderless">
-                                <thead class="bg-light text-uppercase small text-secondary border-bottom border-2">
-                                    <tr>
-                                        <th class="text-center" style="width: 60px;">#</th>
-                                        <th>Tên vai trò</th>
-                                        <th>Danh sách quyền</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if (Model != null && Model.Any())
-                                    {
-                                        int index = 1;
-                                        foreach (var role in Model)
-                                        {
-                                            <tr class="border-bottom">
-                                                <td class="text-center text-muted fw-semibold">@index</td>
-                                                <td class="fw-bold fs-6 text-dark">@role.RoleName</td>
-                                                <td>
-                                                    @if (role.Permissions != null && role.Permissions.Any())
-                                                    {
-                                                        <div class="d-flex flex-wrap gap-2">
-                                                            @foreach (var perm in role.Permissions)
-                                                            {
-                                                                <span class="badge bg-gradient bg-info text-dark border border-light rounded-pill px-3 py-2 shadow-sm">
-                                                                    <i class="bi bi-check-circle me-1"></i> @perm.PermissionName
-                                                                </span>
-                                                            }
-                                                        </div>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="fst-italic text-muted">Không có quyền nào</span>
-                                                    }
-                                                </td>
-                                            </tr>
-                                            index++;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <tr>
-                                            <td colspan="3" class="text-center py-4 text-muted">
-                                                <i class="bi bi-database-x fs-4 d-block mb-2"></i>
-                                                Không có vai trò nào được tìm thấy.
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+    <!-- Thông báo -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            <strong>@TempData["ErrorMessage"]</strong>
         </div>
+    }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            <strong>@TempData["SuccessMessage"]</strong>
+        </div>
+    }
+
+    <h2 class="mb-3 text-primary">
+        <i class="bi bi-shield-lock-fill me-2"></i>@ViewData["Title"]
+    </h2>
+
+    <!-- Nút hành động -->
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+        <a asp-action="IndexPermission" asp-controller="Roles" class="btn btn-outline-primary">
+            <i class="bi bi-list-check"></i> Danh sách quyền
+        </a>
+        <a asp-action="AssignPermissions" asp-controller="Roles" class="btn btn-outline-success">
+            <i class="bi bi-person-check-fill"></i> Phân quyền
+        </a>
     </div>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th style="width:60px;">#</th>
+                <th>Tên vai trò</th>
+                <th>Danh sách quyền</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                int index = 1;
+                foreach (var role in Model)
+                {
+                    <tr>
+                        <td class="text-center">@index</td>
+                        <td>@role.RoleName</td>
+                        <td>
+                            @if (role.Permissions != null && role.Permissions.Any())
+                            {
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var perm in role.Permissions)
+                                    {
+                                        <span class="badge bg-info text-dark rounded-pill px-3 py-2">
+                                            <i class="bi bi-check-circle me-1"></i>@perm.PermissionName
+                                        </span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Không có quyền nào</span>
+                            }
+                        </td>
+                    </tr>
+                    index++;
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3" class="text-center py-3 text-muted">
+                        <i class="bi bi-database-x fs-4 d-block mb-2"></i>
+                        Không có vai trò nào được tìm thấy.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
 
 @section Scripts {

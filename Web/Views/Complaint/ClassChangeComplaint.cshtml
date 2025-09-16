@@ -3,42 +3,59 @@
     ViewBag.Title = "Gửi khiếu nại đổi lớp";
 }
 
-<h2 class="mb-4">Gửi khiếu nại đổi lớp</h2>
-
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+    </div>
 }
 @if (TempData["ErrorMessage"] != null)
 {
-    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+    </div>
 }
 
-<form asp-action="ClassChangeComplaint" method="post">
-    <div class="mb-3">
-        <label asp-for="CurrentClassId" class="form-label">Lớp hiện tại</label>
-        <select asp-for="CurrentClassId" class="form-select" asp-items="ViewBag.ClassList"></select>
-        <span asp-validation-for="CurrentClassId" class="text-danger"></span>
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0"><i class="bi bi-envelope-paper"></i> Gửi khiếu nại đổi lớp</h4>
     </div>
+    <div class="card-body">
+        <form asp-action="ClassChangeComplaint" method="post">
+            <div class="mb-3">
+                <label asp-for="CurrentClassId" class="form-label fw-bold">Lớp hiện tại</label>
+                <select asp-for="CurrentClassId" class="form-select" asp-items="ViewBag.ClassList">
+                    <option value="">-- Chọn lớp hiện tại --</option>
+                </select>
+                <span asp-validation-for="CurrentClassId" class="text-danger"></span>
+            </div>
 
-    <div class="mb-3">
-        <label asp-for="RequestedClassId" class="form-label">Lớp muốn chuyển đến</label>
-        <select asp-for="RequestedClassId" class="form-select" asp-items="ViewBag.RequestedClassList"></select>
-        <span asp-validation-for="RequestedClassId" class="text-danger"></span>
+            <div class="mb-3">
+                <label asp-for="RequestedClassId" class="form-label fw-bold">Lớp muốn chuyển đến</label>
+                <select asp-for="RequestedClassId" class="form-select" asp-items="ViewBag.RequestedClassList">
+                    <option value="">-- Chọn lớp muốn chuyển đến --</option>
+                </select>
+                <span asp-validation-for="RequestedClassId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Reason" class="form-label fw-bold">Lý do khiếu nại</label>
+                <textarea asp-for="Reason" class="form-control" rows="4" placeholder="Nhập lý do bạn muốn đổi lớp..."></textarea>
+                <span asp-validation-for="Reason" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-send-fill"></i> Gửi khiếu nại
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                </a>
+            </div>
+        </form>
     </div>
-
-    <div class="mb-3">
-        <label asp-for="Reason" class="form-label">Lý do khiếu nại</label>
-        <textarea asp-for="Reason" class="form-control" rows="4"></textarea>
-        <span asp-validation-for="Reason" class="text-danger"></span>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Gửi khiếu nại</button>
-    <a asp-action="Index" class="btn btn-secondary ms-2">Quay lại danh sách</a>
-</form>
+</div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @await Html.PartialAsync("_ValidationScriptsPartial")
 }
