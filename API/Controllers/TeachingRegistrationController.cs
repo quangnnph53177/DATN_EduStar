@@ -90,7 +90,7 @@ namespace API.Controllers
         }
         //duyệt
         [HttpPut("admin/approve")]
-        [Authorize(Roles = "Admin")]
+       // [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ApproveRegistration(int RegistrationId, ApprovedStatus Approve)
         {
             try

@@ -133,20 +133,32 @@
                 {
                     <li class="nav-item"><a class="nav-link @(IsActive("Users"))" asp-controller="Users" asp-action="Index">👤 Quản lý người dùng</a></li>
                     <li class="nav-item"><a class="nav-link @(IsActive("Teacher"))" asp-controller="Teacher" asp-action="Index">📚 Danh sách giảng viên</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("Student"))" asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a></li>
+                    //<li class="nav-item"><a class="nav-link @(IsActive("Statistical"))" asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("Scheduless"))" asp-controller="Scheduless" asp-action="Index1">📅 Lịch học</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("SubjectW"))" asp-controller="SubjectW" asp-action="Index">📘 Môn học</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("TeachingRegistrations"))" asp-controller="TeachingRegistrations" asp-action="AllRegistrations">🗓️ Đơn đăng ký</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("Attendance"))" asp-controller="Attendance" asp-action="IndexSession">📖 Điểm danh</a></li>
+                    @if (User.HasClaim("Permission", "Create"))
+                    {
+                        <li class="nav-item"><a class="nav-link @(IsActive("Roles"))" asp-controller="Roles" asp-action="Index">🛡️ Phân quyền</a></li>
+                    }
                 }
-
-                <li class="nav-item"><a class="nav-link @(IsActive("Student"))" asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a></li>
-                <li class="nav-item"><a class="nav-link @(IsActive("Statistical"))" asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a></li>
-                <li class="nav-item"><a class="nav-link @(IsActive("Scheduless"))" asp-controller="Scheduless" asp-action="Index1">📅 Lịch học</a></li>
-                <li class="nav-item"><a class="nav-link @(IsActive("SubjectW"))" asp-controller="SubjectW" asp-action="Index">📘 Môn học</a></li>
-                <li class="nav-item"><a class="nav-link @(IsActive("Attendance"))" asp-controller="Attendance" asp-action="IndexSession">📖 Điểm danh</a></li>
                 @* <li class="nav-item"><a class="nav-link @(IsActive("ClassMvc"))" asp-controller="ClassMvc" asp-action="Index">🏫 Lớp học</a></li> *@
-                <li class="nav-item"><a class="nav-link @(IsActive("TeachingRegistrations"))" asp-controller="TeachingRegistrations" asp-action="AllSchedules">🗓️ Đăng ký giảng dạy</a></li>
-                <li class="nav-item"><a class="nav-link @(IsActive("Complaint"))" asp-controller="Complaint" asp-action="Index">⚠️ Khiếu nại</a></li>
-
-                @if (User.HasClaim("Permission", "Create"))
+                @if (User.IsInRole("Teacher"))
                 {
-                    <li class="nav-item"><a class="nav-link @(IsActive("Roles"))" asp-controller="Roles" asp-action="Index">🛡️ Phân quyền</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("Scheduless"))" asp-controller="Scheduless" asp-action="ByTeacher">📅 Lịch dạy</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("SubjectW"))" asp-controller="SubjectW" asp-action="Index">📘 Môn học</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("TeacherAttendance"))" asp-controller="TeacherAttendance" asp-action="MyClasses">📖 Điểm danh</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("TeachingRegistrations"))" asp-controller="TeachingRegistrations" asp-action="AllSchedules">🗓️ Đăng ký giảng dạy</a></li>
+                }
+                @if (User.IsInRole("Student"))
+                {
+                    <li class="nav-item"><a class="nav-link @(IsActive("Scheduless"))" asp-controller="Scheduless" asp-action="ByStudent">📅 Lịch học</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("Attendance"))" asp-controller="Attendance" asp-action="History">Điểm danh</a></li>
+
+                    <li class="nav-item"><a class="nav-link @(IsActive("Complaint"))" asp-controller="Complaint" asp-action="ClassChangeComplaint">⚠️ Khiếu nại</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("Users"))" asp-controller="Users" asp-action="IndexUser">👤 Quản lý người dùng</a></li>
                 }
             </ul>
 
@@ -160,7 +172,10 @@
                     </button>
                     <ul class="dropdown-menu w-100">
                         <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a></li>
-                        <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexLog">🕓 Nhật ký hoạt động</a></li>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexLog">🕓 Nhật ký hoạt động</a></li>
+                        }
                         <li>
                             <form method="post" asp-controller="Users" asp-action="Logout">
                                 <button type="submit" class="dropdown-item">🚪 Đăng xuất</button>

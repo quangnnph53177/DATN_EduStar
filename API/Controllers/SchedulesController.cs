@@ -14,11 +14,13 @@ namespace API.Controllers
         {
             _services = services;
         }
+
         [HttpGet]
         public async Task<IActionResult> Get()
         {
             var result = await _services.GetAll();
-            if (result == null) return null;
+            if (result == null) return NotFound();
+
             var check = result.Select(c => new SchedulesViewModel
             {
                 Id = c.Id,
@@ -33,34 +35,43 @@ namespace API.Controllers
                 enddate = c.EndDate,
                 UserId = c.UsersId,
                 Status = c.Status.ToString(),
-
-                //StudentCount =int.Parse,
-
             });
             return Ok(check);
         }
+
         [HttpGet("codinh")]
         public async Task<IActionResult> getcodinh()
         {
             var result = await _services.GetAllCoDinh();
             return Ok(result);
         }
+
         [HttpGet("Id")]
-        public async Task<IActionResult> GetByStudent(Guid id)
+        public async Task<IActionResult> GetByStudent()
         {
-            var result = await _services.GetByStudent(id);
+            var userId = User.GetUserId();
+            var result = await _services.GetByStudent(userId);
             return Ok(result);
         }
+
+        [HttpGet("Teacher")]
+        public async Task<IActionResult> GetbyTeacher()
+        {
+            var userId = User.GetUserId();
+            var result = await _services.GetByTeacher(userId);
+            return Ok(result);
+        }
+
         [HttpPost("arrangeschedules")]
         public async Task<IActionResult> getarrschedule()
         {
             await _services.AutogenerateSchedule();
             return Ok(new { success = true, message = "Tạo lịch học tự động thành công" });
         }
+
         [HttpPost("create")]
         public async Task<IActionResult> Create(SchedulesDTO model)
         {
-
             try
             {
                 await _services.CreateSchedules(model);
@@ -71,6 +82,7 @@ namespace API.Controllers
                 return BadRequest(new { message = $"Lỗi khi thêm: {ex.Message}" });
             }
         }
+
         [HttpGet("excel")]
         public async Task<IActionResult> exportbyexcel(Guid id)
         {
@@ -81,35 +93,77 @@ namespace API.Controllers
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 filename);
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> Getid(int id)
         {
-            return Ok(await _services.GetById(id));
+            try
+            {
+                var result = await _services.GetById(id);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> Updatesch(int id, SchedulesDTO model)
         {
-            if (id == null)
+            Console.WriteLine($"[API] Received update request for ID: {id}");
+            Console.WriteLine($"[API] Model ID: {model?.Id}");
+
+            // Kiểm tra tham số hợp lệ
+            if (model == null)
             {
-                return BadRequest("Id không khớp");
+                return BadRequest(new { message = "Dữ liệu không được để trống" });
             }
+
+            if (id != model.Id)
+            {
+                return BadRequest(new { message = "Id không khớp với dữ liệu gửi lên" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .Select(x => new { Field = x.Key, Errors = x.Value.Errors.Select(e => e.ErrorMessage) })
+                    .ToList();
+
+                return BadRequest(new { message = "Dữ liệu không hợp lệ", errors = errors });
+            }
+
             try
             {
+                Console.WriteLine($"[API] Calling UpdateSchedules service...");
                 await _services.UpdateSchedules(model);
+                Console.WriteLine($"[API] Update successful");
+
                 return Ok(new { message = "Cập nhật thành công" });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[API] Update failed: {ex}");
                 return BadRequest(new { message = $"Lỗi khi cập nhật: {ex.Message}" });
             }
-
         }
+
         [HttpDelete("{Id}")]
         public async Task<IActionResult> Delete(int Id)
         {
-            await _services.DeleteSchedules(Id);
-            return Ok(new { message = "xóa thành công" });
+            try
+            {
+                await _services.DeleteSchedules(Id);
+                return Ok(new { message = "Xóa thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Lỗi khi xóa: {ex.Message}" });
+            }
         }
+
         [HttpPost("{schedulesId}/assignStudent/{studentId}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -133,11 +187,12 @@ namespace API.Controllers
                     $"Lỗi máy chủ: {ex.Message}");
             }
         }
+
         [HttpDelete("{schedulesId}/removeStudent/{studentId}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> RemoveStudentFromClass( int SchedulesId, Guid studentId)
+        public async Task<IActionResult> RemoveStudentFromClass(int SchedulesId, Guid studentId)
         {
             try
             {

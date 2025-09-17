@@ -170,45 +170,119 @@ namespace API.Services.Repositories
 
         public async Task UpdateSchedules(SchedulesDTO model)
         {
+            Console.WriteLine($"[Repo] Starting update for schedule ID: {model.Id}");
+
             var schedule = await _context.Schedules
                 .Include(s => s.ScheduleDays)
                 .FirstOrDefaultAsync(i => i.Id == model.Id);
 
             if (schedule == null)
-                throw new Exception("Không tìm thấy lịch học cần cập nhật.");
-
-            // Kiểm tra trùng lịch
-            var isDuplicated = await _context.Schedules
-                .Include(s => s.ScheduleDays)
-                .AnyAsync(s =>
-                    s.Id != model.Id &&
-                    s.RoomId == model.RoomId &&
-                    s.StudyShiftId == model.StudyShiftId &&
-                    s.ScheduleDays.Any(d => model.WeekDayId.Contains(d.DayOfWeekkId))
-                );
-
-            if (isDuplicated)
-                throw new Exception("⚠️ Trùng lịch học: cùng ca học, phòng học và thứ học.");
-
-            // Cập nhật thông tin
-            schedule.ClassName = model.ClassName;
-            schedule.SubjectId = model.SubjectId;
-            schedule.StudyShiftId = model.StudyShiftId;
-            schedule.RoomId = model.RoomId;
-            schedule.UsersId = model.TeacherId.Value;
-
-            // Cập nhật lại các ngày học
-            _context.SchedulesInDays.RemoveRange(schedule.ScheduleDays);
-            foreach (var dayId in model.WeekDayId)
             {
-                _context.SchedulesInDays.Add(new SchedulesInDay
-                {
-                    ScheduleId = schedule.Id,
-                    DayOfWeekkId = dayId
-                });
+                Console.WriteLine($"[Repo] Schedule not found with ID: {model.Id}");
+                throw new Exception("Không tìm thấy lịch học cần cập nhật.");
             }
 
-            await _context.SaveChangesAsync();
+            Console.WriteLine($"[Repo] Found schedule: {schedule.ClassName}");
+
+            // Kiểm tra trùng lịch một cách cụ thể hơn
+            var conflictSchedules = await _context.Schedules
+                .Include(s => s.ScheduleDays)
+                .Where(s => s.Id != model.Id // Loại trừ chính schedule đang update
+                    && s.RoomId == model.RoomId
+                    && s.StudyShiftId == model.StudyShiftId)
+                .ToListAsync();
+
+            foreach (var conflictSchedule in conflictSchedules)
+            {
+                var conflictDays = conflictSchedule.ScheduleDays.Select(sd => sd.DayOfWeekkId).ToList();
+                var newDays = model.WeekDayId ?? new List<int>();
+
+                // Kiểm tra xem có ngày nào trùng không
+                var hasConflict = newDays.Any(day => conflictDays.Contains(day));
+
+                if (hasConflict)
+                {
+                    var conflictDayNames = conflictDays.Intersect(newDays)
+                        .Select(dayId => GetDayName(dayId))
+                        .ToList();
+
+                    Console.WriteLine($"[Repo] Schedule conflict detected with {conflictSchedule.ClassName}");
+                    throw new Exception($"Trùng lịch với lớp '{conflictSchedule.ClassName}' vào các ngày: {string.Join(", ", conflictDayNames)}");
+                }
+            }
+
+            Console.WriteLine($"[Repo] No conflicts found, proceeding with update");
+
+            try
+            {
+                // Bắt đầu transaction để đảm bảo tính nhất quán
+                using var transaction = await _context.Database.BeginTransactionAsync();
+
+                // Cập nhật thông tin cơ bản
+                schedule.ClassName = model.ClassName;
+                schedule.SubjectId = model.SubjectId;
+                schedule.StudyShiftId = model.StudyShiftId;
+                schedule.RoomId = model.RoomId;
+
+                if (model.TeacherId.HasValue)
+                    schedule.UsersId = model.TeacherId.Value;
+
+                Console.WriteLine($"[Repo] Updated basic info");
+
+                // Xóa tất cả các ngày học cũ
+                var oldDays = schedule.ScheduleDays.ToList();
+                _context.SchedulesInDays.RemoveRange(oldDays);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"[Repo] Removed {oldDays.Count} old schedule days");
+
+                // Thêm các ngày học mới
+                if (model.WeekDayId != null && model.WeekDayId.Any())
+                {
+                    foreach (var dayId in model.WeekDayId)
+                    {
+                        var newScheduleDay = new SchedulesInDay
+                        {
+                            ScheduleId = schedule.Id,
+                            DayOfWeekkId = dayId
+                        };
+                        _context.SchedulesInDays.Add(newScheduleDay);
+                    }
+
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"[Repo] Added {model.WeekDayId.Count} new schedule days");
+                }
+
+                // Cập nhật trạng thái lịch học
+                setstatus(schedule);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                Console.WriteLine($"[Repo] Update completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Repo] Error during update: {ex}");
+                throw new Exception($"Lỗi khi cập nhật lịch học: {ex.Message}");
+            }
+        }
+
+        // Helper method để lấy tên ngày
+        private string GetDayName(int dayId)
+        {
+            var dayNames = new Dictionary<int, string>
+    {
+        { 1, "Thứ 2" },
+        { 2, "Thứ 3" },
+        { 3, "Thứ 4" },
+        { 4, "Thứ 5" },
+        { 5, "Thứ 6" },
+        { 6, "Thứ 7" },
+        { 7, "Chủ nhật" }
+    };
+
+            return dayNames.TryGetValue(dayId, out var name) ? name : $"Ngày {dayId}";
         }
 
 
@@ -227,29 +301,163 @@ namespace API.Services.Repositories
         public async Task<List<SchedulesViewModel>> GetByStudent(Guid Id)
         {
             var student = await _context.StudentsInfors
-                .Include(s => s.ScheduleStudents).ThenInclude(c => c.Schedule)
+                .Include(s => s.ScheduleStudents)
+                    .ThenInclude(ss => ss.Schedule)
+                        .ThenInclude(sc => sc.ScheduleDays)
+                            .ThenInclude(sd => sd.DayOfWeekk)
+                .Include(s => s.ScheduleStudents)
+                    .ThenInclude(ss => ss.Schedule)
+                        .ThenInclude(sc => sc.Room)
+                .Include(s => s.ScheduleStudents)
+                    .ThenInclude(ss => ss.Schedule)
+                        .ThenInclude(sc => sc.StudyShift)
+                .Include(s => s.ScheduleStudents)
+                    .ThenInclude(ss => ss.Schedule)
+                        .ThenInclude(sc => sc.Subject)
                 .FirstOrDefaultAsync(s => s.UserId == Id);
 
-            if (student == null || student.ScheduleStudents.FirstOrDefault().Schedule == null)
+            if (student == null || !student.ScheduleStudents.Any())
                 return new List<SchedulesViewModel>();
 
-            var classId = student.ScheduleStudents.FirstOrDefault().Schedule.Id;
+            var result = new List<SchedulesViewModel>();
 
-            var schedules = await _context.Schedules
-                .Where(sc => sc.Id == classId)
-                .Include(sc => sc.ScheduleDays).ThenInclude(sd => sd.DayOfWeekk)
-                .Include(sc => sc.Room)
-                .Include(sc => sc.StudyShift)
-                .ToListAsync();
-
-            return schedules.Select(sc => new SchedulesViewModel
+            foreach (var scheduleStudent in student.ScheduleStudents.Where(ss => ss.Schedule != null))
             {
-                Id = sc.Id,
-                ClassName = sc.ClassName,
-                weekdays = sc.ScheduleDays.Select(d => d.DayOfWeekk.Weekdays).ToList(),
-                StudyShift = sc.StudyShift.StudyShiftName,
-                RoomCode = sc.Room.RoomCode,
-            }).ToList();
+                var schedule = scheduleStudent.Schedule;
+
+                // Lấy ngày bắt đầu và kết thúc của lịch học
+                var startDate = schedule.StartDate ?? DateTime.Now.Date;
+                var endDate = schedule.EndDate ?? DateTime.Now.AddMonths(3).Date;
+
+                foreach (var scheduleDay in schedule.ScheduleDays)
+                {
+                    // Tìm tất cả các ngày trong khoảng thời gian học thuộc thứ này
+                    var datesForThisWeekday = GetDatesForWeekday(startDate, endDate, scheduleDay.DayOfWeekk.Weekdays);
+
+                    foreach (var date in datesForThisWeekday)
+                    {
+                        result.Add(new SchedulesViewModel
+                        {
+                            Id = schedule.Id,
+                            ClassName = schedule.ClassName ?? "",
+                            RoomCode = schedule.Room?.RoomCode ?? "",
+                            SubjectName = schedule.Subject?.SubjectName ?? "",
+                            weekdays = new List<Weekday> { scheduleDay.DayOfWeekk.Weekdays },
+                            StudyShift = schedule.StudyShift?.StudyShiftName ?? "",
+                            starttime = schedule.StudyShift?.StartTime, // Giả sử StudyShift có StartTime
+                            endtime = schedule.StudyShift?.EndTime,     // Giả sử StudyShift có EndTime
+                            startdate = date,
+                            enddate = date,
+                            Status = schedule.Status?.ToString() ?? "",
+                            UserId = Id
+                        });
+                    }
+                }
+            }
+
+            // Sắp xếp theo ngày và ca học
+            return result.OrderBy(r => r.startdate).ThenBy(r => r.starttime).ToList();
+        }
+        public async Task<List<SchedulesViewModel>> GetByTeacher(Guid Id)
+        {
+            // Kiểm tra user có phải là giảng viên không (RoleId = 2)
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == Id && u.Roles.FirstOrDefault().Id == 2);
+            if (user == null)
+                return new List<SchedulesViewModel>();
+
+            // Lấy thông tin giảng viên và các lịch dạy
+            var teacher = await _context.Users
+                .Include(c => c.Schedules) // Lịch dạy của giảng viên
+                .ThenInclude(s => s.ScheduleDays)
+                .ThenInclude(sd => sd.DayOfWeekk)
+                .Include(c => c.Schedules)
+                .ThenInclude(s => s.Room)
+                .Include(c => c.Schedules)
+                .ThenInclude(s => s.StudyShift)
+                .Include(c => c.Schedules)
+                .ThenInclude(s => s.Subject)
+                .FirstOrDefaultAsync(t => t.Id == Id);
+
+            if (teacher == null || !teacher.Schedules.Any())
+                return new List<SchedulesViewModel>();
+
+            var result = new List<SchedulesViewModel>();
+
+            foreach (var schedule in teacher.Schedules.Where(s => s != null))
+            {
+                // Lấy ngày bắt đầu và kết thúc của lịch dạy
+                var startDate = schedule.StartDate ?? DateTime.Now.Date;
+                var endDate = schedule.EndDate ?? DateTime.Now.AddMonths(3).Date;
+
+                foreach (var scheduleDay in schedule.ScheduleDays)
+                {
+                    // Tìm tất cả các ngày trong khoảng thời gian dạy thuộc thứ này
+                    var datesForThisWeekday = GetDatesForWeekday(startDate, endDate, scheduleDay.DayOfWeekk.Weekdays);
+
+                    foreach (var date in datesForThisWeekday)
+                    {
+                        result.Add(new SchedulesViewModel
+                        {
+                            Id = schedule.Id,
+                            ClassName = schedule.ClassName ?? "",
+                            RoomCode = schedule.Room?.RoomCode ?? "",
+                            SubjectName = schedule.Subject?.SubjectName ?? "",
+                            weekdays = new List<Weekday> { scheduleDay.DayOfWeekk.Weekdays },
+                            StudyShift = schedule.StudyShift?.StudyShiftName ?? "",
+                            starttime = schedule.StudyShift?.StartTime,
+                            endtime = schedule.StudyShift?.EndTime,
+                            startdate = date,
+                            enddate = date,
+                            Status = schedule.Status?.ToString() ?? "",
+                            UserId = Id
+                        });
+                    }
+                }
+            }
+
+            // Sắp xếp theo ngày và ca dạy
+            return result.OrderBy(r => r.startdate).ThenBy(r => r.starttime).ToList();
+        }
+        // Helper method để lấy tất cả các ngày thuộc thứ cụ thể trong khoảng thời gian
+        private List<DateTime> GetDatesForWeekday(DateTime startDate, DateTime endDate, Weekday weekday)
+        {
+            var dates = new List<DateTime>();
+
+            // Chuyển đổi Weekday enum sang DayOfWeek enum
+            var targetDayOfWeek = ConvertWeekdayToDayOfWeek(weekday);
+
+            var current = startDate;
+
+            // Tìm ngày đầu tiên thuộc thứ cần tìm
+            while (current.DayOfWeek != targetDayOfWeek && current <= endDate)
+            {
+                current = current.AddDays(1);
+            }
+
+            // Thêm tất cả các ngày thuộc thứ này trong khoảng thời gian
+            while (current <= endDate)
+            {
+                dates.Add(current);
+                current = current.AddDays(7); // Thêm 1 tuần
+            }
+
+            return dates;
+        }
+
+        // Helper method để chuyển đổi Weekday enum sang System.DayOfWeek
+        private DayOfWeek ConvertWeekdayToDayOfWeek(Weekday weekday)
+        {
+            return weekday switch
+            {
+                Weekday.Monday => DayOfWeek.Monday,
+                Weekday.Tuesday => DayOfWeek.Tuesday,
+                Weekday.Wednesday => DayOfWeek.Wednesday,
+                Weekday.Thursday => DayOfWeek.Thursday,
+                Weekday.Friday => DayOfWeek.Friday,
+                Weekday.Saturday => DayOfWeek.Saturday,
+                Weekday.Sunday => DayOfWeek.Sunday,
+                _ => DayOfWeek.Monday
+            };
         }
 
         public async Task<byte[]> ExportSchedules(List<SchedulesViewModel> model)
@@ -340,5 +548,6 @@ namespace API.Services.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
+
     }
 }

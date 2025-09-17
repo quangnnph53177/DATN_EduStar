@@ -7,6 +7,29 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="Views\Attendance\Create.cshtml" />
+    <None Include="Views\Attendance\Detail.cshtml" />
+    <None Include="Views\Attendance\History.cshtml" />
+    <None Include="Views\Attendance\IndexSession.cshtml" />
+    <None Include="Views\Scheduless\AssignStudent.cshtml" />
+    <None Include="Views\Scheduless\Create.cshtml" />
+    <None Include="Views\Scheduless\Details.cshtml" />
+    <None Include="Views\Scheduless\Edit.cshtml" />
+    <None Include="Views\Scheduless\Index.cshtml" />
+    <None Include="Views\Scheduless\Index1.cshtml" />
+    <None Include="Views\SubjectW\Create.cshtml" />
+    <None Include="Views\SubjectW\Delete.cshtml" />
+    <None Include="Views\SubjectW\Details.cshtml" />
+    <None Include="Views\SubjectW\Edit.cshtml" />
+    <None Include="Views\SubjectW\Index.cshtml" />
+    <None Include="Views\TeachingRegistrations\AllRegistrations.cshtml" />
+    <None Include="Views\TeachingRegistrations\AllSchedules.cshtml" />
+    <None Include="Views\TeachingRegistrations\Index.cshtml" />
+    <None Include="Views\TeachingRegistrations\TeacherRegister.cshtml" />
+    <None Include="Views\TeachingRegistrations\TeacherRegistrations.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="EPPlus" Version="7.0.1" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />

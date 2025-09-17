@@ -22,8 +22,6 @@ namespace API.Services.Repositories
                 SubjectName = sub.SubjectName,
                 Subjectcode = sub.subjectCode,
                 Description= sub.Description,
-                NumberOfCredits = sub.NumberOfCredits,
-                SemesterId = sub.SemesterId, 
                 Status = sub.Status,
             };
             _context.Subjects.Add(su);
@@ -52,9 +50,9 @@ namespace API.Services.Repositories
                 Id = c.Id,
                 SubjectName = c.SubjectName,
                 subjectCode= c.Subjectcode,
-                NumberOfCredits = c.NumberOfCredits,
+           
                 Description = c.Description,
-                SemesterId = c.SemesterId,
+          
                 Status = c.Status,
             }).ToList();
             return item;
@@ -68,9 +66,9 @@ namespace API.Services.Repositories
                 Id= id,
                 SubjectName=details.SubjectName,
                 subjectCode= details.Subjectcode,
-                NumberOfCredits=details.NumberOfCredits,
+              
                 Description=details.Description,
-                SemesterId = details.SemesterId,
+               
                 Status = details.Status,
             };
             return item;
@@ -98,14 +96,8 @@ namespace API.Services.Repositories
             {
                 query = query.Where(c => c.Subjectcode.ToLower().Contains(subcode));
             }
-            if (numberofCredit.HasValue)
-            {
-                query = query.Where(c => c.NumberOfCredits == numberofCredit);
-            }
-            if (semesterId.HasValue)
-            {
-                query = query.Where(c => c.SemesterId == semesterId);
-            }
+           
+           
             if (status.HasValue)
             {
                 query = query.Where(c => c.Status == status);  
@@ -115,9 +107,9 @@ namespace API.Services.Repositories
                 Id = c.Id,
                 SubjectName=c.SubjectName,
                 subjectCode = c.Subjectcode,
-                NumberOfCredits=c.NumberOfCredits,
+                
                 Description=c.Description,
-                SemesterId = c.SemesterId,
+              
                 Status =c.Status,
             }).ToListAsync();
             return model;
@@ -134,9 +126,9 @@ namespace API.Services.Repositories
             // Cập nhật thông tin
             con.SubjectName = subject.SubjectName;
             con.Subjectcode = subject.subjectCode;
-            con.NumberOfCredits = subject.NumberOfCredits;
+          
             con.Description = subject.Description;
-            con.SemesterId = subject.SemesterId;
+            
             con.Status = subject.Status;
 
             // Không cần gọi Update(con) nếu con đang được tracked bởi EF

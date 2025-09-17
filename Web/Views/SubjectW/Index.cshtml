@@ -11,9 +11,12 @@
             <h4 class="mb-0">
                 <i class="bi bi-journal-text me-2"></i>@ViewData["Title"]
             </h4>
-            <a asp-action="Create" class="btn btn-sm btn-light text-primary fw-semibold shadow-sm">
-                <i class="bi bi-plus-circle me-1"></i> Thêm môn học
+            @if (User.IsInRole("Admin"))
+            {
+                <a asp-action="Create" class="btn btn-sm btn-light text-primary fw-semibold shadow-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Thêm môn học
             </a>
+            }
         </div>
 
         <!-- Body -->
@@ -30,7 +33,7 @@
                     <input type="text" name="subcode" class="form-control" placeholder="VD: CS101"
                            value="@ViewContext.HttpContext.Request.Query["subcode"]" />
                 </div>
-                <div class="col-md-2">
+            @*     <div class="col-md-2">
                     <label class="form-label">Số tín chỉ</label>
                     <input type="number" name="numberofCredit" class="form-control"
                            value="@ViewContext.HttpContext.Request.Query["numberofCredit"]" />
@@ -39,7 +42,7 @@
                     <label class="form-label">Kỳ</label>
                     <input type="number" name="semesterId" class="form-control"
                            value="@ViewContext.HttpContext.Request.Query["semesterId"]" />
-                </div>
+                </div> *@
                 <div class="col-md-2 d-grid">
                     <button type="submit" class="btn btn-outline-primary">
                         <i class="bi bi-search"></i> Tìm kiếm
@@ -54,7 +57,7 @@
                         <tr class="fw-bold">
                             <th class="align-middle">Tên môn học</th>
                             <th class="align-middle">Mã môn học</th>
-                            <th class="align-middle">Số tín chỉ</th>
+                           @* // <th class="align-middle">Số tín chỉ</th> *@
                             <th class="align-middle text-start" style="width: 500px;">Mô tả</th>
                             <th class="align-middle text-nowrap">Thao tác</th>
                         </tr>
@@ -73,22 +76,25 @@
                                 <tr>
                                     <td>@item.SubjectName</td>
                                     <td>@item.subjectCode</td>
-                                    <td>@item.NumberOfCredits</td>
+                                   @*  <td>@item.NumberOfCredits</td> *@
                                     <td class="text-start clamp-description" title="@item.Description">
                                         <i class="bi bi-info-circle text-secondary me-1"></i>
                                         @item.Description
                                     </td>
                                     <td class="text-nowrap">
                                         <div class="d-flex justify-content-center gap-2 flex-wrap">
-                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">
-                                                <i class="bi bi-pencil-square"></i> Sửa
-                                            </a>
                                             <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info text-dark">
                                                 <i class="bi bi-eye"></i> Chi tiết
                                             </a>
-                                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">
-                                                <i class="bi bi-trash"></i> Xóa
-                                            </a>
+                                            @if (User.IsInRole("Admin"))
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">
+                                                    <i class="bi bi-pencil-square"></i> Sửa
+                                                </a>
+
+                                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i> Xóa
+                                            </a>}
                                         </div>
                                     </td>
                                 </tr>

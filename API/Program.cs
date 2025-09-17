@@ -38,7 +38,7 @@ builder.Services.AddScoped<IAttendance , AttendanceRepos>();
 builder.Services.AddScoped<IComplaintRepos, ComplaintRepos>();
 builder.Services.AddScoped<IRoom, RoomRepos>();
 builder.Services.AddScoped<ITeachingRegistrationRepos, TeachingRegistrationRepos>();
-builder.Services.AddScoped<ISemesterRepos, SemesterRepos>();
+//builder.Services.AddScoped<ISemesterRepos, SemesterRepos>();
 builder.Services.AddMemoryCache();
 builder.Services.AddCors(options =>
 {

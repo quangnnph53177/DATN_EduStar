@@ -1,0 +1,332 @@
+﻿
+@model List<TeacherClassViewModel>
+@{
+    ViewData["Title"] = "Quản lý lớp học - Giảng viên";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-0">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>
+                                Quản lý lớp học
+                            </h2>
+                            <small class="opacity-75">Danh sách các lớp bạn đang giảng dạy</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-light" onclick="location.reload()">
+                                <i class="fas fa-sync-alt"></i> Làm mới
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    @if (Model == null || !Model.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">Không có lớp học nào</h4>
+                            <p class="text-muted">Bạn chưa được phân công giảng dạy lớp nào.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th><i class="fas fa-users me-1"></i>Tên lớp</th>
+                                        <th><i class="fas fa-book me-1"></i>Môn học</th>
+                                        <th><i class="fas fa-clock me-1"></i>Ca học</th>
+                                        @* <th><i class="fas fa-calendar me-1"></i>Thứ trong tuần</th> *@
+                                        <th><i class="fas fa-door-open me-1"></i>Phòng</th>
+                                       @*  <th><i class="fas fa-info-circle me-1"></i>Trạng thái</th> *@
+                                        <th width="200"><i class="fas fa-cogs me-1"></i>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var classItem in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong class="text-primary">@classItem.ClassName</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">@classItem.SubjectName</span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">@classItem.StudyShiftName</small>
+                                            </td>
+                                          @*   <td>
+                                                @foreach (var day in classItem.WeekDays)
+                                                {
+                                                    <span class="badge bg-secondary me-1">@day</span>
+                                                }
+                                            </td> *@
+                                            <td>
+                                                <strong>@classItem.RoomCode</strong>
+                                            </td>
+                                          @*   <td>
+                                                @if (classItem.HasActiveSession)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check-circle me-1"></i>Đã có phiên
+                                                    </span>
+                                                }
+                                                else if (classItem.CanCreateSession)
+                                                {
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-exclamation-circle me-1"></i>Có thể tạo phiên
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-times-circle me-1"></i>Không thể tạo
+                                                    </span>
+                                                }
+                                            </td> *@
+                                            <td>
+                                                @if (classItem.CanCreateSession)
+                                                {
+                                                    <button class="btn btn-success btn-sm"
+                                                            onclick="openCreateSessionModal('@classItem.ScheduleId', '@classItem.ClassName', '@classItem.SubjectName')">
+                                                        <i class="fas fa-plus-circle me-1"></i>Tạo phiên
+                                                    </button>
+                                                }
+                                                else if (classItem.HasActiveSession)
+                                                {
+                                                    <a href="@Url.Action("SessionDetail", "TeacherAttendance", new { scheduleId = classItem.ScheduleId })"
+                                                       class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-eye me-1"></i>Xem phiên
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">
+                                                        <i class="fas fa-ban"></i> Không có hành động
+                                                    </span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal tạo phiên điểm danh -->
+<div class="modal fade" id="createSessionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="createSessionForm" method="post">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus-circle me-2"></i>Tạo phiên điểm danh
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="scheduleId" name="SchedulesId" />
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Tên lớp:</strong></label>
+                        <input type="text" class="form-control" id="className" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Môn học:</strong></label>
+                        <input type="text" class="form-control" id="subjectName" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="sessionCode" class="form-label">
+                            <i class="fas fa-code me-1"></i><strong>Mã phiên điểm danh:</strong>
+                        </label>
+                        <input type="text" class="form-control" id="sessionCode" name="SessionCode"
+                               placeholder="Nhập mã phiên (VD: ATT001)" required />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="startTime" class="form-label">
+                                    <i class="fas fa-play me-1"></i><strong>Thời gian bắt đầu:</strong>
+                                </label>
+                                <input type="datetime-local" class="form-control" id="startTime" name="Starttime" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="endTime" class="form-label">
+                                    <i class="fas fa-stop me-1"></i><strong>Thời gian kết thúc:</strong>
+                                </label>
+                                <input type="datetime-local" class="form-control" id="endTime" name="Endtime" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Lưu ý:</strong> Phiên điểm danh chỉ có thể tạo trong 30 phút đầu của ca học.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Hủy
+                    </button>
+                    <button type="submit" class="btn btn-success" id="createButton">
+                        <i class="fas fa-check me-1"></i>Tạo phiên
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <script>
+        function openCreateSessionModal(scheduleId, className, subjectName) {
+            document.getElementById('scheduleId').value = scheduleId;
+            document.getElementById('className').value = className;
+            document.getElementById('subjectName').value = subjectName;
+
+            // Tự động generate mã phiên
+            const now = new Date();
+            const dateStr = now.getFullYear().toString() +
+                (now.getMonth() + 1).toString().padStart(2, '0') +
+                now.getDate().toString().padStart(2, '0');
+            const sessionCode = `ATT_${className}_${dateStr}`;
+            document.getElementById('sessionCode').value = sessionCode;
+
+            // Set thời gian mặc định
+            const startTime = new Date();
+            const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // +2 hours
+
+            document.getElementById('startTime').value = formatDateTimeLocal(startTime);
+            document.getElementById('endTime').value = formatDateTimeLocal(endTime);
+
+            // Hiển thị modal
+            new bootstrap.Modal(document.getElementById('createSessionModal')).show();
+        }
+
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        document.getElementById('createSessionForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const createButton = document.getElementById('createButton');
+
+            // Disable button và hiển thị loading
+            createButton.disabled = true;
+            createButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang tạo...';
+
+            fetch('@Url.Action("CreateSession", "TeacherAttendance")', {
+                method: 'POST',
+                body: JSON.stringify({
+                    SchedulesId: parseInt(formData.get('SchedulesId')),
+                    SessionCode: formData.get('SessionCode'),
+                    Starttime: formData.get('Starttime'),
+                    Endtime: formData.get('Endtime')
+                }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success || response.ok) {
+                        // Thành công
+                        bootstrap.Modal.getInstance(document.getElementById('createSessionModal')).hide();
+
+                        // Hiển thị thông báo thành công
+                        showAlert('success', 'Tạo phiên điểm danh thành công!');
+
+                        // Reload trang sau 1.5s
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('danger', data.message || 'Có lỗi xảy ra khi tạo phiên');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('danger', 'Có lỗi xảy ra: ' + error.message);
+                })
+                .finally(() => {
+                    // Reset button
+                    createButton.disabled = false;
+                    createButton.innerHTML = '<i class="fas fa-check me-1"></i>Tạo phiên';
+                });
+        });
+
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+
+            document.body.appendChild(alertDiv);
+
+            // Auto dismiss after 3 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+    </script>
+
+
+    <style>
+        .card {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .badge {
+            font-size: 0.8em;
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0,123,255,.075);
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+    </style>

@@ -9,6 +9,7 @@ namespace API.Services
         Task<List<Lichcodinh>> GetAllCoDinh();
         Task<SchedulesViewModel> GetById(int id);
         Task<List<SchedulesViewModel>> GetByStudent(Guid Id);
+        Task<List<SchedulesViewModel>> GetByTeacher(Guid Id);
         Task AutogenerateSchedule();
         Task CreateSchedules(SchedulesDTO model);
         Task UpdateSchedules(SchedulesDTO model);

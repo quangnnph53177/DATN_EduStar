@@ -12,13 +12,26 @@ namespace Web.Controllers
 {
     public class AttendanceController : Controller
     {
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly HttpClient _client;
         private readonly AduDbcontext _context;
-        public AttendanceController(HttpClient client, AduDbcontext context)
+        public AttendanceController(HttpClient client, AduDbcontext context, IHttpClientFactory httpClientFactory)
         {
             _client = client;
             _client.BaseAddress = new Uri("https://localhost:7298/");
             _context = context;
+            _httpClientFactory = httpClientFactory;
+        }
+        private HttpClient? GetClientWithToken()
+        {
+            var client = _httpClientFactory.CreateClient("EdustarAPI");
+            if (!Request.Cookies.TryGetValue("JWToken", out var token) || string.IsNullOrEmpty(token))
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return null;
+            }
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            return client;
         }
         public async Task<IActionResult> IndexSession(int? classId, int? studyShiftid, int? roomid, int? subjectid)
         {
@@ -94,18 +107,24 @@ namespace Web.Controllers
 
         public async Task<IActionResult> History()
         {
-
-            var response = await _client.GetAsync("api/attendance/history");
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                return RedirectToAction("Login", "Users");
+            }
+            // Gọi API lấy lịch học
+            var response = await client.GetAsync("api/Attendance/history");
             if (!response.IsSuccessStatusCode)
+            {
+               
                 return View(new List<StudentAttendanceHistory>());
+            }
 
             var json = await response.Content.ReadAsStringAsync();
             var data = JsonConvert.DeserializeObject<List<StudentAttendanceHistory>>(json);
-
             return View(data);
+           
         }
-
-
         [HttpGet]
         public async Task<IActionResult> Create()
         {
@@ -113,7 +132,7 @@ namespace Web.Controllers
             ViewBag.Schedules = sche.Select(s => new SelectListItem
             {
                 Value = s.Id.ToString(),
-                Text = s.Id.ToString()
+                Text = s.ClassName.ToString()
             }).ToList();
             return View();
         }
@@ -134,7 +153,7 @@ namespace Web.Controllers
                 return RedirectToAction(nameof(IndexSession));
             }
         }
-
+       
         public async Task LoadSelectitem()
         {
             var classList = await _context.Schedules.ToListAsync();

@@ -22,9 +22,18 @@
                     </nav>
                 </div>
                 <div class="btn-group" role="group">
-                    <a asp-action="Index1" asp-route-id="@Model.Id" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-1"></i> Quay lại
-                    </a>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a asp-action="Index1" asp-route-id="@Model.Id" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Quay lại
+                        </a>
+                    }
+                    @if (User.IsInRole("Teacher"))
+                    {
+                        <a asp-action="Byteacher" asp-route-id="@Model.Id" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Quay lại
+                        </a>
+                    }
                 </div>
             </div>
         </div>

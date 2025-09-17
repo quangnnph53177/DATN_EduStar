@@ -1,6 +1,4 @@
-﻿// AttendanceRepos.cs
-
-using API.Data;
+﻿using API.Data;
 using API.Models;
 using API.ViewModel;
 using Microsoft.EntityFrameworkCore;
@@ -55,24 +53,24 @@ namespace API.Services.Repositories
             if (schedule == null || schedule.StudyShift == null)
                 throw new Exception("Không tìm thấy lịch học hoặc ca học.");
 
-            //  Kiểm tra hôm nay có phải là ngày học không
-            var today = (Weekday)DateTime.Today.DayOfWeek;
-            var validDays = schedule.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays).ToList();
+           //// Kiểm tra hôm nay có phải là ngày học không
+           // var today = (Weekday)DateTime.Today.DayOfWeek;
+           // var validDays = schedule.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays).ToList();
 
-            if (!validDays.Contains(today))
-                throw new Exception($"Hôm nay không phải là ngày học của lớp (Hôm nay là: {today})");
+           // if (!validDays.Contains(today))
+           //     throw new Exception($"Hôm nay không phải là ngày học của lớp (Hôm nay là: {today})");
 
-            //  Kiểm tra thời gian trong ca học
-            if (!schedule.StudyShift.StartTime.HasValue)
-                throw new Exception("Ca học chưa được cấu hình thời gian bắt đầu.");
+           // //  Kiểm tra thời gian trong ca học
+           // if (!schedule.StudyShift.StartTime.HasValue)
+           //     throw new Exception("Ca học chưa được cấu hình thời gian bắt đầu.");
 
-            var timeSpan = schedule.StudyShift.StartTime.Value.ToTimeSpan();
-            var now = DateTime.Now;
-            var startTime = DateTime.Today.Add(timeSpan);
-            var endTime = startTime.AddMinutes(30);
+           // var timeSpan = schedule.StudyShift.StartTime.Value.ToTimeSpan();
+           // var now = DateTime.Now;
+           // var startTime = DateTime.Today.Add(timeSpan);
+           // var endTime = startTime.AddMinutes(30);
 
-            if (now < startTime || now > endTime)
-                throw new Exception("Chỉ được tạo phiên điểm danh trong 30 phút đầu của ca học.");
+           // if (now < startTime || now > endTime)
+           //     throw new Exception("Chỉ được tạo phiên điểm danh trong 30 phút đầu của ca học.");
 
             //  Tạo phiên
             var session = new Attendance
@@ -87,9 +85,38 @@ namespace API.Services.Repositories
             _context.Attendances.Add(session);
             await _context.SaveChangesAsync();
         }
+        public async Task<List<TeacherClassViewModel>> GetTeacherClasses(Guid teacherId)
+        {
+            var today = (Weekday)DateTime.Today.DayOfWeek;
 
+            var teacherClasses = await _context.Schedules
+                .Include(s => s.Subject)
+                .Include(s => s.StudyShift)
+                .Include(s => s.Room)
+                .Include(s => s.ScheduleDays).ThenInclude(sd => sd.DayOfWeekk)
+                .Include(s => s.Attendances.Where(a => a.CreateAt.Value == DateTime.Today))
+                .Where(s => s.UsersId == teacherId) // Giả sử có TeacherId trong Schedule model
+                .ToListAsync();
 
+            var result = teacherClasses.Select(s => new TeacherClassViewModel
+            {
+                ScheduleId = s.Id,
+                ClassName = s.ClassName,
+                SubjectName = s.Subject.SubjectName,
+                StudyShiftName = s.StudyShift.StudyShiftName,
+                WeekDays = s.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays.ToString()).ToList(),
+                RoomCode = s.Room.RoomCode,
 
+                // Kiểm tra có phải ngày học hôm nay không
+                CanCreateSession = s.ScheduleDays.Any(sd => sd.DayOfWeekk.Weekdays == today)
+                                 && !s.Attendances.Any(a => a.CreateAt.Value == DateTime.Today),
+
+                // Kiểm tra đã có phiên điểm danh hôm nay chưa
+                HasActiveSession = s.Attendances.Any(a => a.CreateAt.Value == DateTime.Today)
+            }).ToList();
+
+            return result;
+        }
         public async Task<List<IndexAttendanceViewModel>> GetAllSession()
         {
             var attendance = await _context.Attendances
@@ -109,7 +136,7 @@ namespace API.Services.Repositories
                     SubjectName = a.Schedules.Subject.SubjectName,
                     ClassName = a.Schedules.ClassName,
                     ShiftStudy = a.Schedules.StudyShift.StudyShiftName,
-                    WeekDay = string.Join(", ", a.Schedules.ScheduleDays.Select(d => d.DayOfWeekk.Weekdays.ToString())),
+                    WeekDay = a.Schedules.ScheduleDays.Select(d => d.DayOfWeekk.Weekdays).ToList(),
                     RoomCode = a.Schedules.Room.RoomCode,
                     StartTime = a.Starttime,
                     EndTime = a.Endtime,
@@ -144,7 +171,7 @@ namespace API.Services.Repositories
                 SubjectName = schedule.Subject.SubjectName,
                 ClassName = schedule.ClassName,
                 ShiftStudy = schedule.StudyShift.StudyShiftName,
-                WeekDay = string.Join(", ", schedule.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays.ToString())),
+                WeekDay = schedule.ScheduleDays?.Select(d => d.DayOfWeekk.Weekdays).ToList(),
                 RoomCode = schedule.Room.RoomCode,
                 StartTime = attendance.Starttime,
                 EndTime = attendance.Endtime,
@@ -181,7 +208,7 @@ namespace API.Services.Repositories
                     SubjectName = d.Attendance.Schedules.Subject.SubjectName,
                     ClassName = d.Attendance.Schedules.ClassName,
                     Shift = d.Attendance.Schedules.StudyShift.StudyShiftName,
-                    WeekDay = string.Join(", ", d.Attendance.Schedules.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays.ToString())),
+                   // WeekDay = string.Join(", ", d.Attendance.Schedules.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays.ToString())),
                     CheckInTime = d.CheckinTime,
                     Status = d.Status == AttendanceStatus.Present ? "✅ Có mặt"
                             : d.Status == AttendanceStatus.Late ? "🕒 Đi trễ"
@@ -226,7 +253,7 @@ namespace API.Services.Repositories
                 SubjectName = s.Schedules.Subject.SubjectName,
                 ShiftStudy = s.Schedules.StudyShift.StudyShiftName,
                 RoomCode = s.Schedules.Room.RoomCode,
-                WeekDay = string.Join(", ", s.Schedules.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays.ToString())),
+                WeekDay = s.Schedules.ScheduleDays.Select(d => d.DayOfWeekk.Weekdays).ToList(),
                 StartTime = s.Starttime,
                 EndTime = s.Endtime,
             }).ToListAsync();

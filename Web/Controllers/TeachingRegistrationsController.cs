@@ -39,7 +39,7 @@ namespace Web.Controllers
             var client = GetClientWithToken();
             if (client == null)
             {
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction("Login", "Users");
             }
             var response = await client.GetAsync("api/TeachingRegistration/allschedules");
             var json = await response.Content.ReadAsStringAsync();
@@ -78,7 +78,7 @@ namespace Web.Controllers
             var client = GetClientWithToken();
             if (client == null)
             {
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction("Login", "Users");
             }
 
             var response = await client.GetAsync("api/TeachingRegistration/my-registrations");
@@ -95,7 +95,7 @@ namespace Web.Controllers
             var client = GetClientWithToken();
             if (client == null)
             {
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction("Login", "Users");
             }
 
             var url = "api/TeachingRegistration/admin/all-registrations";

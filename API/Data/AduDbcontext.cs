@@ -48,7 +48,6 @@ public partial class AduDbcontext : DbContext
     public virtual DbSet<StudyShift> StudyShifts { get; set; }
 
     public virtual DbSet<Subject> Subjects { get; set; }
-    public virtual DbSet<Semester> Semesters { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<TeachingRegistration> TeachingRegistrations { get; set; }
 
@@ -156,11 +155,6 @@ public partial class AduDbcontext : DbContext
             entity.HasIndex(e => e.RequestedClassId, "IX_ClassChange_RequestedClassId");
 
             entity.Property(e => e.ComplaintId).ValueGeneratedNever();
-            entity.HasOne(d => d.Semester)
-                .WithMany(s => s.ClassChanges)
-                .HasForeignKey(d => d.SemesterId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("FK_ClassChange_Semester");
 
             entity.HasOne(d => d.Complaint).WithOne(p => p.ClassChange)
                 .HasForeignKey<ClassChange>(d => d.ComplaintId)
@@ -304,11 +298,7 @@ public partial class AduDbcontext : DbContext
             entity.HasIndex(e => e.SemesterId, "IX_Schedules_SemesterId"); // Add index for SemesterId
 
             // ✅ ADD THIS: Configure Schedule → Semester relationship
-            entity.HasOne(d => d.Semester)
-                .WithMany(s => s.Schedules)
-                .HasForeignKey(d => d.SemesterId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("FK_Schedules_Semester");
+          
 
             entity.HasOne(d => d.Room).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.RoomId)
@@ -364,19 +354,7 @@ public partial class AduDbcontext : DbContext
             entity.HasOne(d => d.Schedule).WithMany(p => p.ScheduleDays).HasForeignKey(d => d.ScheduleId);
         });
 
-        modelBuilder.Entity<Semester>(entity =>
-        {
-            // Thiết lập khóa chính
-            entity.HasKey(e => e.Id).HasName("PK_Semester");
-            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
-            entity.Property(e => e.StartDate).HasColumnType("date");
-            entity.Property(e => e.EndDate).HasColumnType("date");
-            entity.Property(e => e.IsActive).HasDefaultValue(false);
-            entity.HasData(
-                new Semester { Id = 1, Name = "SP2025", StartDate = new DateTime(2025, 1, 1), EndDate = new DateTime(2025, 4, 29), IsActive = true },
-                new Semester { Id = 2, Name = "SM2025", StartDate = new DateTime(2025, 5, 2), EndDate = new DateTime(2025, 8, 30), IsActive = false }
-            );
-        });
+      
             modelBuilder.Entity<StudentsInfor>(entity =>
         {
             entity.HasKey(e => e.UserId).HasName("PK__Students__1788CC4CCCC2035F");
@@ -418,19 +396,7 @@ public partial class AduDbcontext : DbContext
             entity.Property(e => e.Subjectcode).HasMaxLength(50);
 
             entity.Property(e => e.Status).HasDefaultValue(true);
-            entity.HasOne(d => d.Semester)
-                .WithMany(s => s.Subjects)
-                .HasForeignKey(d => d.SemesterId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("FK_Subject_Semester");
-
-
-            // ✅ Foreign Key: Subject → Semester
-            entity.HasOne(e => e.Semester)
-                .WithMany(s => s.Subjects)
-                .HasForeignKey(e => e.SemesterId)
-                .OnDelete(DeleteBehavior.Restrict)    // hoặc .Cascade nếu bạn muốn xóa Semester thì Subject bị xóa theo
-                .IsRequired();
+          
         });
 
         modelBuilder.Entity<TeachingRegistration>(entity =>
@@ -500,11 +466,7 @@ public partial class AduDbcontext : DbContext
             entity.Property(e => e.Dob).HasColumnName("DOB");
             entity.Property(e => e.FullName).HasMaxLength(90);
             entity.Property(e => e.UserCode).HasMaxLength(50);
-            entity.HasOne(d => d.Semester)
-                .WithMany(s => s.UserProfiles)
-                .HasForeignKey(d => d.SemesterId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("FK_UserProfiles_Semester");
+            
             entity.HasOne(d => d.User).WithOne(p => p.UserProfile)
                 .HasForeignKey<UserProfile>(d => d.UserId)
                 .HasConstraintName("FK__UserProfi__UserI__46E78A0C");

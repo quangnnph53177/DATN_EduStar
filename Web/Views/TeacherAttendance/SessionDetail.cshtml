@@ -1,0 +1,250 @@
+﻿@model API.ViewModel.IndexAttendanceViewModel
+@{
+    ViewData["Title"] = "Chi tiết phiên điểm danh";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-1">
+                                <i class="fas fa-clipboard-list me-2"></i>
+                                Phiên điểm danh: @Model.SessionCode
+                            </h3>
+                            <p class="mb-0 opacity-75">
+                                <i class="fas fa-calendar me-1"></i>
+                                @Model.StartTime?.ToString("dd/MM/yyyy HH:mm") - @Model.EndTime?.ToString("HH:mm")
+                            </p>
+                        </div>
+                        <div>
+                            <a href="@Url.Action("Index", "TeacherAttendance")" class="btn btn-light">
+                                <i class="fas fa-arrow-left me-1"></i>Quay lại
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="info-item">
+                                <i class="fas fa-users text-primary me-2"></i>
+                                <strong>Lớp:</strong> @Model.ClassName
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-item">
+                                <i class="fas fa-book text-success me-2"></i>
+                                <strong>Môn:</strong> @Model.SubjectName
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-item">
+                                <i class="fas fa-door-open text-warning me-2"></i>
+                                <strong>Phòng:</strong> @Model.RoomCode
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-item">
+                                <i class="fas fa-clock text-info me-2"></i>
+                                <strong>Ca:</strong> @Model.ShiftStudy
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh sách sinh viên -->
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-graduate me-2"></i>
+                        Danh sách sinh viên (@Model.stinclass?.Count() ?? 0 sinh viên)
+                    </h4>
+                </div>
+
+                <div class="card-body p-0">
+                    @if (Model.stinclass == null || !Model.stinclass.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-times fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Chưa có sinh viên nào trong lớp</h5>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>STT</th>
+                                        <th><i class="fas fa-id-card me-1"></i>Mã SV</th>
+                                        <th><i class="fas fa-user me-1"></i>Họ tên</th>
+                                        <th><i class="fas fa-envelope me-1"></i>Email</th>
+                                        <th><i class="fas fa-check-circle me-1"></i>Trạng thái</th>
+                                        <th><i class="fas fa-cogs me-1"></i>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int index = 1;
+                                    }
+                                    @foreach (var student in Model.stinclass)
+                                    {
+                                        <tr>
+                                            <td><strong>@index</strong></td>
+                                            <td>
+                                                <span class="badge bg-secondary">@student.StudentCode</span>
+                                            </td>
+                                            <td>
+                                                <strong>@student.FullName</strong>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">@student.Email</small>
+                                            </td>
+                                            <td>
+                                                <select class="form-select attendance-select attendance-dropdown @($"status-{student.Status?.ToLower()}")"
+                                                        id="@index"
+                                                        data-student="@student.StudentId"
+                                                        data-attendance="@Model.AttendanceId">
+                                                    <option value="0" selected="@(student.Status == "Absent" ? "selected" : null)">
+                                                        ❌ Vắng mặt
+                                                    </option>
+                                                    <option value="1" selected="@(student.Status == "Present" ? "selected" : null)">
+                                                        ✅ Có mặt
+                                                    </option>
+                                                    <option value="2" selected="@(student.Status == "Late" ? "selected" : null)">
+                                                        ⏰ Đi muộn
+                                                    </option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-primary btn-sm"
+                                                        onclick="updateAttendance('@student.StudentId', '@student.FullName')">
+                                                    <i class="fas fa-edit me-1"></i>Cập nhật
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal cập nhật điểm danh -->
+<div class="modal fade" id="updateAttendanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-edit me-2"></i>Cập nhật điểm danh
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateAttendanceForm">
+                    <input type="hidden" id="updateStudentId" />
+                    <input type="hidden" id="updateAttendanceId" value="@Model.AttendanceId" />
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Sinh viên:</strong></label>
+                        <input type="text" class="form-control" id="updateStudentName" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Trạng thái điểm danh:</strong></label>
+                        <select class="form-select" id="updateStatus" required>
+                            <option value="">-- Chọn trạng thái --</option>
+                            <option value="Present">✅ Có mặt</option>
+                            <option value="Late">🕒 Đi trễ</option>
+                            <option value="Absent">❌ Vắng</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="submitUpdateAttendance()">
+                    <i class="fas fa-save me-1"></i>Cập nhật
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateAttendance(studentId, studentName) {
+            document.getElementById('updateStudentId').value = studentId;
+            document.getElementById('updateStudentName').value = studentName;
+            document.getElementById('updateStatus').value = '';
+
+            new bootstrap.Modal(document.getElementById('updateAttendanceModal')).show();
+        }
+
+        function submitUpdateAttendance() {
+            const studentId = document.getElementById('updateStudentId').value;
+            const attendanceId = document.getElementById('updateAttendanceId').value;
+            const status = document.getElementById('updateStatus').value;
+
+            if (!status) {
+                alert('Vui lòng chọn trạng thái điểm danh');
+                return;
+            }
+
+            fetch('@Url.Action("CheckIn", "Attendance")', {
+                method: 'POST',
+                body: JSON.stringify({
+                    AttendanceId: parseInt(attendanceId),
+                    StudentId: studentId,
+                    Status: parseInt(status === 'Present' ? 0 : status === 'Late' ? 1 : 2)
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    bootstrap.Modal.getInstance(document.getElementById('updateAttendanceModal')).hide();
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi cập nhật điểm danh');
+                });
+        }
+    </script>
+}
+
+@section Styles {
+    <style>
+        .info-item {
+            margin-bottom: 10px;
+            padding: 10px 0;
+        }
+
+        .card {
+            border-radius: 15px;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0,123,255,.075);
+        }
+
+        .badge {
+            font-size: 0.9em;
+            padding: 0.5em 0.8em;
+        }
+    </style>
+}

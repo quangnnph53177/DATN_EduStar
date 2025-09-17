@@ -6,6 +6,7 @@ namespace API.Services
     {
         Task CreateSession(CreateAttendanceViewModel model);
         Task<List<IndexAttendanceViewModel>> GetAllSession();
+        Task<List<TeacherClassViewModel>> GetTeacherClasses(Guid teacherId);
         Task<IndexAttendanceViewModel> GetByIndex(int attendance);
         Task<bool> CheckInStudent(CheckInDto dto);
         Task<List<StudentAttendanceHistory>> GetHistoryForStudent(Guid studentId);

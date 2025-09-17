@@ -119,8 +119,7 @@ namespace API.Services.Repositories
                     schedulesId = ss.Schedule.Id,
                     ClassName = ss.Schedule.ClassName,
                     SubjectName = ss.Schedule.Subject != null ? ss.Schedule.Subject.SubjectName : null,
-                    SemesterId = ss.Schedule.SemesterId,
-                    NumberOfCredits = ss.Schedule.Subject != null ? (int)ss.Schedule.Subject.NumberOfCredits : 0,
+                    
                     TeacherName = ss.Schedule.User != null ? ss.Schedule.User.UserName : null, // nếu Schedule có User (teacher)
                 })
                 .AsNoTracking()

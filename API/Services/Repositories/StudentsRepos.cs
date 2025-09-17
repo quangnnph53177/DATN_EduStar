@@ -363,9 +363,7 @@ namespace API.Services.Repositories
             {
                 ClassName = u.ClassName,
                 SubjectName = u.Subject.SubjectName,
-                //SemesterId = u.Semester,
-                //YearSchool = u.YearSchool ?? 0,
-                NumberOfCredits = u.Subject.NumberOfCredits ?? 0,
+               
                 RoomCode = u.Room.RoomCode,
                 StudyShiftName = u.StudyShift.StudyShiftName,
                 starttime = u.StudyShift.StartTime,
@@ -400,7 +398,7 @@ namespace API.Services.Repositories
                 SubjectName = u.Subject.SubjectName,
                 //SemesterId = u.Semester,
                 //YearSchool = u.YearSchool ?? 0,
-                NumberOfCredits = u.Subject?.NumberOfCredits ?? 0,
+       
                 RoomCode = u.Room?.RoomCode,
                 StudyShiftName = u.StudyShift?.StudyShiftName,
                 starttime = u.StudyShift?.StartTime,
@@ -415,7 +413,7 @@ namespace API.Services.Repositories
                 SubjectName = u.Subject.SubjectName,
                 //SemesterId = u.Semester,
                 //YearSchool = u.YearSchool ?? 0,
-                NumberOfCredits = u.Subject?.NumberOfCredits ?? 0,
+                
                 RoomCode = u.Room?.RoomCode,
                 StudyShiftName = u.StudyShift?.StudyShiftName,
                 starttime = u.StudyShift?.StartTime,

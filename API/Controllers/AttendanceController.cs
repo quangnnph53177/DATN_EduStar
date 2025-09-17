@@ -19,7 +19,7 @@ namespace API.Controllers
         }
         [HttpPost]
         public async Task<IActionResult> CreateSession(CreateAttendanceViewModel model)
-       {
+        {
             await _service.CreateSession(model);
             return Ok(model);
         }
@@ -51,7 +51,7 @@ namespace API.Controllers
             return Ok(await _service.CheckInStudent(dto));
         }
         [HttpGet("history")]
-        public async Task<IActionResult> History()
+        public async Task<IActionResult> GetHistory()
         {
             var studentIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(studentIdString, out var studentId))

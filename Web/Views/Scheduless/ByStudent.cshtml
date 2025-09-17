@@ -1,0 +1,304 @@
+﻿@using API.ViewModel
+@model List<SchedulesViewModel>
+
+<style>
+    .schedule-container {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 20px 0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .schedule-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 20px 25px;
+        margin: -25px -25px 25px -25px;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .schedule-header i {
+        font-size: 24px;
+    }
+
+    .schedule-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+
+    .empty-state i {
+        font-size: 64px;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h4 {
+        color: #495057;
+        margin-bottom: 10px;
+    }
+
+    .schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .schedule-table thead {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    }
+
+    .schedule-table thead th {
+        color: white;
+        font-weight: 600;
+        padding: 18px 16px;
+        text-align: left;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .schedule-table tbody tr {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #f1f3f4;
+    }
+
+    .schedule-table tbody tr:hover {
+        background: #f8f9fa;
+        transform: translateX(4px);
+        box-shadow: 4px 0 0 #2c3e50;
+    }
+
+    .schedule-table tbody td {
+        padding: 16px;
+        vertical-align: middle;
+        border: none;
+        color: #2d3748;
+        font-weight: 500;
+    }
+
+    .date-cell {
+        font-weight: 600;
+        color: #2c3e50;
+        min-width: 120px;
+    }
+
+    .date-main {
+        font-size: 16px;
+        margin-bottom: 2px;
+    }
+
+    .date-weekday {
+        font-size: 12px;
+        color: #7f8c8d;
+        font-weight: 400;
+    }
+
+    .subject-name {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 15px;
+        margin-bottom: 2px;
+    }
+
+    .class-name {
+        font-size: 13px;
+        color: #7f8c8d;
+    }
+
+    .time-info {
+        background: #ecf0f1;
+        color: #2c3e50;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .time-info::before {
+        content: '🕒';
+    }
+
+    .room-code {
+        background: #e8f4fd;
+        color: #2980b9;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .room-code::before {
+        content: '🏫';
+    }
+
+    .stats-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .stats-item {
+        text-align: center;
+    }
+
+    .stats-number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .stats-label {
+        font-size: 12px;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-top: 4px;
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .status-sapdienra {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-dangdienra {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-ketthuc {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    
+    }
+</style>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+<div class="schedule-container">
+    <div class="schedule-header">
+        <i class="fas fa-calendar-alt"></i>
+        <h2>Thời khóa biểu chi tiết</h2>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h4>Chưa có lịch học</h4>
+            <p>Hiện tại bạn chưa có lịch học nào được đăng ký.</p>
+        </div>
+    }
+    else
+    {
+        <div class="stats-bar">
+            <div class="stats-item">
+                <div class="stats-number">@Model.Count</div>
+                <div class="stats-label">Buổi học</div>
+            </div>
+            <div class="stats-item">
+                <div class="stats-number">@Model.Select(x => x.SubjectName).Distinct().Count()</div>
+                <div class="stats-label">Môn học</div>
+            </div>
+            <div class="stats-item">
+                <div class="stats-number">@Model.Select(x => x.StudyShift).Distinct().Count()</div>
+                <div class="stats-label">Ca học</div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-calendar me-2"></i>Ngày học</th>
+                        <th><i class="fas fa-book-open me-2"></i>Môn học</th>
+                        <th><i class="fas fa-clock me-2"></i>Thời gian</th>
+                        <th><i class="fas fa-door-open me-2"></i>Phòng</th>
+                        <th><i class="fas fa-info-circle me-2"></i>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OrderBy(x => x.startdate).ThenBy(x => x.starttime))
+                    {
+                        <tr>
+                            <td class="date-cell">
+                                <div class="date-main">@item.startdate?.ToString("dd/MM/yyyy")</div>
+                                <div class="date-weekday">@item.weekdays.FirstOrDefault()</div>
+                            </td>
+                            <td>
+                                <div class="subject-name">@item.SubjectName</div>
+                                <div class="class-name">Lớp: @item.ClassName</div>
+                            </td>
+                            <td>
+                                <span class="time-info">
+                                    @item.StudyShift
+                                    @if (item.starttime.HasValue && item.endtime.HasValue)
+                                    {
+                                        <span> (@item.starttime?.ToString("HH:mm") - @item.endtime?.ToString("HH:mm"))</span>
+                                    }
+                                </span>
+                            </td>
+                            <td>
+                                <span class="room-code">@item.RoomCode</span>
+                            </td>
+                            <td>
+                                <span class="status-badge status-@item.Status?.ToLower()">@item.Status</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<script>
+    // Thêm hiệu ứng hover cho các dòng
+    document.addEventListener('DOMContentLoaded', function () {
+        const rows = document.querySelectorAll('.schedule-table tbody tr');
+
+        rows.forEach(row => {
+            row.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateX(4px)';
+            });
+
+            row.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateX(0)';
+            });
+        });
+    });
+</script>
