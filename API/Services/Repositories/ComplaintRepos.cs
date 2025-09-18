@@ -84,7 +84,7 @@ namespace API.Services.Repositories
                 .Join(_context.ClassChanges, complaint => complaint.Id, classChange => classChange.ComplaintId,
                     (complaint, classChange) => new { complaint, classChange })
                 .Join(_context.Schedules, cc => cc.classChange.RequestedClassId, cls => cls.Id,
-                    (cc, cls) => new { cc.complaint, SubjectId = cls.SubjectId})
+                    (cc, cls) => new { cc.complaint, SubjectId = cls.SubjectId })
                 .AnyAsync(x => x.SubjectId == subjectId /*&& x.SemesterId == semesterId*/);
 
             if (hasPendingComplaint)

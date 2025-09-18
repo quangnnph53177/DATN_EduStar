@@ -26,11 +26,14 @@
     <h2 class="mb-0 text-primary">
         <i class="bi bi-clipboard-check-fill me-2"></i> @ViewData["Title"]
     </h2>
+     @if (User.IsInRole("Student"))
+                {
     <div>
         <a asp-controller="Complaint" asp-action="ClassChangeComplaint" class="btn btn-primary">
             <i class="bi bi-plus-circle-fill me-1"></i> Khiếu nại đổi lớp
         </a>
     </div>
+                }
 </div>
 
 <!-- Thống kê nhanh -->
@@ -85,12 +88,10 @@
                     <tr>
                         <th>ID</th>
                         <th>Loại</th>
-                        <th>Lý do</th>
                         <th>Trạng thái</th>
                         <th>Người gửi</th>
                         <th>Người xử lý</th>
                         <th>Ngày tạo</th>
-                        <th>Phản hồi</th>
                         <th>Xử lý lúc</th>
                         <th class="text-center">Chức năng</th>
                     </tr>
@@ -103,7 +104,6 @@
                             <tr>
                                 <td>@item.Id</td>
                                 <td>@item.ComplaintType</td>
-                                <td>@item.Reason</td>
                                 <td>
                                     @if (item.Statuss == "Pending")
                                     {
@@ -131,7 +131,6 @@
                                 <td>@item.StudentName</td>
                                 <td>@item.ProcessedByName</td>
                                 <td>@item.CreateAt?.ToString("dd/MM/yyyy HH:mm")</td>
-                                <td>@item.ResponseNote</td>
                                 <td>@item.ProcessedAt?.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center">

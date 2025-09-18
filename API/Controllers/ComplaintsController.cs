@@ -43,8 +43,8 @@ namespace API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [Authorize(Roles = "3")]
         [HttpPost("class-change-complaint")]
-        [Authorize]
         public async Task<IActionResult> SubmitClassChangeComplaint([FromBody] ClassChangeComplaintDTO dto)
         {
             if (dto == null || dto.CurrentClassId == 0 || dto.RequestedClassId == 0 || string.IsNullOrWhiteSpace(dto.Reason))
