@@ -1,0 +1,76 @@
+﻿@using API.ViewModel
+@model StudentViewModels
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Thông tin cá nhân</h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("EditMyProfile")" class="btn btn-primary btn-sm">
+                            <i class="fas fa-edit"></i> Chỉnh sửa
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="profile-avatar mb-3">
+                                @if (!string.IsNullOrEmpty(Model.Avatar))
+                                {
+                                    <img src="@Model.Avatar" alt="Avatar" class="img-circle profile-user-img img-fluid">
+                                }
+                                else
+                                {
+                                    <img src="/images/default-avatar.png" alt="Default Avatar" class="img-circle profile-user-img img-fluid">
+                                }
+                            </div>
+                            <h3>@Model.FullName</h3>
+                            <p class="text-muted">@Model.StudentCode</p>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <strong><i class="fas fa-user mr-1"></i> Tên đăng nhập</strong>
+                                    <p class="text-muted">@Model.UserName</p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <strong><i class="fas fa-envelope mr-1"></i> Email</strong>
+                                    <p class="text-muted">@Model.Email</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <strong><i class="fas fa-phone mr-1"></i> Số điện thoại</strong>
+                                    <p class="text-muted">@(Model.PhoneNumber ?? "Chưa cập nhật")</p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <strong><i class="fas fa-birthday-cake mr-1"></i> Ngày sinh</strong>
+                                    <p class="text-muted">@(Model.Dob?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <strong><i class="fas fa-venus-mars mr-1"></i> Giới tính</strong>
+                                    <p class="text-muted">
+                                        @(Model.Gender.HasValue ? (Model.Gender.Value ? "Nữ" : "Nam") : "Chưa cập nhật")
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <strong><i class="fas fa-map-marker-alt mr-1"></i> Địa chỉ</strong>
+                                    <p class="text-muted">@(Model.Address ?? "Chưa cập nhật")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

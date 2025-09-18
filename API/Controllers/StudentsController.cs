@@ -84,7 +84,49 @@ namespace API.Controllers
             }
 
         }
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetMyProfile()
+        {
+            try
+            {
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(currentUserId) || !Guid.TryParse(currentUserId, out var userId))
+                    return Unauthorized("Không tìm thấy thông tin người dùng");
 
+                var profile = await _service.GetById(userId);
+                if (profile == null)
+                    return NotFound("Không tìm thấy thông tin sinh viên");
+
+                return Ok(profile);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi hệ thống: {ex.Message}");
+            }
+        }
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateMyProfile(StudentViewModels model, IFormFile? imgFile)
+        {
+            try
+            {
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(currentUserId) || !Guid.TryParse(currentUserId, out var userId))
+                    return Unauthorized("Không tìm thấy thông tin người dùng");
+
+                // Đảm bảo chỉ cập nhật profile của chính mình
+                if (model.id != userId)
+                    return Forbid("Bạn chỉ có thể cập nhật thông tin của chính mình");
+
+                await _service.UpdateByBeast(model, imgFile);
+                return Ok(new { message = "Cập nhật thông tin cá nhân thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Lỗi khi cập nhật: {ex.Message}" });
+            }
+        }
         [HttpGet("auditlog")]
         public async Task<IActionResult> Log()
         {
@@ -135,7 +177,7 @@ namespace API.Controllers
             }
         }
         [HttpPut("beast/{id}")]
-        public async Task<IActionResult> UpdateWithbeast(Guid Id, StudentViewModels model)
+        public async Task<IActionResult> UpdateWithbeast(Guid Id, [FromForm] StudentViewModels model,IFormFile? imgFile)
         {
             if (Id != model.id)
             {
@@ -143,12 +185,12 @@ namespace API.Controllers
             }
             try
             {
-                await _service.UpdateByBeast(model);
-                return Ok(new { message = "Cập nhập thành công" });
+                await _service.UpdateByBeast(model, imgFile);
+                return Ok(new { message = "Cập nhật thành công" });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = $"Lỗi khi cập nhập :{ex.Message}" });
+                return BadRequest(new { message = $"Lỗi khi cập nhật: {ex.Message}" });
             }
         }
         [HttpPut("{id}/toggle-active")]

@@ -1,0 +1,119 @@
+﻿@using API.ViewModel
+@model StudentViewModels
+
+@{
+    ViewData["Title"] = "Chỉnh sửa thông tin cá nhân";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Chỉnh sửa thông tin cá nhân</h3>
+                </div>
+                <form asp-action="EditMyProfile" method="post" enctype="multipart/form-data">
+                    <div class="card-body">
+                        @Html.HiddenFor(m => m.id)
+                        @Html.HiddenFor(m => m.UserName)
+                        @Html.HiddenFor(m => m.StudentCode)
+
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="form-group">
+                                    <label>Ảnh đại diện</label>
+                                    <div class="mb-3">
+                                        @if (!string.IsNullOrEmpty(Model.Avatar))
+                                        {
+                                            <img src="@Model.Avatar" alt="Avatar" class="img-circle profile-user-img img-fluid" id="avatar-preview">
+                                        }
+                                        else
+                                        {
+                                            <img src="/images/default-avatar.png" alt="Default Avatar" class="img-circle profile-user-img img-fluid" id="avatar-preview">
+                                        }
+                                    </div>
+                                    <input type="file" name="avatarFile" class="form-control" accept="image/*" onchange="previewImage(this)">
+                                    <small class="text-muted">Chỉ hỗ trợ file JPG, JPEG, PNG</small>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="FullName">Họ và tên <span class="text-danger">*</span></label>
+                                            <input asp-for="FullName" class="form-control" required>
+                                            <span asp-validation-for="FullName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="Email">Email <span class="text-danger">*</span></label>
+                                            <input asp-for="Email" class="form-control" type="email" required>
+                                            <span asp-validation-for="Email" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="PhoneNumber">Số điện thoại</label>
+                                            <input asp-for="PhoneNumber" class="form-control">
+                                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="Dob">Ngày sinh</label>
+                                            <input asp-for="Dob" class="form-control" type="date">
+                                            <span asp-validation-for="Dob" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Giới tính</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" asp-for="Gender" value="false" id="male">
+                                                <label class="form-check-label" for="male">Nam</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" asp-for="Gender" value="true" id="female">
+                                                <label class="form-check-label" for="female">Nữ</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="Address">Địa chỉ</label>
+                                    <textarea asp-for="Address" class="form-control" rows="3"></textarea>
+                                    <span asp-validation-for="Address" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Lưu thay đổi
+                        </button>
+                        <a href="@Url.Action("MyProfile")" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Hủy
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('avatar-preview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>

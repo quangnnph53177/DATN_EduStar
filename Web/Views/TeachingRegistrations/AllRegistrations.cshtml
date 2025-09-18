@@ -130,7 +130,7 @@
                                     <td>
                                         <strong class="text-primary">@registration.ClassName</strong>
                                     </td>
-                                    <td>@registration.SujectName</td>
+                                    <td>@registration.SubjectName</td>
                                     <td>
                                         <span class="badge bg-info">@registration.RoomName</span>
                                     </td>
@@ -377,7 +377,7 @@
                             // Update statistics
                             updateStatistics();
 
-                            // Reload page after 2 seconds
+                            // Reload page after 2 secondss
                             setTimeout(() => location.reload(), 2000);
                         } else {
                             showAlert('danger', response.message);

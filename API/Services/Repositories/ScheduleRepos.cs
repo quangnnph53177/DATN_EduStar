@@ -18,10 +18,10 @@ namespace API.Services.Repositories
 
         public async Task CreateSchedules(SchedulesDTO model)
         {
-            if (model.startdate == null)
+            if (model.StartDate == null)
                 throw new Exception("Ngày bắt đầu không được để trống.");
 
-            var startDate = model.startdate.Value.Date;
+            var startDate = model.StartDate.Value.Date;
             var endDate = startDate.AddDays(30);
 
             // Kiểm tra trùng lịch theo từng thứ được chọn

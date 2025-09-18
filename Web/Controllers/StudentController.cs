@@ -153,8 +153,134 @@ namespace Web.Controllers
         {
             var response = await _client.GetStringAsync($"api/students/{id}");
             var result = JsonConvert.DeserializeObject<StudentViewModels>(response);
-            
             return View(result);
+        }
+        [HttpGet]
+        public async Task<IActionResult> MyProfile()
+        {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
+                return RedirectToAction("Login", "Users");
+            }
+
+            try
+            {
+                var response = await client.GetAsync("api/Students/profile");
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    TempData["ErrorMessage"] = "Bạn không có quyền truy cập.";
+                    return RedirectToAction("Login", "Users");
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    TempData["ErrorMessage"] = "Không thể tải thông tin cá nhân.";
+                    return View(new StudentViewModels());
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var profile = JsonConvert.DeserializeObject<StudentViewModels>(json);
+
+                return View(profile);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                return View(new StudentViewModels());
+            }
+        }
+        [HttpGet]
+        public async Task<IActionResult> EditMyProfile()
+        {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
+                return RedirectToAction("Login", "Users");
+            }
+
+            try
+            {
+                var response = await client.GetAsync("api/Students/profile");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    TempData["ErrorMessage"] = "Không thể tải thông tin để chỉnh sửa.";
+                    return RedirectToAction("MyProfile");
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var profile = JsonConvert.DeserializeObject<StudentViewModels>(json);
+
+                return View(profile);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                return RedirectToAction("MyProfile");
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditMyProfile(StudentViewModels model, IFormFile avatarFile)
+        {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
+                return RedirectToAction("Login", "Users");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                using var content = new MultipartFormDataContent();
+
+                // Thêm các thông tin cơ bản
+                content.Add(new StringContent(model.id.ToString()), "id");
+                content.Add(new StringContent(model.Email ?? ""), "Email");
+                content.Add(new StringContent(model.PhoneNumber ?? ""), "PhoneNumber");
+                content.Add(new StringContent(model.FullName ?? ""), "FullName");
+                content.Add(new StringContent(model.Address ?? ""), "Address");
+
+                if (model.Dob.HasValue)
+                    content.Add(new StringContent(model.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
+
+                if (model.Gender.HasValue)
+                    content.Add(new StringContent(model.Gender.Value.ToString()), "Gender");
+
+                // Thêm file avatar nếu có
+                if (avatarFile != null && avatarFile.Length > 0)
+                {
+                    var streamContent = new StreamContent(avatarFile.OpenReadStream());
+                    streamContent.Headers.ContentType = new MediaTypeHeaderValue(avatarFile.ContentType);
+                    content.Add(streamContent, "imgFile", avatarFile.FileName);
+                }
+
+                var response = await client.PutAsync("api/Students/profile", content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    TempData["ErrorMessage"] = $"Cập nhật thất bại: {error}";
+                    return View(model);
+                }
+
+                TempData["SuccessMessage"] = "Cập nhật thông tin cá nhân thành công!";
+                return RedirectToAction("MyProfile");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                return View(model);
+            }
         }
         [HttpPost]
         public async Task<IActionResult> Lock(Guid id)
@@ -249,43 +375,57 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> EditBeast(Guid id, StudentViewModels model, IFormFile avatarFile)
         {
-            var oldresponse = await _client.GetStringAsync($"api/students/{id}");
-            var oldata = JsonConvert.DeserializeObject<StudentViewModels>(oldresponse);
-            if (avatarFile != null && avatarFile.Length > 0)
+            var client = GetClientWithToken();
+            if (client == null)
             {
-                // Tạo tên file duy nhất
-                var fileName = Path.GetFileNameWithoutExtension(avatarFile.FileName);
-                var extension = Path.GetExtension(avatarFile.FileName);
-                var newFileName = $"{fileName}_{Guid.NewGuid()}{extension}";
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
+                return RedirectToAction("Login", "Users");
+            }
 
-                // Đường dẫn thư mục wwwroot/uploads
-                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads");
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
+            try
+            {
+                // Tạo multipart content để gửi cả data và file
+                using var content = new MultipartFormDataContent();
 
-                // Lưu file vào wwwroot/uploads
-                var filePath = Path.Combine(uploadsFolder, newFileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                // Thêm các thông tin cơ bản
+                content.Add(new StringContent(model.id.ToString()), "id");
+                content.Add(new StringContent(model.UserName ?? ""), "UserName");
+                content.Add(new StringContent(model.Email ?? ""), "Email");
+                content.Add(new StringContent(model.PhoneNumber ?? ""), "PhoneNumber");
+                content.Add(new StringContent(model.FullName ?? ""), "FullName");
+                content.Add(new StringContent(model.Address ?? ""), "Address");
+
+                if (model.Dob.HasValue)
+                    content.Add(new StringContent(model.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
+
+                if (model.Gender.HasValue)
+                    content.Add(new StringContent(model.Gender.Value.ToString()), "Gender");
+
+                // Thêm file avatar nếu có
+                if (avatarFile != null && avatarFile.Length > 0)
                 {
-                    await avatarFile.CopyToAsync(stream);
+                    var streamContent = new StreamContent(avatarFile.OpenReadStream());
+                    streamContent.Headers.ContentType = new MediaTypeHeaderValue(avatarFile.ContentType);
+                    content.Add(streamContent, "imgFile", avatarFile.FileName);
                 }
 
-                // Gán đường dẫn tương đối (hoặc URL nếu muốn)
-                model.Avatar = $"/uploads/{newFileName}";
+                var response = await client.PutAsync($"api/Students/Beast/{id}", content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    TempData["ErrorMessage"] = $"Cập nhật thất bại: {error}";
+                    return View(model);
+                }
+
+                TempData["SuccessMessage"] = "Cập nhật sinh viên thành công!";
+                return RedirectToAction("Index");
             }
-            else
+            catch (Exception ex)
             {
-                model.Avatar = oldata.Avatar;
-            }
-            var response = await _client.PutAsJsonAsync($"api/Students/Beast/{id}", model);
-            if (!response.IsSuccessStatusCode)
-            {
-                var error = await response.Content.ReadAsStringAsync();
-                ModelState.AddModelError(string.Empty, $"Cập nhật thất bại: {response.StatusCode} - {error}");
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
                 return View(model);
             }
-
-            return RedirectToAction("Index");
         }
         public async Task<IActionResult> Delete(Guid id)
         {

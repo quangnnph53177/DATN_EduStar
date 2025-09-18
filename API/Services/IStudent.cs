@@ -8,7 +8,7 @@ namespace API.Services
         Task<List<StudentViewModels>> GetAllStudents();
         Task<StudentViewModels> GetById(Guid Id);
         Task UpdatebyBoss(StudentViewModels model);// cập nhập của admin
-        Task UpdateByBeast(StudentViewModels model);//cập nhập sủa sinh viên
+        Task UpdateByBeast(StudentViewModels model, IFormFile? imgFile = null);//cập nhập sủa sinh viên
         Task<bool> KhoaMoSinhVienAsync(Guid Id);
         Task<bool> DeleteStudent(Guid Id);
         Task SendNotificationtoClass(int classId, string subject);

@@ -436,9 +436,6 @@ namespace API.Migrations
                     b.Property<int?>("RoomId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("SemesterId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
 
@@ -459,8 +456,6 @@ namespace API.Migrations
                     b.HasIndex(new[] { "ClassName" }, "IX_Schedules_ClassName");
 
                     b.HasIndex(new[] { "RoomId" }, "IX_Schedules_RoomId");
-
-                    b.HasIndex(new[] { "SemesterId" }, "IX_Schedules_SemesterId");
 
                     b.HasIndex(new[] { "StudyShiftId" }, "IX_Schedules_StudyShiftId");
 

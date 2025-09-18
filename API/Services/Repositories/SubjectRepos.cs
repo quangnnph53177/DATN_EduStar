@@ -20,7 +20,7 @@ namespace API.Services.Repositories
             {
                 Id = sub.Id,
                 SubjectName = sub.SubjectName,
-                Subjectcode = sub.subjectCode,
+                Subjectcode = sub.SubjectCode,
                 Description= sub.Description,
                 Status = sub.Status,
             };
@@ -49,7 +49,7 @@ namespace API.Services.Repositories
             {
                 Id = c.Id,
                 SubjectName = c.SubjectName,
-                subjectCode= c.Subjectcode,
+                SubjectCode= c.Subjectcode,
            
                 Description = c.Description,
           
@@ -65,7 +65,7 @@ namespace API.Services.Repositories
             {
                 Id= id,
                 SubjectName=details.SubjectName,
-                subjectCode= details.Subjectcode,
+                SubjectCode= details.Subjectcode,
               
                 Description=details.Description,
                
@@ -106,7 +106,7 @@ namespace API.Services.Repositories
             {
                 Id = c.Id,
                 SubjectName=c.SubjectName,
-                subjectCode = c.Subjectcode,
+                SubjectCode = c.Subjectcode,
                 
                 Description=c.Description,
               
@@ -125,7 +125,7 @@ namespace API.Services.Repositories
 
             // Cập nhật thông tin
             con.SubjectName = subject.SubjectName;
-            con.Subjectcode = subject.subjectCode;
+            con.Subjectcode = subject.SubjectCode;
           
             con.Description = subject.Description;
             

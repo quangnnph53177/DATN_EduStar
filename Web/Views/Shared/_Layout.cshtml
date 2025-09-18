@@ -134,7 +134,6 @@
                     <li class="nav-item"><a class="nav-link @(IsActive("Users"))" asp-controller="Users" asp-action="Index">👤 Quản lý người dùng</a></li>
                     <li class="nav-item"><a class="nav-link @(IsActive("Teacher"))" asp-controller="Teacher" asp-action="Index">📚 Danh sách giảng viên</a></li>
                     <li class="nav-item"><a class="nav-link @(IsActive("Student"))" asp-controller="Student" asp-action="Index">🎓 Danh sách sinh viên</a></li>
-                    //<li class="nav-item"><a class="nav-link @(IsActive("Statistical"))" asp-controller="Statistical" asp-action="DashBoard">📊 Thống kê</a></li>
                     <li class="nav-item"><a class="nav-link @(IsActive("Scheduless"))" asp-controller="Scheduless" asp-action="Index1">📅 Lịch học</a></li>
                     <li class="nav-item"><a class="nav-link @(IsActive("SubjectW"))" asp-controller="SubjectW" asp-action="Index">📘 Môn học</a></li>
                     <li class="nav-item"><a class="nav-link @(IsActive("TeachingRegistrations"))" asp-controller="TeachingRegistrations" asp-action="AllRegistrations">🗓️ Đơn đăng ký</a></li>
@@ -155,10 +154,9 @@
                 @if (User.IsInRole("Student"))
                 {
                     <li class="nav-item"><a class="nav-link @(IsActive("Scheduless"))" asp-controller="Scheduless" asp-action="ByStudent">📅 Lịch học</a></li>
-                    <li class="nav-item"><a class="nav-link @(IsActive("Attendance"))" asp-controller="Attendance" asp-action="History">Điểm danh</a></li>
-
+                    <li class="nav-item"><a class="nav-link @(IsActive("Attendance"))" asp-controller="Attendance" asp-action="History">📖 Điểm danh</a></li>
                     <li class="nav-item"><a class="nav-link @(IsActive("Complaint"))" asp-controller="Complaint" asp-action="ClassChangeComplaint">⚠️ Khiếu nại</a></li>
-                    <li class="nav-item"><a class="nav-link @(IsActive("Users"))" asp-controller="Users" asp-action="IndexUser">👤 Quản lý người dùng</a></li>
+                    <li class="nav-item"><a class="nav-link @(IsActive("Student"))" asp-controller="Student" asp-action="MyProfile">👤 Thông tin cá nhân</a></li>
                 }
             </ul>
 

@@ -21,7 +21,6 @@ public partial class Schedule
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public Guid? UsersId { get; set; }
-    public int? SemesterId { get; set; }
     public virtual ICollection<AttendanceDetailsComplaint> AttendanceDetailsComplaints { get; set; } = new List<AttendanceDetailsComplaint>();
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
     public virtual ICollection<ClassChange> ClassChangeCurrentClasses { get; set; } = new List<ClassChange>();

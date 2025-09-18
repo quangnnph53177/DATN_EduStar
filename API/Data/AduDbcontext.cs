@@ -295,9 +295,9 @@ public partial class AduDbcontext : DbContext
             entity.HasIndex(e => e.StudyShiftId, "IX_Schedules_StudyShiftId");
             entity.HasIndex(e => e.SubjectId, "IX_Schedules_SubjectId");
             entity.HasIndex(e => e.UsersId, "IX_Schedules_UsersId");
-            entity.HasIndex(e => e.SemesterId, "IX_Schedules_SemesterId"); // Add index for SemesterId
+            
 
-            // ✅ ADD THIS: Configure Schedule → Semester relationship
+
           
 
             entity.HasOne(d => d.Room).WithMany(p => p.Schedules)

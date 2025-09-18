@@ -287,30 +287,55 @@ namespace API.Services.Repositories
             return result;
         }
 
-        public async Task UpdateByBeast(StudentViewModels model)
+        public async Task UpdateByBeast(StudentViewModels model, IFormFile? imgFile = null)
         {
             var upinsv = await _context.Users
                 .Include(p => p.UserProfile)
                 .FirstOrDefaultAsync(d => d.Id == model.id);
 
-
+            if (upinsv == null)
+                throw new Exception("Không tìm thấy sinh viên.");
 
             var olddata = JsonConvert.SerializeObject(new
             {
                 upinsv.UserName,
                 upinsv.Email,
                 upinsv.PhoneNumber,
-                upinsv.UserProfile.Avatar,
-                upinsv.UserProfile.Address,
-                upinsv.UserProfile.Dob,
+                Avatar = upinsv.UserProfile?.Avatar,
+                Address = upinsv.UserProfile?.Address,
+                Dob = upinsv.UserProfile?.Dob,
             });
 
-            // Cập nhật thông tin
+            // Cập nhật thông tin cơ bản
             upinsv.UserName = model.UserName;
-            upinsv.PassWordHash = model.PassWordHash;
+            if (!string.IsNullOrWhiteSpace(model.PassWordHash))
+            {
+                upinsv.PassWordHash = model.PassWordHash; // Nên hash lại password nếu cần
+            }
             upinsv.Email = model.Email;
             upinsv.PhoneNumber = model.PhoneNumber;
-            upinsv.UserProfile.Avatar = model.Avatar;
+
+            // Đảm bảo UserProfile tồn tại
+            if (upinsv.UserProfile == null)
+            {
+                upinsv.UserProfile = new UserProfile { UserId = upinsv.Id };
+            }
+
+            // Xử lý avatar nếu có file mới
+            if (imgFile != null && imgFile.Length > 0)
+            {
+                try
+                {
+                    var avatarPath = await SaveAvatar(imgFile, upinsv.UserProfile.Avatar);
+                    upinsv.UserProfile.Avatar = avatarPath;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Lỗi khi lưu avatar: {ex.Message}");
+                }
+            }
+
+            // Cập nhật các thông tin khác
             upinsv.UserProfile.Address = model.Address;
             upinsv.UserProfile.Dob = model.Dob;
 
@@ -319,9 +344,9 @@ namespace API.Services.Repositories
                 upinsv.UserName,
                 upinsv.Email,
                 upinsv.PhoneNumber,
-                upinsv.UserProfile.Avatar,
-                upinsv.UserProfile.Address,
-                upinsv.UserProfile.Dob,
+                Avatar = upinsv.UserProfile?.Avatar,
+                Address = upinsv.UserProfile?.Address,
+                Dob = upinsv.UserProfile?.Dob,
             });
 
             _context.Users.Update(upinsv);
@@ -343,6 +368,33 @@ namespace API.Services.Repositories
             _context.Auditlogs.Add(audit);
 
             await _context.SaveChangesAsync();
+        }
+        private async Task<string> SaveAvatar(IFormFile imgFile, string? oldPath = null)
+        {
+            var validImageFormats = new[] { ".jpg", ".jpeg", ".png" };
+            var ext = Path.GetExtension(imgFile.FileName).ToLowerInvariant();
+
+            if (!validImageFormats.Contains(ext))
+                throw new Exception("Định dạng ảnh không hợp lệ. Chỉ hỗ trợ jpg, jpeg, png");
+
+            var avatarDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "avatars");
+            if (!Directory.Exists(avatarDir))
+                Directory.CreateDirectory(avatarDir);
+
+            if (!string.IsNullOrWhiteSpace(oldPath))
+            {
+                var fullOldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldPath.TrimStart('/'));
+                if (File.Exists(fullOldPath))
+                    File.Delete(fullOldPath);
+            }
+
+            var uniqueName = $"{Guid.NewGuid()}{ext}";
+            var savePath = Path.Combine(avatarDir, uniqueName);
+
+            await using var stream = new FileStream(savePath, FileMode.Create);
+            await imgFile.CopyToAsync(stream);
+
+            return $"/images/avatars/{uniqueName}";
         }
 
         public async Task UpdatebyBoss(StudentViewModels model)
@@ -396,9 +448,6 @@ namespace API.Services.Repositories
             {
                 ClassName = u.ClassName,
                 SubjectName = u.Subject.SubjectName,
-                //SemesterId = u.Semester,
-                //YearSchool = u.YearSchool ?? 0,
-       
                 RoomCode = u.Room?.RoomCode,
                 StudyShiftName = u.StudyShift?.StudyShiftName,
                 starttime = u.StudyShift?.StartTime,
@@ -411,9 +460,6 @@ namespace API.Services.Repositories
             {
                 ClassName = u.ClassName,
                 SubjectName = u.Subject.SubjectName,
-                //SemesterId = u.Semester,
-                //YearSchool = u.YearSchool ?? 0,
-                
                 RoomCode = u.Room?.RoomCode,
                 StudyShiftName = u.StudyShift?.StudyShiftName,
                 starttime = u.StudyShift?.StartTime,

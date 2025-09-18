@@ -26,20 +26,15 @@
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="subjectCode" class="form-label fw-semibold">🔖 Mã môn học</label>
-                    <input asp-for="subjectCode" class="form-control" placeholder="VD: CS101" />
-                    <span asp-validation-for="subjectCode" class="text-danger"></span>
+                    <label asp-for="SubjectCode" class="form-label fw-semibold">🔖 Mã môn học</label>
+                    <input asp-for="SubjectCode" class="form-control" placeholder="VD: CS101" />
+                    <span asp-validation-for="SubjectCode" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="Description" class="form-label fw-semibold">📝 Mô tả</label>
                     <textarea asp-for="Description" class="form-control auto-resize" rows="3" placeholder="Mô tả ngắn gọn..."></textarea>
                     <span asp-validation-for="Description" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="NumberOfCredits" class="form-label fw-semibold">🎯 Số tín chỉ</label>
-                    <input asp-for="NumberOfCredits" type="number" min="1" class="form-control" />
-                    <span asp-validation-for="NumberOfCredits" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
