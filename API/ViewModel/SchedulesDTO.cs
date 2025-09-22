@@ -31,8 +31,6 @@ namespace API.ViewModel
         [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc")]
         public DateTime? StartDate { get; set; } // Đổi tên từ startdate
 
-        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc")]
-        [DateGreaterThan("StartDate", ErrorMessage = "Ngày kết thúc phải sau ngày bắt đầu")]
         public DateTime? EndDate { get; set; } // Đổi tên từ enddate
 
         public Guid? TeacherId { get; set; }

@@ -84,7 +84,6 @@
     .time-sub {
         font-size: 0.8rem;
         color: var(--gray-600);
-    }
 </style>
 
 <div class="container-fluid px-4">
@@ -97,30 +96,17 @@
                 </h2>
                 <p class="lead mb-0 opacity-90">Theo dõi quá trình học tập và tham gia lớp học</p>
             </div>
-            <div class="col-md-4">
-                <div class="history-stats">
-                    @{
-                        var presentCount = Model.Count(x => x.Status == "Present");
-                        var absentCount = Model.Count(x => x.Status == "Absent");
-                        var lateCount = Model.Count(x => x.Status == "Late");
-                    }
-                    <div class="stat-item">
-                        <div class="stat-number text-success">@presentCount</div>
-                        <div class="small">Có mặt</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number text-warning">@lateCount</div>
-                        <div class="small">Đi muộn</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number text-danger">@absentCount</div>
-                        <div class="small">Vắng mặt</div>
-                    </div>
-                </div>
+            <div class="col-md-4 text-end">
+                <form asp-action="StudentCheckIn" method="post">
+                    <button type="submit" class="btn btn-checkin">
+                        <i class="bi bi-camera me-2"></i> Điểm danh khuôn mặt
+                    </button>
+                </form>
             </div>
         </div>
     </div>
 
+    <!-- phần bảng giữ nguyên -->
     <div class="history-table">
         <table class="table table-hover mb-0">
             <thead class="table-header">
@@ -218,6 +204,7 @@
         </div>
     }
 </div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>

@@ -512,6 +512,9 @@ namespace API.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<byte[]>("FaceFeatures")
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<string>("StudentsCode")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");

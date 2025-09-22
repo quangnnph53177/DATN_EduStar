@@ -26,6 +26,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.22.1" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
@@ -38,6 +39,15 @@
   <ItemGroup>
     <Folder Include="wwwroot\images\" />
     <Folder Include="wwwroot\images\avatars\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Models\arcface_model.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Models\face_detector_yolov8n.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

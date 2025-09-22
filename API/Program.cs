@@ -1,6 +1,7 @@
 ﻿using API.Data;
 using API.Models;
 using API.Services;
+using API.Services.FaceRecognition;
 using API.Services.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,13 @@ builder.Services.AddScoped<IAttendance , AttendanceRepos>();
 builder.Services.AddScoped<IComplaintRepos, ComplaintRepos>();
 builder.Services.AddScoped<IRoom, RoomRepos>();
 builder.Services.AddScoped<ITeachingRegistrationRepos, TeachingRegistrationRepos>();
+builder.Services.AddScoped<FaceRecognitionService>(sp =>
+{
+    var faceDetectorPath = Path.Combine(Directory.GetCurrentDirectory(), "Models", "face_detector_yolov8n.onnx");
+    var faceRecognizerPath = Path.Combine(Directory.GetCurrentDirectory(), "Models", "arcface_model.onnx");
+    return new FaceRecognitionService(faceDetectorPath, faceRecognizerPath);
+});
+
 //builder.Services.AddScoped<ISemesterRepos, SemesterRepos>();
 builder.Services.AddMemoryCache();
 builder.Services.AddCors(options =>
