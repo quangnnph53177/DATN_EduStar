@@ -24,62 +24,48 @@
         </div>
 
         <div class="card-body">
-
             <!-- Thông tin chung -->
             <h5 class="text-primary mb-3"><i class="bi bi-card-text"></i> Thông tin chung</h5>
             <div class="row mb-3">
-                <div class="col-md-6">
-                    <strong>Loại khiếu nại:</strong> @complaint.ComplaintType
-                </div>
-                <div class="col-md-6">
-                    <strong>Lý do:</strong> @complaint.Reason
-                </div>
+                <div class="col-md-6"><strong>Loại khiếu nại:</strong> @complaint.ComplaintType</div>
+                <div class="col-md-6"><strong>Lý do:</strong> @complaint.Reason</div>
             </div>
 
-            <!-- Bằng chứng -->
-            <div class="mb-4">
-                <strong>Bằng chứng:</strong>
-                @if (!string.IsNullOrEmpty(complaint.ProofUrl))
-                {
-                    <a class="btn btn-sm btn-outline-primary ms-2" href="@complaint.ProofUrl" target="_blank">
-                        <i class="bi bi-link-45deg"></i> Xem bằng chứng
-                    </a>
-                }
-                else
-                {
-                    <span class="text-muted ms-2">Không có</span>
-                }
-            </div>
+            <!-- Bằng chứng minh chứng -->
+            <h5 class="text-primary mb-3"><i class="bi bi-image"></i> Bằng chứng</h5>
+            @if (!string.IsNullOrEmpty(complaint.ProofUrl))
+            {
+                <img src="https://localhost:7298/@complaint.ProofUrl"
+                     alt="Bằng chứng khiếu nại"
+                     class="rounded shadow-sm border mb-3"
+                     style="width: 160px; height: 160px; object-fit: cover;" />
+            }
+            else
+            {
+                <div class="bg-light text-secondary rounded d-flex align-items-center justify-content-center shadow-sm mb-3"
+                     style="width: 160px; height: 160px;">
+                    <i class="bi bi-image fs-1"></i>
+                </div>
+                <div class="text-danger">Chưa có bằng chứng. Vui lòng upload ảnh minh chứng.</div>
+            }
 
             <!-- Thông tin lớp -->
             <h5 class="text-primary mb-3"><i class="bi bi-building"></i> Thông tin lớp</h5>
             <div class="row mb-3">
-                <div class="col-md-6">
-                    <strong>Lớp hiện tại:</strong> @complaint.CurrentClassName
-                </div>
-                <div class="col-md-6">
-                    <strong>Lớp yêu cầu:</strong> @complaint.RequestedClassName
-                </div>
+                <div class="col-md-6"><strong>Lớp hiện tại:</strong> @complaint.CurrentClassName</div>
+                <div class="col-md-6"><strong>Lớp yêu cầu:</strong> @complaint.RequestedClassName</div>
             </div>
 
             <!-- Thông tin xử lý -->
             <h5 class="text-primary mb-3"><i class="bi bi-person-check"></i> Thông tin xử lý</h5>
             <div class="row mb-3">
-                <div class="col-md-6">
-                    <strong>Học viên:</strong> @complaint.StudentName
-                </div>
-                <div class="col-md-6">
-                    <strong>Người xử lý:</strong> @complaint.ProcessedByName
-                </div>
+                <div class="col-md-6"><strong>Học viên:</strong> @complaint.StudentName</div>
+                <div class="col-md-6"><strong>Người xử lý:</strong> @complaint.ProcessedByName</div>
             </div>
 
             <div class="row mb-3">
-                <div class="col-md-6">
-                    <strong>Ngày tạo:</strong> <i class="bi bi-calendar-event"></i> @complaint.CreateAt?.ToString("dd/MM/yyyy HH:mm")
-                </div>
-                <div class="col-md-6">
-                    <strong>Ngày xử lý:</strong> <i class="bi bi-calendar-check"></i> @complaint.ProcessedAt?.ToString("dd/MM/yyyy HH:mm")
-                </div>
+                <div class="col-md-6"><strong>Ngày tạo:</strong> <i class="bi bi-calendar-event"></i> @complaint.CreateAt?.ToString("dd/MM/yyyy HH:mm")</div>
+                <div class="col-md-6"><strong>Ngày xử lý:</strong> <i class="bi bi-calendar-check"></i> @complaint.ProcessedAt?.ToString("dd/MM/yyyy HH:mm")</div>
             </div>
 
             <div class="mb-3">
@@ -87,12 +73,23 @@
                 <div class="border rounded p-2 bg-light">@complaint.ResponseNote</div>
             </div>
 
+            <!-- Button duyệt khiếu nại -->
+            <div class="d-flex justify-content-between">
+                <a href="@Url.Action("Index", "Complaint")" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Quay lại
+                </a>
+               
+                @if (User.HasClaim("Permission", "ProcessComplaint") && complaint.Statuss != "Đã xử lý")
+                {
+                    <a href="@Url.Action("ProcessClassComplaint", "Complaint", new { id = complaint.Id })"
+                       class="btn btn-warning text-dark">
+                        <i class="bi bi-check-circle"></i> Duyệt khiếu nại
+                    </a>
+                }
+            </div>
+
         </div>
     </div>
-
-    <a href="@Url.Action("Index", "Complaint")" class="btn btn-secondary">
-        <i class="bi bi-arrow-left"></i> Quay lại
-    </a>
 }
 else
 {

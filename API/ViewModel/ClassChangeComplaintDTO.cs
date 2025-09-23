@@ -15,5 +15,10 @@ namespace API.ViewModel
         [Required(ErrorMessage = "Lý do là bắt buộc")]
         [StringLength(500, MinimumLength = 10, ErrorMessage = "Lý do từ 10-500 ký tự")]
         public string Reason { get; set; }
+
+        ///// <summary>
+        ///// Ảnh minh chứng khiếu nại (tuỳ chọn)
+        ///// </summary>
+        //public IFormFile? ProofFile { get; set; }
     }
 }

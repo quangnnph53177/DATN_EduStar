@@ -71,13 +71,31 @@ namespace Web.Controllers
             return View(new ClassChangeComplaintDTO());
         }
         [HttpPost]
-        public async Task<IActionResult> ClassChangeComplaint(ClassChangeComplaintDTO dto)
+        public async Task<IActionResult> ClassChangeComplaint(ClassChangeComplaintDTO dto, IFormFile imgFile)
         {
             var client = GetClientWithToken();
             if (client == null) return RedirectToAction("Login", "Account");
             try
             {
-                var response = await client.PostAsJsonAsync("api/Complaints/class-change-complaint", dto);
+                if (imgFile == null || imgFile.Length == 0)
+                {
+                    TempData["ErrorMessage"] = "Vui lòng chọn hình ảnh minh chứng.";
+                    await LoadClassSelectLists();
+                    return View(dto);
+                }
+
+                using var content = new MultipartFormDataContent();
+
+                // add fields
+                content.Add(new StringContent(dto.CurrentClassId.ToString()), "CurrentClassId");
+                content.Add(new StringContent(dto.RequestedClassId.ToString()), "RequestedClassId");
+                content.Add(new StringContent(dto.Reason), "Reason");
+
+                var stream = imgFile.OpenReadStream();
+                content.Add(new StreamContent(stream), "imgFile", imgFile.FileName); 
+
+                var response = await client.PostAsync("api/Complaints/class-change-complaint", content);
+
                 if (response.IsSuccessStatusCode)
                 {
                     TempData["SuccessMessage"] = "Đăng ký khiếu nại thành công.";
@@ -87,11 +105,10 @@ namespace Web.Controllers
                 {
                     var error = await response.Content.ReadAsStringAsync();
                     TempData["ErrorMessage"] = $"Lỗi khi đăng ký khiếu nại: {error}";
-                   
                 }
+
                 await LoadClassSelectLists();
                 return View(dto);
-
             }
             catch (Exception ex)
             {

@@ -528,7 +528,7 @@ namespace API.Controllers
 
         }
 
-        [Authorize(Policy = "DetailUS")]
+        [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> GetCurrentUser()
         {

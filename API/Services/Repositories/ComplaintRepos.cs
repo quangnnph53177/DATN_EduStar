@@ -8,9 +8,34 @@ namespace API.Services.Repositories
     public class ComplaintRepos : IComplaintRepos
     {
         private readonly AduDbcontext _context;
-        public ComplaintRepos(AduDbcontext aduDbcontext)
+        private readonly ILogger<ComplaintRepos> _logger;
+        public ComplaintRepos(AduDbcontext aduDbcontext, ILogger<ComplaintRepos> logger)
         {
             _context = aduDbcontext;
+            _logger = logger;
+        }
+
+        private async Task<string> SaveFileAsync(IFormFile file, string folderName)
+        {
+            var validImageFormats = new[] { ".jpg", ".jpeg", ".png" };
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (!validImageFormats.Contains(ext))
+            {
+                _logger.LogError("Định dạng ảnh không hợp lệ");
+                throw new Exception("Định dạng ảnh không hợp lệ. Chỉ chấp nhận .jpg, .jpeg, .png");
+            }
+
+            var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", folderName);
+            if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
+
+            var uniqueName = $"{Guid.NewGuid()}{ext}";
+            var savePath = Path.Combine(uploadDir, uniqueName);
+
+            await using var stream = new FileStream(savePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+
+            return $"/uploads/{folderName}/{uniqueName}";
         }
 
         public async Task<IEnumerable<ComplaintDTO>> GetAllComplaints(List<int> currentUserRoleIds, string? currentUsername)
@@ -38,7 +63,7 @@ namespace API.Services.Repositories
                 ComplaintType = c.ComplaintType,
                 Statuss = c.Statuss,
                 Reason = c.Reason,
-              //  ProofUrl = c.ProofUrl,
+                ProofUrl = c.ProofUrl,
                 StudentName = c.Student?.UserName,
                 ProcessedByName = c.ProcessedByNavigation?.UserName,
                 CreateAt = c.CreateAt,
@@ -51,7 +76,7 @@ namespace API.Services.Repositories
             }).ToList();
         }
 
-        public async Task<string> SubmitClassChangeComplaint(ClassChangeComplaintDTO dto, string userCode)
+        public async Task<string> SubmitClassChangeComplaint(ClassChangeComplaintDTO dto, string userCode, IFormFile imgFile)
         {
             // Tìm sinh viên theo userCode
             var student = await _context.StudentsInfors
@@ -74,9 +99,10 @@ namespace API.Services.Repositories
             if (!enrolledClasses.Any(c => c.schedulesId == dto.CurrentClassId))
                 throw new Exception("Sinh viên không thuộc lớp hiện tại.");
 
-            int subjectId = currentClass.SubjectId ?? throw new Exception("SubjectId không được null.");
+            int subjectId = currentClass.SubjectId ?? throw new Exception("Môn học không được null.");
             //int semesterId = currentClass.SemesterId ?? throw new Exception("SemesterId không được null.");
 
+            // Kiểm tra có khiếu nại trước đó không
             bool hasPendingComplaint = await _context.Complaints
                 .Where(c =>
                     c.Student.StudentsInfor.StudentsCode == userCode &&
@@ -90,6 +116,10 @@ namespace API.Services.Repositories
             if (hasPendingComplaint)
                 throw new Exception("Bạn đã gửi khiếu nại chuyển lớp cho môn học này trước đó.");
 
+            // Xử lý upload minh chứng (bắt buộc)
+            string proofPath = await SaveFileAsync(imgFile, "complaints");
+
+
             var newComplaint = new Complaint
             {
                 StudentId = student.UserId,
@@ -97,6 +127,7 @@ namespace API.Services.Repositories
                 Reason = dto.Reason,
                 Statuss = "Pending",
                 CreateAt = DateTime.Now,
+                ProofUrl = proofPath,
                 ClassChange = new ClassChange
                 {
                     CurrentClassId = dto.CurrentClassId,
@@ -147,8 +178,6 @@ namespace API.Services.Repositories
             if (handler == null)
                 throw new Exception("Người xử lý không hợp lệ.");
 
-
-            // Nếu duyệt: cập nhật danh sách lớp cho sinh viên
             // Nếu duyệt: cập nhật danh sách lớp cho sinh viên
             if (dto.Status == "Approved")
             {
@@ -222,6 +251,7 @@ namespace API.Services.Repositories
                     ComplaintType = complaint.ComplaintType,
                     Statuss = complaint.Statuss,
                     Reason = complaint.Reason,
+                    ProofUrl = complaint.ProofUrl,
                     StudentName = complaint.Student?.UserName,
                     ProcessedByName = complaint.ProcessedByNavigation?.UserName,
                     CreateAt = complaint.CreateAt,
