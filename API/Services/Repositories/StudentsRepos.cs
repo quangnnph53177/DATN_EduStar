@@ -116,6 +116,7 @@ namespace API.Services.Repositories
                     .ThenInclude(u => u.Roles)
                 .Where(s => s.User.Roles.Any(r => r.Id == 3))
                 .AsSplitQuery()
+                .OrderByDescending(s => s.StudentsCode)
                 .ToListAsync();
             var student = lstSv.Select(u => new StudentViewModels
             {

@@ -44,6 +44,7 @@ namespace API.Controllers
                 enddate = c.EndDate,
                 UserId = c.UsersId,
                 Status = c.Status.ToString(),
+                IsActive = c.IsActive
             });
             return Ok(check);
         }
@@ -207,18 +208,24 @@ namespace API.Controllers
                 return BadRequest(new { message = $"Lỗi khi cập nhật: {ex.Message}" });
             }
         }
-        [Authorize]
-        [HttpDelete("{Id}")]
-        public async Task<IActionResult> Delete(int Id)
+
+        [HttpPut("toggle-status/{Id}")]
+        public async Task<IActionResult> ToggleStatus(int Id)
         {
             try
             {
-                await _services.DeleteSchedules(Id);
-                return Ok(new { message = "Xóa thành công" });
+                var isActive = await _services.ToggleScheduleStatus(Id);
+                var message = isActive ? "Kích hoạt lịch học thành công" : "Vô hiệu hóa lịch học thành công";
+
+                return Ok(new
+                {
+                    message = message,
+                    isActive = isActive
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = $"Lỗi khi xóa: {ex.Message}" });
+                return BadRequest(new { message = $"Lỗi khi thay đổi trạng thái: {ex.Message}" });
             }
         }
         [Authorize]
@@ -249,6 +256,12 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
+                // Kiểm tra lỗi về lịch học bị vô hiệu hóa
+                if (ex.Message.Contains("vô hiệu hóa"))
+                {
+                    return BadRequest(new { message = ex.Message });
+                }
+
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     $"Lỗi máy chủ: {ex.Message}");
             }

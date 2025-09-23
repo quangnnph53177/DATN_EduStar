@@ -22,9 +22,9 @@ namespace API.Services.Repositories
                 throw new Exception("Ngày bắt đầu không được để trống.");
 
             var startDate = model.StartDate.Value.Date;
-            var endDate =model.EndDate.Value.Date;
+            var endDate = model.EndDate.Value.Date;
 
-            // Kiểm tra trùng lịch theo từng thứ được chọn
+            // Kiểm tra trùng lịch theo từng thứ được chọn (chỉ với lịch học đang hoạt động)
             foreach (var dayId in model.WeekDayId)
             {
                 var conflict = await _context.SchedulesInDays
@@ -32,7 +32,8 @@ namespace API.Services.Repositories
                     .Where(sd => sd.DayOfWeekkId == dayId
                         && sd.Schedule.RoomId == model.RoomId
                         && sd.Schedule.StudyShiftId == model.StudyShiftId
-                        && sd.Schedule.StartDate == startDate)
+                        && sd.Schedule.StartDate == startDate
+                        && sd.Schedule.IsActive) 
                     .FirstOrDefaultAsync();
 
                 if (conflict != null)
@@ -47,7 +48,8 @@ namespace API.Services.Repositories
                 StudyShiftId = model.StudyShiftId,
                 StartDate = startDate,
                 EndDate = endDate,
-                UsersId = model.TeacherId
+                UsersId = model.TeacherId,
+                IsActive = true // Mặc định là hoạt động khi tạo mới
             };
             
             setstatus(schedule);
@@ -81,6 +83,7 @@ namespace API.Services.Repositories
         public async Task<List<Schedule>> GetAll()
         {
             return await _context.Schedules
+                 .Where(s => s.IsActive)
                 .Include(s => s.Subject)
                 .Include(r => r.Room)
                 .Include(s => s.StudyShift)
@@ -118,7 +121,7 @@ namespace API.Services.Repositories
                 enddate = schedule.EndDate,
                 Status = schedule.Status.ToString(),
                 UserId = schedule.UsersId,
-                Teachers = schedule.User != null ? new List<string> { schedule.User.UserProfile.FullName } : new List<string>(),
+                UserName = schedule.User?.UserName ?? "N/A",
                 SubjectId = schedule.SubjectId,
                 RoomId = schedule.RoomId,
                 StudyShiftId = schedule.StudyShiftId,
@@ -138,9 +141,6 @@ namespace API.Services.Repositories
 
             return model;
         }
-
-
-
         public async Task<List<Lichcodinh>> GetAllCoDinh()
         {
             var result = await _context.Schedules
@@ -188,14 +188,19 @@ namespace API.Services.Repositories
                 throw new Exception("Không tìm thấy lịch học cần cập nhật.");
             }
 
+            // Kiểm tra lịch học có đang hoạt động không
+            if (!schedule.IsActive)
+                throw new Exception("Không thể cập nhật lịch học đã bị vô hiệu hóa");
+
             Console.WriteLine($"[Repo] Found schedule: {schedule.ClassName}");
 
-            // Kiểm tra trùng lịch một cách cụ thể hơn
+            // Kiểm tra trùng lịch một cách cụ thể hơn (chỉ với lịch đang hoạt động)
             var conflictSchedules = await _context.Schedules
                 .Include(s => s.ScheduleDays)
                 .Where(s => s.Id != model.Id // Loại trừ chính schedule đang update
                     && s.RoomId == model.RoomId
-                    && s.StudyShiftId == model.StudyShiftId)
+                    && s.StudyShiftId == model.StudyShiftId
+                    && s.IsActive) // Chỉ kiểm tra với lịch đang hoạt động
                 .ToListAsync();
 
             foreach (var conflictSchedule in conflictSchedules)
@@ -273,6 +278,7 @@ namespace API.Services.Repositories
                 throw new Exception($"Lỗi khi cập nhật lịch học: {ex.Message}");
             }
         }
+    
 
         // Helper method để lấy tên ngày
         private string GetDayName(int dayId)
@@ -293,15 +299,20 @@ namespace API.Services.Repositories
 
 
 
-        public async Task DeleteSchedules(int Id)
+        public async Task<bool> ToggleScheduleStatus(int Id)
         {
-            var delete = await _context.Schedules
+            var schedule = await _context.Schedules
                 .Include(s => s.ScheduleDays)
                 .FirstOrDefaultAsync(c => c.Id == Id);
 
-            _context.SchedulesInDays.RemoveRange(delete.ScheduleDays);
-            _context.Schedules.Remove(delete);
+            if (schedule == null)
+                throw new Exception("Không tìm thấy lịch học");
+
+            // Đổi trạng thái IsActive
+            schedule.IsActive = !schedule.IsActive;
+
             await _context.SaveChangesAsync();
+            return schedule.IsActive; // Trả về trạng thái hiện tại
         }
 
         public async Task<List<SchedulesViewModel>> GetByStudent(Guid Id)
@@ -366,7 +377,7 @@ namespace API.Services.Repositories
         }
         public async Task<List<SchedulesViewModel>> GetByTeacher(Guid Id)
         {
-            // Kiểm tra user có phải là giảng viên không (RoleId = 2)
+           
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == Id && u.Roles.FirstOrDefault().Id == 2);
             if (user == null)
                 return new List<SchedulesViewModel>();
@@ -382,6 +393,8 @@ namespace API.Services.Repositories
                 .ThenInclude(s => s.StudyShift)
                 .Include(c => c.Schedules)
                 .ThenInclude(s => s.Subject)
+                .Include(s=> s.Schedules)
+                .ThenInclude(s=> s.Attendances)
                 .FirstOrDefaultAsync(t => t.Id == Id);
 
             if (teacher == null || !teacher.Schedules.Any())
@@ -403,9 +416,11 @@ namespace API.Services.Repositories
                     foreach (var date in datesForThisWeekday)
                     {
                         var existingAttendance = await _context.Attendances
-                                .FirstOrDefaultAsync(a => a.SchedulesId == schedule.Id &&
-                              a.CreateAt.HasValue &&
-                              a.CreateAt.Value.Date == date.Date);
+                                .FirstOrDefaultAsync(a => a.SchedulesId == schedule.Id 
+                              //  &&
+                              //a.CreateAt.HasValue &&
+                              //a.CreateAt.Value.Date == date.Date
+                              );
 
                         // Kiểm tra có thể tạo phiên điểm danh không
                         var canCreate = CanCreateAttendanceForSchedule(schedule, date);
@@ -544,9 +559,13 @@ namespace API.Services.Repositories
             if (classEntity == null)
                 return false;
 
+            // Kiểm tra lịch học có đang hoạt động không
+            if (!classEntity.IsActive)
+                throw new Exception("Không thể thêm sinh viên vào lịch học đã bị vô hiệu hóa");
+
             // Lấy danh sách sinh viên hợp lệ VÀ đang hoạt động
             var validStudentIds = await _context.StudentsInfors
-                .Where(s => request.StudentIds.Contains(s.UserId) && s.User.Statuss == true) // Thêm điều kiện IsActive
+                .Where(s => request.StudentIds.Contains(s.UserId) && s.User.Statuss == true)
                 .Select(s => s.UserId)
                 .ToListAsync();
 

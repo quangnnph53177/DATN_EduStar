@@ -265,24 +265,33 @@ namespace Web.Controllers
             }
         }
 
-        public async Task<IActionResult> Delete(int Id)
+        [HttpPost]
+        public async Task<IActionResult> ToggleStatus(int Id)
         {
-            var client = GetClientWithToken();
-            if (client == null)
+            try
             {
-                return RedirectToAction("Login", "Users");
-            }
+                var response = await _client.PutAsync($"api/Schedules/toggle-status/{Id}", null);
 
-            var response = await client.DeleteAsync($"api/Schedules/{Id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var result = JsonConvert.DeserializeObject<dynamic>(responseContent);
 
-            if (response.IsSuccessStatusCode)
-            {
-                TempData["Message"] = "Xóa thành công!";
+                    string message = result?.message?.ToString() ?? "Thay đổi trạng thái thành công";
+                    bool isActive = result?.isActive ?? false;
+
+                    TempData["SuccessMessage"] = message;
+                    TempData["ScheduleStatus"] = isActive ? "Hoạt động" : "Vô hiệu hóa";
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    TempData["ErrorMessage"] = $"Thay đổi trạng thái thất bại: {error}";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                var error = await response.Content.ReadAsStringAsync();
-                TempData["Error"] = "Xóa thất bại!";
+                TempData["ErrorMessage"] = $"Lỗi kết nối: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index1));
@@ -458,20 +467,46 @@ namespace Web.Controllers
             }
 
             var errorContent = await response.Content.ReadAsStringAsync();
-            ViewBag.ErrorMessage = $"Lỗi khi gọi API: {errorContent}";
+
+            // Parse JSON error để lấy message cụ thể
+            try
+            {
+                var errorObj = JsonConvert.DeserializeObject<dynamic>(errorContent);
+                string errorMessage = errorObj?.message?.ToString() ?? errorContent;
+
+                // Kiểm tra lỗi về lịch học bị vô hiệu hóa
+                if (errorMessage.Contains("vô hiệu hóa"))
+                {
+                    ViewBag.ErrorMessage = "Không thể thêm sinh viên: " + errorMessage;
+                }
+                else
+                {
+                    ViewBag.ErrorMessage = $"Lỗi khi gọi API: {errorMessage}";
+                }
+            }
+            catch
+            {
+                ViewBag.ErrorMessage = $"Lỗi khi gọi API: {errorContent}";
+            }
+
             await LoadStudentListForClass(request.SchedulesId);
             return View();
         }
-
         private async Task LoadStudentListForClass(int classId)
         {
             var cls = await _context.Schedules.FindAsync(classId);
+
+            // Kiểm tra lịch học có đang hoạt động không
+            if (cls != null && !cls.IsActive)
+            {
+                ViewBag.WarningMessage = "Lịch học này đã bị vô hiệu hóa. Không thể thêm sinh viên mới.";
+            }
 
             var allStudents = await _context.StudentsInfors
                 .Select(s => new StudentDTO
                 {
                     id = s.UserId,
-                    StudentCode= s.StudentsCode,
+                    StudentCode = s.StudentsCode,
                     FullName = s.User.UserProfile.FullName,
                     Email = s.User.Email
                 })
@@ -489,8 +524,8 @@ namespace Web.Controllers
             ViewBag.ClassId = classId;
             ViewBag.NameClass = cls?.ClassName;
             ViewBag.StudentList = unassignedStudents;
+            ViewBag.IsScheduleActive = cls?.IsActive ?? false;
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveStudent(int SchedulesId, [FromForm] Guid studentId)

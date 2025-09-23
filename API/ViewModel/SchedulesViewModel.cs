@@ -14,7 +14,7 @@
         public DateTime? enddate { get; set; }
         public string? Status { get; set; }
         public Guid? UserId { get; set; }
-        public List<string> Teachers { get; set; } = new();
+        public string UserName { get; set; }
         public int? SubjectId { get; set; }
         public int? RoomId { get; set; }
         public int? StudyShiftId { get; set; }
@@ -23,6 +23,8 @@
         public bool HasActiveAttendance { get; set; }
         public int? ActiveAttendanceId { get; set; }
         public string SessionCode { get; set; }
+        public bool IsActive { get; set; } = true;
+        public string StatusDisplay => IsActive ? "Hoạt động" : "Vô hiệu hóa";
         public List<StudentViewModels>? Students { get; set; }
     }
 }

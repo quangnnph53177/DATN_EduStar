@@ -58,9 +58,12 @@
                             ✏️ Cập nhật
                         </a>
                     }
-                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                        ⬅️ Quay lại
-                    </a>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                            ⬅️ Quay lại
+                        </a>
+                    }
                 </div>
             </div>
 

@@ -15,7 +15,7 @@ namespace API.Services
         Task UpdateSchedules(SchedulesDTO model);
         Task<bool> AssignStudentToClassAsync(AssignStudentsRequest request);
         Task<byte[]> ExportSchedules(List<SchedulesViewModel> model);
-        Task DeleteSchedules(int Id);
+        Task<bool> ToggleScheduleStatus(int Id);
         Task<bool> RemoveStudentFromClassAsync(int schedulesId, Guid studentId);
     }
 }

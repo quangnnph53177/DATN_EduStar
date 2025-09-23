@@ -4,7 +4,7 @@
     ViewData["Title"] = "Quản lý lịch học";
 }
 
-<div class="container-fluid" >
+<div class="container-fluid">
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -31,10 +31,6 @@
                             <i class="bi bi-plus-circle me-1"></i>
                             Tạo lịch mới
                         </a>
-@*                         <a asp-action="Auto" class="btn btn-info">
-                            <i class="bi bi-magic me-1"></i>
-                            Tự động xếp lịch
-                        </a> *@
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -43,17 +39,6 @@
                             <i class="bi bi-funnel me-1"></i>
                             Bộ lọc
                         </button>
-                      @*   <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-download me-1"></i>
-                                Xuất dữ liệu
-                            </button>
-                           @*  <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-file-excel me-2"></i>Xuất Excel</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-file-pdf me-2"></i>Xuất PDF</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-printer me-2"></i>In ấn</a></li>
-                            </ul> *@
-                        </div>
                     </div>
                 </div>
             </div>
@@ -84,12 +69,11 @@
                         <input type="text" class="form-control" name="roomCode" placeholder="Mã phòng">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label small text-muted">Ca học</label>
-                        <select class="form-select" name="studyShift">
+                        <label class="form-label small text-muted">Trạng thái</label>
+                        <select class="form-select" name="isActive">
                             <option value="">Tất cả</option>
-                            <option value="Sáng">Ca sáng</option>
-                            <option value="Chiều">Ca chiều</option>
-                            <option value="Tối">Ca tối</option>
+                            <option value="true">Hoạt động</option>
+                            <option value="false">Vô hiệu hóa</option>
                         </select>
                     </div>
                     <div class="col-md-2 d-flex align-items-end gap-2">
@@ -120,27 +104,27 @@
         <div class="col-md-3">
             <div class="card text-center border-success">
                 <div class="card-body">
-                    <i class="bi bi-building display-6 text-success"></i>
-                    <h5 class="card-title text-success mt-2">@Model.Select(x => x.RoomCode).Distinct().Count()</h5>
-                    <p class="card-text text-muted small">Phòng học</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center border-info">
-                <div class="card-body">
-                    <i class="bi bi-people display-6 text-info"></i>
-                    <h5 class="card-title text-info mt-2">@Model.Select(x => x.ClassName).Distinct().Count()</h5>
-                    <p class="card-text text-muted small">Lớp học</p>
+                    <i class="bi bi-check-circle display-6 text-success"></i>
+                    <h5 class="card-title text-success mt-2">@Model.Count(s => s.IsActive)</h5>
+                    <p class="card-text text-muted small">Đang hoạt động</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card text-center border-warning">
                 <div class="card-body">
-                    <i class="bi bi-book display-6 text-warning"></i>
-                    <h5 class="card-title text-warning mt-2">@Model.Select(x => x.SubjectName).Distinct().Count()</h5>
-                    <p class="card-text text-muted small">Môn học</p>
+                    <i class="bi bi-pause-circle display-6 text-warning"></i>
+                    <h5 class="card-title text-warning mt-2">@Model.Count(s => !s.IsActive)</h5>
+                    <p class="card-text text-muted small">Vô hiệu hóa</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <i class="bi bi-building display-6 text-info"></i>
+                    <h5 class="card-title text-info mt-2">@Model.Select(x => x.RoomCode).Distinct().Count()</h5>
+                    <p class="card-text text-muted small">Phòng học</p>
                 </div>
             </div>
         </div>
@@ -183,6 +167,10 @@
                                     <i class="bi bi-clock me-1"></i>
                                     @Html.DisplayNameFor(model => model.StudyShift)
                                 </th>
+                                <th scope="col" style="width: 120px;" class="text-center">
+                                    <i class="bi bi-toggle-on me-1"></i>
+                                    Trạng thái
+                                </th>
                                 <th scope="col" style="width: 200px;" class="text-center">
                                     <i class="bi bi-gear me-1"></i>
                                     Hành động
@@ -195,7 +183,7 @@
                             }
                             @foreach (var item in Model)
                             {
-                                <tr>
+                                <tr class="@(!item.IsActive ? "table-secondary" : "")">
                                     <td class="text-center text-muted">
                                         <small>@index</small>
                                     </td>
@@ -205,7 +193,9 @@
                                                 <i class="bi bi-people text-primary"></i>
                                             </div>
                                             <div>
-                                                <div class="fw-semibold">@Html.DisplayFor(modelItem => item.ClassName)</div>
+                                                <div class="fw-semibold @(!item.IsActive ? "text-muted" : "")">
+                                                    @Html.DisplayFor(modelItem => item.ClassName)
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -215,7 +205,9 @@
                                                 <i class="bi bi-book text-success"></i>
                                             </div>
                                             <div>
-                                                <div class="fw-medium">@Html.DisplayFor(modelItem => item.SubjectName)</div>
+                                                <div class="fw-medium @(!item.IsActive ? "text-muted" : "")">
+                                                    @Html.DisplayFor(modelItem => item.SubjectName)
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -267,6 +259,22 @@
                                         </span>
                                     </td>
                                     <td class="text-center">
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>
+                                                Hoạt động
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-pause-circle me-1"></i>
+                                                Vô hiệu hóa
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a href="@Url.Action("Details", new { id = item.Id })"
                                                class="btn btn-outline-info"
@@ -274,18 +282,21 @@
                                                title="Xem chi tiết">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a href="@Url.Action("Edit", new { id = item.Id })"
-                                               class="btn btn-outline-primary"
-                                               data-bs-toggle="tooltip"
-                                               title="Chỉnh sửa">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
+                                            @if (item.IsActive)
+                                            {
+                                                <a href="@Url.Action("Edit", new { id = item.Id })"
+                                                   class="btn btn-outline-primary"
+                                                   data-bs-toggle="tooltip"
+                                                   title="Chỉnh sửa">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            }
                                             <button type="button"
-                                                    class="btn btn-outline-danger"
+                                                    class="btn @(item.IsActive ? "btn-outline-warning" : "btn-outline-success")"
                                                     data-bs-toggle="tooltip"
-                                                    title="Xóa lịch học"
-                                                    onclick="confirmDelete('@item.Id', '@item.ClassName', '@item.SubjectName')">
-                                                <i class="bi bi-trash"></i>
+                                                    title="@(item.IsActive ? "Vô hiệu hóa" : "Kích hoạt")"
+                                                    onclick="confirmToggleStatus('@item.Id', '@item.ClassName', @item.IsActive.ToString().ToLower())">
+                                                <i class="bi @(item.IsActive ? "bi-pause" : "bi-play")"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -307,10 +318,6 @@
                             <i class="bi bi-plus-circle me-1"></i>
                             Tạo lịch mới
                         </a>
-@*                         <a asp-action="Auto" class="btn btn-info">
-                            <i class="bi bi-magic me-1"></i>
-                            Tự động xếp lịch
-                        </a> *@
                     </div>
                 </div>
             }
@@ -318,43 +325,39 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
+<!-- Toggle Status Confirmation Modal -->
+<div class="modal fade" id="toggleModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
+            <div class="modal-header" id="toggleModalHeader">
                 <h5 class="modal-title">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    Xác nhận xóa
+                    <span id="toggleModalTitle">Xác nhận</span>
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-3">Bạn có chắc chắn muốn xóa lịch học này không?</p>
-                <div class="alert alert-warning">
+                <p class="mb-3" id="toggleModalMessage"></p>
+                <div class="alert alert-info">
                     <div class="d-flex align-items-center mb-2">
                         <i class="bi bi-people me-2"></i>
-                        <strong>Lớp học:</strong> <span id="deleteClassName"></span>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-book me-2"></i>
-                        <strong>Môn học:</strong> <span id="deleteSubjectName"></span>
+                        <strong>Lớp học:</strong> <span id="toggleClassName"></span>
                     </div>
                 </div>
-                <p class="text-muted small mb-0">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Hành động này không thể hoàn tác.
-                </p>
+                <p class="text-muted small mb-0" id="toggleWarning"></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x me-1"></i>
                     Hủy bỏ
                 </button>
-                <a id="deleteConfirmButton" href="#" class="btn btn-danger">
-                    <i class="bi bi-trash me-1"></i>
-                    Xóa lịch học
-                </a>
+                <form id="toggleForm" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn" id="toggleConfirmButton">
+                        <i class="bi bi-check me-1"></i>
+                        <span id="toggleButtonText">Xác nhận</span>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -397,6 +400,9 @@
         overflow-y: auto;
     }
 
+    .table-secondary {
+        background-color: rgba(108, 117, 125, 0.1) !important;
+    }
 </style>
 
 @section Scripts {
@@ -433,12 +439,36 @@
             }
         });
 
-        // Delete confirmation function
-        function confirmDelete(id, className, subjectName) {
-            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            document.getElementById('deleteClassName').textContent = className;
-            document.getElementById('deleteSubjectName').textContent = subjectName;
-            document.getElementById('deleteConfirmButton').href = '@Url.Action("Delete")' + '/' + id;
+        // Toggle status confirmation function
+        function confirmToggleStatus(id, className, isActive) {
+            const modal = new bootstrap.Modal(document.getElementById('toggleModal'));
+            const modalHeader = document.getElementById('toggleModalHeader');
+            const modalTitle = document.getElementById('toggleModalTitle');
+            const modalMessage = document.getElementById('toggleModalMessage');
+            const toggleWarning = document.getElementById('toggleWarning');
+            const toggleForm = document.getElementById('toggleForm');
+            const toggleButton = document.getElementById('toggleConfirmButton');
+            const toggleButtonText = document.getElementById('toggleButtonText');
+
+            document.getElementById('toggleClassName').textContent = className;
+            toggleForm.action = '@Url.Action("ToggleStatus")' + '/' + id;
+
+            if (isActive) {
+                modalHeader.className = 'modal-header bg-warning text-white';
+                modalTitle.textContent = 'Vô hiệu hóa lịch học';
+                modalMessage.textContent = 'Bạn có chắc chắn muốn vô hiệu hóa lịch học này không?';
+                toggleWarning.innerHTML = '<i class="bi bi-info-circle me-1"></i>Lịch học sẽ không thể thêm sinh viên mới khi bị vô hiệu hóa.';
+                toggleButton.className = 'btn btn-warning';
+                toggleButtonText.textContent = 'Vô hiệu hóa';
+            } else {
+                modalHeader.className = 'modal-header bg-success text-white';
+                modalTitle.textContent = 'Kích hoạt lịch học';
+                modalMessage.textContent = 'Bạn có chắc chắn muốn kích hoạt lại lịch học này không?';
+                toggleWarning.innerHTML = '<i class="bi bi-info-circle me-1"></i>Lịch học sẽ có thể hoạt động bình thường sau khi được kích hoạt.';
+                toggleButton.className = 'btn btn-success';
+                toggleButtonText.textContent = 'Kích hoạt';
+            }
+
             modal.show();
         }
 

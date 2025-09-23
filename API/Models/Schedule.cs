@@ -11,6 +11,7 @@ public partial class Schedule
     public int? SubjectId { get; set; }
     public int? RoomId { get; set; }
     public int? StudyShiftId { get; set; }
+    public bool IsActive { get; set; } = true;
     public SchedulesStatus? Status { get; set; }
     public enum SchedulesStatus
     {
