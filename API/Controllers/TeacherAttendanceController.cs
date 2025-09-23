@@ -49,8 +49,6 @@ namespace API.Controllers
             try
             {
                 var userId = User.GetUserId();
-
-                // Tạo model cho CreateSession
                 var model = new CreateAttendanceViewModel
                 {
                     SchedulesId = dto.ScheduleId,
@@ -58,10 +56,7 @@ namespace API.Controllers
                     Starttime = DateTime.Now,
                     Endtime = DateTime.Now.AddMinutes(30) // Hoặc thời gian kết thúc phù hợp
                 };
-
-                // Gọi method CreateSession từ AttendanceRepos
                 await _attendanceService.CreateSession(model);
-
                 return Ok(new
                 {
                     success = true,

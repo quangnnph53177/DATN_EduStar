@@ -363,10 +363,10 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    @if (item.startdate?.Date == DateTime.Today)
+                                   @*  @if (item.startdate?.Date == DateTime.Today)
                                     {
                                         @if (item.CanCreateAttendance)
-                                        {
+                                        { *@
                                             <form asp-action="CreateQuickSession" method="post" style="display: inline;">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="scheduleId" value="@item.Id" />
@@ -375,30 +375,30 @@
                                                     <i class="fas fa-plus-circle"></i> Tạo phiên
                                                 </button>
                                             </form>
-                                        }
+                                       @*  }
                                         else if (item.HasActiveAttendance)
-                                        {
+                                        { *@
                                             <a href="@Url.Action("Detail", "Attendance", new { id = item.ActiveAttendanceId })"
                                                class="btn btn-primary btn-sm"
                                                data-bs-toggle="tooltip"
                                                title="Xem phiên điểm danh">
                                                 <i class="fas fa-users-check"></i> Xem điểm danh
                                             </a>
-                                        }
+                                      @*   }
                                         else
-                                        {
+                                        { *@
                                             <span class="text-muted small">
                                                 <i class="fas fa-clock"></i> Chưa đến giờ
                                             </span>
-                                        }
+                                 @*        }
                                     }
                                     else
-                                    {
+                                    { *@
                                         <span class="text-muted small">
                                             <i class="fas fa-calendar-times"></i>
                                             @(item.startdate?.Date < DateTime.Today ? "Đã qua" : "Sắp tới")
                                         </span>
-                                    }
+                                @*     } *@
 
                                     <a href="@Url.Action("Details", new { id = item.Id })"
                                        class="btn btn-outline-info btn-sm"

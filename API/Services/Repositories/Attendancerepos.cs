@@ -191,8 +191,7 @@ namespace API.Services.Repositories
                         FullName = c.Student.User.UserProfile.FullName,
                         Email = c.Student.User.Email,
                         HasCheckedIn = detail?.CheckinTime != null,
-                        // MẶC ĐỊNH LÀ "Present" NẾU CHƯA CÓ DETAIL
-                        Status = detail?.Status.ToString() ?? "Present"
+                        Status = detail?.Status.ToString()
                     };
                 }).ToList()
             };

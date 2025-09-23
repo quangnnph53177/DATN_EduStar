@@ -75,7 +75,6 @@ namespace Web.Controllers
                 ViewBag.Error = "Không tìm thấy phiên điểm danh.";
                 return RedirectToAction("IndexSession");
             }
-
             var data = await response.Content.ReadFromJsonAsync<IndexAttendanceViewModel>();
             return View(data);
         }

@@ -149,7 +149,7 @@
                 {
                     <li class="nav-item"><a class="nav-link @(IsActive("Scheduless"))" asp-controller="Scheduless" asp-action="ByTeacher">📅 Lịch dạy</a></li>
                     <li class="nav-item"><a class="nav-link @(IsActive("SubjectW"))" asp-controller="SubjectW" asp-action="Index">📘 Môn học</a></li>
-                    <li class="nav-item"><a class="nav-link @(IsActive("TeacherAttendance"))" asp-controller="TeacherAttendance" asp-action="MyClasses">📖 Điểm danh</a></li>
+                    //<li class="nav-item"><a class="nav-link @(IsActive("TeacherAttendance"))" asp-controller="TeacherAttendance" asp-action="MyClasses">📖 Điểm danh</a></li>
                     <li class="nav-item"><a class="nav-link @(IsActive("TeachingRegistrations"))" asp-controller="TeachingRegistrations" asp-action="AllSchedules">🗓️ Đăng ký giảng dạy</a></li>
                 }
                 @if (User.IsInRole("Student"))
@@ -194,12 +194,6 @@
             <div class="main-content">
                 @RenderBody()
             </div>
-
-            @* <footer>
-                <marquee direction="left" scrollamount="5">
-                    &copy; @DateTime.Now.Year - EduStar | Hành trang vững – Tương lai rộng mở.
-                </marquee>
-            </footer> *@
         </div>
     </div>
     <footer>
