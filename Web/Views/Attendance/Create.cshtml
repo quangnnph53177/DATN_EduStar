@@ -119,7 +119,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-8 col-xl-6">
             <div class="form-container">
-                <form asp-action="Create" method="post">
+                <form asp-controller="Attendance" asp-action="Create" method="post" >
                     <div class="form-group">
                         <label asp-for="SchedulesId" class="form-label">
                             <i class="bi bi-calendar-event form-icon"></i>
@@ -139,12 +139,12 @@
                         <input asp-for="SessionCode" class="form-control" placeholder="Nhập mã phiên điểm danh..." />
                         <span asp-validation-for="SessionCode" class="text-danger mt-2 d-block"></span>
                     </div>
-
                     <div class="d-grid">
                         <button type="submit" class="btn btn-create">
                             <i class="bi bi-plus-circle me-2"></i>
                             Tạo phiên điểm danh
                         </button>
+                       
                     </div>
                 </form>
             </div>

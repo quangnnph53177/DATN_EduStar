@@ -66,5 +66,43 @@ namespace API.Controllers
             var history = await _service.GetHistoryForStudent(studentId);
             return Ok(history);
         }
+        [HttpPost("checkin-by-face")]
+        //[Authorize(Roles = "Teacher,Admin,Student")]
+        public async Task<IActionResult> CheckinByFace([FromForm] CheckInByFaceDto dto)
+        {
+            //if (!ModelState.IsValid)
+            //{
+            //    return BadRequest(ModelState);
+            //}
+
+            var studentIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(studentIdString, out var studentId))
+            {
+                return Unauthorized(new { message = "Không tìm thấy thông tin sinh viên" });
+            }
+
+            try
+            {
+                // Chuyển IFormFile thành mảng byte
+                byte[] imageBytes;
+                using (var ms = new MemoryStream())
+                {
+                    await dto.FaceImage.CopyToAsync(ms);
+                    imageBytes = ms.ToArray();
+                }
+
+                var result = await _service.CheckInByFace(dto.AttendanceId, studentId, imageBytes);
+
+                if (result)
+                {
+                    return Ok(new { success = true, message = "Điểm danh bằng khuôn mặt thành công" });
+                }
+                return BadRequest(new { success = false, message = "Điểm danh thất bại" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Lỗi khi điểm danh bằng khuôn mặt", error = ex.Message });
+            }
+        }
     }
 }

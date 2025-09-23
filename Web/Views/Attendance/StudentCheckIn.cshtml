@@ -1,0 +1,191 @@
+﻿@model API.ViewModel.CheckInByFaceDto
+
+@{
+    ViewData["Title"] = "Điểm danh bằng khuôn mặt";
+}
+<style>
+    :root {
+        --primary-color: #2563eb;
+        --primary-light: #dbeafe;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-600: #475569;
+        --gray-800: #1e293b;
+    }
+
+    .card {
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
+        color: white;
+        padding: 2.5rem 0;
+        border-bottom: none;
+    }
+
+    .card-body {
+        padding: 2.5rem;
+    }
+
+    .form-control, .btn {
+        border-radius: 12px;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+        border: none;
+        padding: 1rem 2.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+            color: white;
+        }
+
+    .alert {
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: none;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .alert-info {
+        background: var(--primary-light);
+        color: var(--primary-color);
+    }
+
+    .alert-success {
+        background: #dcfce7;
+        color: #166534;
+        border-left: 4px solid var(--success-color);
+    }
+
+    .alert-danger {
+        background: #fee2e2;
+        color: #991b1b;
+        border-left: 4px solid var(--danger-color);
+    }
+
+    .alert-warning {
+        background: #fef3c7;
+        color: #92400e;
+        border-left: 4px solid var(--warning-color);
+    }
+
+    .spinner-border {
+        color: white !important;
+    }
+</style>
+
+<div class="container-fluid px-4">
+    <div class="row justify-content-center mt-5">
+        <div class="col-lg-6">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="fw-light my-4">Điểm danh bằng khuôn mặt</h3>
+                </div>
+                <div class="card-body text-center">
+                    <input type="hidden" id="attendanceId" value="@Model.AttendanceId" />
+
+                    <div class="d-flex justify-content-center mb-3">
+                        <video id="webcam" autoplay style="width: 100%; max-width: 400px; border: 2px solid #ccc; border-radius: 10px;"></video>
+                    </div>
+
+                    <button type="button" id="captureBtn" class="btn btn-success btn-lg">
+                        <i class="bi bi-camera me-2"></i>
+                        Chụp ảnh
+                    </button>
+
+                    <canvas id="canvas" style="display:none;"></canvas>
+
+                    <div id="statusMessage" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            const captureBtn = $('#captureBtn');
+            const statusMessage = $('#statusMessage');
+            const attendanceId = $('#attendanceId').val();
+
+            // 1. Access the webcam
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+                        video.srcObject = stream;
+                        video.play();
+                        statusMessage.html('<div class="alert alert-info">Webcam đã sẵn sàng. Vui lòng căn chỉnh khuôn mặt và chụp ảnh.</div>');
+                    })
+                    .catch(function (error) {
+                        console.error("Lỗi truy cập webcam:", error);
+                        statusMessage.html('<div class="alert alert-danger">Không thể truy cập webcam. Vui lòng cho phép truy cập.</div>');
+                        captureBtn.prop('disabled', true);
+                    });
+            }
+
+            // 2. Capture and send the image
+            captureBtn.on('click', function () {
+                // Set canvas size to match video feed
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // Get image data as Blob
+                canvas.toBlob(function (blob) {
+                    const formData = new FormData();
+                    formData.append('AttendanceId', attendanceId);
+                    formData.append('FaceImage', blob, 'face.jpg');
+
+                    statusMessage.html('<div class="alert alert-warning">Đang xử lý...</div>');
+                    captureBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...');
+
+                    // ✅ Gọi đúng action StudentCheckIn
+                    $.ajax({
+                        url: '/Attendance/StudentCheckIn',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (response) {
+                            if (response.success) {
+                                statusMessage.html('<div class="alert alert-success">✅ ' + response.message + '</div>');
+                            } else {
+                                statusMessage.html('<div class="alert alert-danger">❌ ' + response.message + '</div>');
+                            }
+                        },
+                        error: function (xhr) {
+                            var errorMsg = "Lỗi không xác định";
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            statusMessage.html('<div class="alert alert-danger">❌ ' + errorMsg + '</div>');
+                        },
+                        complete: function () {
+                            captureBtn.prop('disabled', false).html('<i class="bi bi-camera me-2"></i> Chụp ảnh');
+                        }
+                    });
+                }, );
+            });
+        });
+    </script>
+}

@@ -1,4 +1,5 @@
 ﻿using API.Data;
+using API.Models;
 using API.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

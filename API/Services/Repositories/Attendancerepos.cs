@@ -1,5 +1,6 @@
 ﻿using API.Data;
 using API.Models;
+using API.Services.FaceRecognition;
 using API.ViewModel;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -10,10 +11,13 @@ namespace API.Services.Repositories
     public class AttendanceRepos : IAttendance
     {
         private readonly AduDbcontext _context;
+        private readonly FaceRecognitionService _faceService;
+        //private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AttendanceRepos(AduDbcontext context)
+        public AttendanceRepos(AduDbcontext context, FaceRecognitionService faceService)
         {
             _context = context;
+            _faceService = faceService;
         }
 
         public async Task<bool> CheckInStudent(CheckInDto dto)
@@ -66,10 +70,10 @@ namespace API.Services.Repositories
             //if (!schedule.StudyShift.StartTime.HasValue)
             //    throw new Exception("Ca học chưa được cấu hình thời gian bắt đầu.");
 
-            var timeSpan = schedule.StudyShift.StartTime.Value.ToTimeSpan();
-            var now = DateTime.Now;
-            var startTime = DateTime.Today.Add(timeSpan);
-            var endTime = startTime.AddMinutes(30);
+            //var timeSpan = schedule.StudyShift.StartTime.Value.ToTimeSpan();
+            //var now = DateTime.Now;
+            //var startTime = DateTime.Today.Add(timeSpan);
+            //var endTime = startTime.AddMinutes(30);
 
             //if (now < startTime || now > endTime)
             //    throw new Exception("Chỉ được tạo phiên điểm danh trong 30 phút đầu của ca học.");
@@ -261,6 +265,104 @@ namespace API.Services.Repositories
             }).ToListAsync();
 
             return result;
+        }
+
+        public async Task<bool> CheckInByFace(int attendanceId, Guid studentId, byte[] faceImageBytes)
+        {
+            var attendanceExists = await _context.Attendances
+                .AnyAsync(a => a.Id == attendanceId);
+
+            if (!attendanceExists)
+                throw new InvalidOperationException($"Không tìm thấy phiên điểm danh với ID: {attendanceId}");
+
+            var studentInClass = await _context.ScheduleStudentsInfors
+                .AnyAsync(ss => ss.StudentsUserId == studentId &&
+                                ss.Schedule.Attendances.Any(a => a.Id == attendanceId));
+
+            if (!studentInClass)
+                throw new InvalidOperationException("Sinh viên không thuộc lớp học này");
+
+            var student = await _context.StudentsInfors
+                .FirstOrDefaultAsync(s => s.UserId == studentId);
+
+            if (student?.FaceFeatures == null || student.FaceFeatures.Length == 0)
+            {
+                throw new InvalidOperationException("Chưa có dữ liệu khuôn mặt cho sinh viên này.");
+            }
+
+            var detectedFaces = _faceService.DetectFaces(faceImageBytes);
+
+            if (detectedFaces.Length == 0)
+            {
+                throw new InvalidOperationException("Không tìm thấy khuôn mặt trong ảnh.");
+            }
+
+            var uploadedFaceFeatures = _faceService.ExtractFaceFeatures(detectedFaces[0]);
+
+            var storedFeatures = new float[student.FaceFeatures.Length / sizeof(float)];
+            System.Runtime.InteropServices.Marshal.Copy(student.FaceFeatures, 0, System.Runtime.InteropServices.Marshal.UnsafeAddrOfPinnedArrayElement(storedFeatures, 0), storedFeatures.Length);
+
+            if (!_faceService.CompareFaces(uploadedFaceFeatures, storedFeatures))
+            {
+                throw new InvalidOperationException("Khuôn mặt không khớp.");
+            }
+
+            var detail = await _context.AttendanceDetails
+                .FirstOrDefaultAsync(a => a.AttendanceId == attendanceId && a.StudentId == studentId);
+
+            if (detail == null)
+            {
+                detail = new AttendanceDetail
+                {
+                    AttendanceId = attendanceId,
+                    StudentId = studentId,
+                    Status = AttendanceDetail.AttendanceStatus.Present,
+                    CheckinTime = DateTime.Now,
+                    Description = "Điểm danh bằng khuôn mặt"
+                };
+                _context.AttendanceDetails.Add(detail);
+            }
+            else
+            {
+                detail.Status = AttendanceDetail.AttendanceStatus.Present;
+                detail.CheckinTime = DateTime.Now;
+                detail.Description = "Cập nhật điểm danh bằng khuôn mặt";
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<IndexAttendanceViewModel>> GetActiveSessionsForStudent(Guid studentId)
+        {
+            var today = DateTime.Today;
+            var now = DateTime.Now;
+
+            var activeSessions = await _context.Attendances
+                .Include(a => a.Schedules)
+                    .ThenInclude(s => s.Subject)
+                .Include(a => a.Schedules)
+                    .ThenInclude(s => s.StudyShift)
+                .Include(a => a.Schedules)
+                    .ThenInclude(s => s.Room)
+                .Where(a => a.Schedules != null &&
+                            a.CreateAt.HasValue &&
+                            a.CreateAt.Value.Date == today &&
+                            a.Endtime.HasValue &&
+                            now < a.Endtime.Value)
+                .Where(a => a.Schedules.ScheduleStudents.Any(ss => ss.StudentsUserId == studentId) &&
+                            !a.AttendanceDetails.Any(ad => ad.StudentId == studentId && ad.Status == AttendanceStatus.Present))
+                .Select(a => new IndexAttendanceViewModel
+                {
+                    AttendanceId = a.Id,
+                    SessionCode = a.SessionCode,
+                    SubjectName = a.Schedules.Subject.SubjectName,
+                    ClassName = a.Schedules.ClassName,
+                    ShiftStudy = a.Schedules.StudyShift.StudyShiftName,
+                    RoomCode = a.Schedules.Room.RoomCode
+                }).ToListAsync();
+
+            return activeSessions;
         }
     }
 }
