@@ -14,6 +14,7 @@
         public DateTime? enddate { get; set; }
         public string? Status { get; set; }
         public Guid? UserId { get; set; }
+        public List<string> Teachers { get; set; } = new();
         public int? SubjectId { get; set; }
         public int? RoomId { get; set; }
         public int? StudyShiftId { get; set; }

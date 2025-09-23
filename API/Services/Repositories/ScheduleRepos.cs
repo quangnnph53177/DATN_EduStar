@@ -49,7 +49,7 @@ namespace API.Services.Repositories
                 EndDate = endDate,
                 UsersId = model.TeacherId
             };
-
+            
             setstatus(schedule);
             _context.Schedules.Add(schedule);
             await _context.SaveChangesAsync();
@@ -95,6 +95,7 @@ namespace API.Services.Repositories
                 .Include(s => s.Subject)
                 .Include(s => s.Room)
                 .Include(s => s.StudyShift)
+                .Include(s => s.User).ThenInclude(u => u.UserProfile)
                 .Include(s => s.ScheduleDays).ThenInclude(sd => sd.DayOfWeekk)
                 .Include(s => s.ScheduleStudents).ThenInclude(ss => ss.Student).ThenInclude(st => st.User).ThenInclude(u => u.UserProfile)
                 .Include(s => s.ScheduleStudents).ThenInclude(ss => ss.Student).ThenInclude(st => st.User)
@@ -117,6 +118,7 @@ namespace API.Services.Repositories
                 enddate = schedule.EndDate,
                 Status = schedule.Status.ToString(),
                 UserId = schedule.UsersId,
+                Teachers = schedule.User != null ? new List<string> { schedule.User.UserProfile.FullName } : new List<string>(),
                 SubjectId = schedule.SubjectId,
                 RoomId = schedule.RoomId,
                 StudyShiftId = schedule.StudyShiftId,

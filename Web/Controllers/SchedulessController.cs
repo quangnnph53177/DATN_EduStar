@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
@@ -39,15 +40,39 @@ namespace Web.Controllers
 
         public async Task<IActionResult> Index1()
         {
-            var response = await _client.GetStringAsync("api/Schedules");
-            var result = JsonConvert.DeserializeObject<List<SchedulesViewModel>>(response);
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                return RedirectToAction("Login", "Users");
+            }
+            
+            var response = await client.GetAsync("api/Schedules");
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["ErrorMessage"] = "Không lấy được danh sách lịch học.";
+                return View(new List<SchedulesViewModel>());
+            }
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<List<SchedulesViewModel>>(json);
             return View(result);
         }
 
         public async Task<IActionResult> Index()
         {
-            var response = await _client.GetStringAsync("api/Schedules/codinh");
-            var result = JsonConvert.DeserializeObject<List<Lichcodinh>>(response);
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                return RedirectToAction("Login", "Users");
+            }
+            var response = await _client.GetAsync("api/Schedules/codinh");
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["ErrorMessage"] = "Không lấy được danh sách lịch học cố định.";
+                return View(new List<SchedulesViewModel>());
+            }
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<List<Lichcodinh>>(json);
+            //var result = JsonConvert.DeserializeObject<List<Lichcodinh>>(response);
             return View(result);
         }
 
@@ -99,14 +124,31 @@ namespace Web.Controllers
 
         public async Task<IActionResult> Details(int Id)
         {
-            var response = await _client.GetStringAsync($"api/Schedules/{Id}");
-            var result = JsonConvert.DeserializeObject<SchedulesViewModel>(response);
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                return RedirectToAction("Login", "Users");
+            }
+            var response = await client.GetAsync($"api/Schedules/{Id}");
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["ErrorMessage"] = "Không lấy được chi tiết lịch học.";
+                return RedirectToAction("Index1");
+            }
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<SchedulesViewModel>(json);
+            //var result = JsonConvert.DeserializeObject<SchedulesViewModel>(response);
             return View(result);
         }
 
         [HttpGet]
         public async Task<IActionResult> Create()
         {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                return RedirectToAction("Login", "Users");
+            }
             await LoadSelectitem();
             return View();
         }
@@ -114,7 +156,18 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(SchedulesDTO dto)
         {
-            var response = await _client.PostAsJsonAsync("api/Schedules/create", dto);
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                return RedirectToAction("Login", "Users");
+            }
+            if (!ModelState.IsValid)
+            {
+                await LoadSelectitem();
+                return View(dto);
+            }
+            var content = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("api/Schedules/create", content);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -132,8 +185,20 @@ namespace Web.Controllers
         {
             try
             {
-                var response = await _client.GetStringAsync($"api/Schedules/{Id}");
-                var schedules = JsonConvert.DeserializeObject<SchedulesDTO>(response);
+                var client = GetClientWithToken();
+                if (client == null)
+                {
+                    return RedirectToAction("Login", "Users");
+                }
+                var response = await client.GetAsync($"api/Schedules/{Id}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    TempData["ErrorMessage"] = "Không lấy được chi tiết lịch học.";
+                    return RedirectToAction("Index1");
+                }
+                var json = await response.Content.ReadAsStringAsync();
+                var schedules = JsonConvert.DeserializeObject<SchedulesDTO>(json);
+                //var schedules = JsonConvert.DeserializeObject<SchedulesDTO>(response);
                 await LoadSelectitemEdit(schedules);
                 return View(schedules);
             }
@@ -155,10 +220,16 @@ namespace Web.Controllers
 
             try
             {
+                var client = GetClientWithToken();
+                if (client == null)
+                {
+                    return RedirectToAction("Login", "Users");
+                }
                 Console.WriteLine($"[MVC] Updating schedule ID: {model.Id}");
+                var content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
 
                 // Đảm bảo URL đúng với API Controller
-                var response = await _client.PutAsJsonAsync($"api/Schedules/{model.Id}", model);
+                var response = await client.PutAsync($"api/Schedules/{model.Id}", content);
 
                 Console.WriteLine($"[MVC] API Response Status: {response.StatusCode}");
 
@@ -196,7 +267,13 @@ namespace Web.Controllers
 
         public async Task<IActionResult> Delete(int Id)
         {
-            var response = await _client.DeleteAsync($"api/Schedules/{Id}");
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                return RedirectToAction("Login", "Users");
+            }
+
+            var response = await client.DeleteAsync($"api/Schedules/{Id}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -348,6 +425,7 @@ namespace Web.Controllers
         [HttpGet]
         public async Task<IActionResult> AssignStudent(int Id)
         {
+            var client = GetClientWithToken();
             await LoadStudentListForClass(Id);
             return View();
         }
@@ -355,6 +433,11 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> AssignStudent(AssignStudentsRequest request)
         {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                return RedirectToAction("Login", "Users");
+            }
             Console.WriteLine(">> [MVC] Nhận classId: " + request.SchedulesId);
             Console.WriteLine(">> [MVC] Số sinh viên chọn: " + (request.StudentIds?.Count ?? 0));
 
@@ -364,8 +447,9 @@ namespace Web.Controllers
                 await LoadStudentListForClass(request.SchedulesId);
                 return View();
             }
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
-            var response = await _client.PostAsJsonAsync($"api/schedules/{request.SchedulesId}/assignStudent/{request.StudentIds}", request);
+            var response = await client.PostAsync($"api/schedules/{request.SchedulesId}/assignStudent/{request.StudentIds}", content);
 
             if (response.IsSuccessStatusCode)
             {

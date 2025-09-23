@@ -13,11 +13,11 @@ namespace API.ViewModel
 
         [Required(ErrorMessage = "Môn học là bắt buộc")]
         [Range(1, int.MaxValue, ErrorMessage = "ID môn học không hợp lệ")]
-        public int SubjectId { get; set; }
+        public int? SubjectId { get; set; }
 
         [Required(ErrorMessage = "Phòng học là bắt buộc")]
         [Range(1, int.MaxValue, ErrorMessage = "ID phòng không hợp lệ")]
-        public int RoomId { get; set; }
+        public int? RoomId { get; set; }
 
         [Required(ErrorMessage = "Ngày học là bắt buộc")]
         [MinLength(1, ErrorMessage = "Phải chọn ít nhất 1 ngày")]
@@ -26,14 +26,15 @@ namespace API.ViewModel
 
         [Required(ErrorMessage = "Ca học là bắt buộc")]
         [Range(1, int.MaxValue, ErrorMessage = "ID ca học không hợp lệ")]
-        public int StudyShiftId { get; set; }
+        public int? StudyShiftId { get; set; }
 
         [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc")]
         public DateTime? StartDate { get; set; }
         [Required(ErrorMessage = "Ngày kết thúc là bắt buộc")]
-        public DateTime? EndDate { get; set; } 
+        public DateTime? EndDate { get; set; }
 
         public Guid? TeacherId { get; set; }
+        public string? TeacherName { get; set; }
 
         [StringLength(50, ErrorMessage = "Trạng thái không quá 50 ký tự")]
         public string? Status { get; set; }

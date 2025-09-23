@@ -1,7 +1,12 @@
-﻿using API.Services;
+﻿using API.Data;
+using API.Services;
 using API.ViewModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace API.Controllers
 {
@@ -10,11 +15,15 @@ namespace API.Controllers
     public class SchedulesController : ControllerBase
     {
         private readonly IShedulesRepos _services;
-        public SchedulesController(IShedulesRepos services)
+        private readonly IAuditLogRepos _auditLog;
+        private readonly AduDbcontext _context;
+        public SchedulesController(IShedulesRepos services, IAuditLogRepos auditLog, AduDbcontext aduDbcontext)
         {
             _services = services;
+            _auditLog = auditLog;
+            _context = aduDbcontext;
         }
-
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> Get()
         {
@@ -38,14 +47,14 @@ namespace API.Controllers
             });
             return Ok(check);
         }
-
+        [Authorize]
         [HttpGet("codinh")]
         public async Task<IActionResult> getcodinh()
         {
             var result = await _services.GetAllCoDinh();
             return Ok(result);
         }
-
+        [Authorize]
         [HttpGet("Id")]
         public async Task<IActionResult> GetByStudent()
         {
@@ -53,7 +62,7 @@ namespace API.Controllers
             var result = await _services.GetByStudent(userId);
             return Ok(result);
         }
-
+        [Authorize]
         [HttpGet("Teacher")]
         public async Task<IActionResult> GetbyTeacher()
         {
@@ -61,20 +70,23 @@ namespace API.Controllers
             var result = await _services.GetByTeacher(userId);
             return Ok(result);
         }
-
+        [Authorize]
         [HttpPost("arrangeschedules")]
         public async Task<IActionResult> getarrschedule()
         {
             await _services.AutogenerateSchedule();
             return Ok(new { success = true, message = "Tạo lịch học tự động thành công" });
         }
-
+        [Authorize(Policy = "CreateUS")]
         [HttpPost("create")]
         public async Task<IActionResult> Create(SchedulesDTO model)
         {
             try
             {
+                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                Guid? performedByGuid = Guid.TryParse(performedBy, out var guid) ? guid : null;
                 await _services.CreateSchedules(model);
+                await _auditLog.LogAsync(performedByGuid, "Create Schedule", JsonSerializer.Serialize(new { }), System.Text.Json.JsonSerializer.Serialize(model), performedByGuid);
                 return Ok(new { message = "Thêm thành công" });
             }
             catch (Exception ex)
@@ -82,7 +94,7 @@ namespace API.Controllers
                 return BadRequest(new { message = $"Lỗi khi thêm: {ex.Message}" });
             }
         }
-
+        [Authorize]
         [HttpGet("excel")]
         public async Task<IActionResult> exportbyexcel(Guid id)
         {
@@ -93,7 +105,7 @@ namespace API.Controllers
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 filename);
         }
-
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> Getid(int id)
         {
@@ -107,10 +119,12 @@ namespace API.Controllers
                 return NotFound(new { message = ex.Message });
             }
         }
-
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Updatesch(int id, SchedulesDTO model)
         {
+            var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid? performedByGuid = Guid.TryParse(performedBy, out var guid) ? guid : null;
             Console.WriteLine($"[API] Received update request for ID: {id}");
             Console.WriteLine($"[API] Model ID: {model?.Id}");
 
@@ -137,10 +151,54 @@ namespace API.Controllers
 
             try
             {
-                Console.WriteLine($"[API] Calling UpdateSchedules service...");
-                await _services.UpdateSchedules(model);
-                Console.WriteLine($"[API] Update successful");
+                var oldSchedule = await _context.Schedules
+                    .Include(s => s.Subject)
+                    .Include(s => s.Room)
+                    .Include(s => s.StudyShift)
+                    .Include(s => s.User) // nếu có relation
+                    .FirstOrDefaultAsync(s => s.Id == id);
 
+                if (oldSchedule == null)
+                    return NotFound(new { message = "Không tìm thấy lịch học" });
+                if (model.TeacherId.HasValue)
+                {
+                    var teacher = await _context.Users
+                        .Where(u => u.Id == model.TeacherId.Value)
+                        .Select(u => new { u.UserProfile.FullName })
+                        .FirstOrDefaultAsync();
+
+                    model.TeacherName = teacher?.FullName;
+                }
+                // ⚡ Map dữ liệu cũ sang DTO để tránh vòng lặp
+                var oldDataDto = new SchedulesDTO
+                {
+                    Id = oldSchedule.Id,
+                    ClassName = oldSchedule.ClassName,
+                    SubjectId = oldSchedule.SubjectId,
+                    RoomId = oldSchedule.RoomId,
+                    StudyShiftId = oldSchedule.StudyShiftId,
+                    StartDate = oldSchedule.StartDate,
+                    EndDate = oldSchedule.EndDate,
+                    TeacherId = oldSchedule.UsersId,
+                    TeacherName = oldSchedule.User?.UserProfile?.FullName,
+                    Status = oldSchedule.Status.ToString(),
+                };
+
+                Console.WriteLine($"[API] Calling UpdateSchedules service...");
+
+                // 🔥 Audit log: serialize DTO, không serialize entity
+                await _auditLog.LogAsync(
+                    performedByGuid,
+                    "Update Schedule",
+                    System.Text.Json.JsonSerializer.Serialize(oldDataDto), // olddata (safe)
+                    System.Text.Json.JsonSerializer.Serialize(model),      // newdata
+                    performedByGuid
+                );
+
+                // Update vào DB
+                await _services.UpdateSchedules(model);
+
+                Console.WriteLine($"[API] Update successful");
                 return Ok(new { message = "Cập nhật thành công" });
             }
             catch (Exception ex)
@@ -149,7 +207,7 @@ namespace API.Controllers
                 return BadRequest(new { message = $"Lỗi khi cập nhật: {ex.Message}" });
             }
         }
-
+        [Authorize]
         [HttpDelete("{Id}")]
         public async Task<IActionResult> Delete(int Id)
         {
@@ -163,7 +221,7 @@ namespace API.Controllers
                 return BadRequest(new { message = $"Lỗi khi xóa: {ex.Message}" });
             }
         }
-
+        [Authorize]
         [HttpPost("{schedulesId}/assignStudent/{studentId}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -173,6 +231,14 @@ namespace API.Controllers
         {
             try
             {
+                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                Guid? performedByGuid = Guid.TryParse(performedBy, out var guid) ? guid : null;
+                await _auditLog.LogAsync(performedByGuid, "Assign Students to Class",
+
+                oldData: JsonSerializer.Serialize(new { SchedulesId = request.SchedulesId }),
+                //newData: JsonSerializer.Serialize(new { StudentIds = request.StudentIds }), performedByGuid);
+                //oldData: $"SchedulesId: {request.SchedulesId}"// không cần object phức tạp
+                JsonSerializer.Serialize(request), performedByGuid);
                 var success = await _services.AssignStudentToClassAsync(request);
                 if (success)
                 {
@@ -187,7 +253,7 @@ namespace API.Controllers
                     $"Lỗi máy chủ: {ex.Message}");
             }
         }
-
+        [Authorize]
         [HttpDelete("{schedulesId}/removeStudent/{studentId}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -196,6 +262,9 @@ namespace API.Controllers
         {
             try
             {
+                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                Guid? performedByGuid = Guid.TryParse(performedBy, out var guid) ? guid : null;
+                await _auditLog.LogAsync(performedByGuid, "Remove Student from Class", "Đã xóa", $"SchedulesId: {SchedulesId}, StudentId: {studentId}", performedByGuid);
                 var success = await _services.RemoveStudentFromClassAsync(SchedulesId, studentId);
                 if (success)
                 {
