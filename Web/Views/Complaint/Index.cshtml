@@ -138,13 +138,6 @@
                                            class="btn btn-outline-info btn-sm mx-1" title="Xem chi tiết">
                                             <i class="bi bi-eye-fill"></i>
                                         </a>
-                                        @if (User.HasClaim("Permission", "ProcessComplaint") && item.Statuss == "Pending")
-                                        {
-                                            <a asp-action="ProcessClassComplaint" asp-route-id="@item.Id"
-                                               class="btn btn-sm btn-warning mx-1" title="Xử lý khiếu nại">
-                                                <i class="bi bi-pencil-fill"></i>
-                                            </a>
-                                        }
                                     </div>
                                 </td>
                             </tr>

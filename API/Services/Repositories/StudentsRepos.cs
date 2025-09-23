@@ -130,7 +130,8 @@ namespace API.Services.Repositories
                 Avatar = u.User?.UserProfile?.Avatar ?? "N/A",
                 Address = u.User?.UserProfile?.Address ?? "N/A",
                 Dob = u.User?.UserProfile?.Dob,
-                Status = u.User?.Statuss ?? false
+                Status = u.User?.Statuss ?? false,
+                IsConfirmed = u.User?.IsConfirm ?? false
             }).ToList();
             return student;
         }
@@ -174,6 +175,7 @@ namespace API.Services.Repositories
                 Dob = inforsv.User?.UserProfile?.Dob,
                 RoleId = inforsv.User?.Roles?.FirstOrDefault()?.Id ?? 0,
                 Status = inforsv.User?.Statuss ?? false,
+                IsConfirmed = inforsv.User?.IsConfirm ?? false,
                 CVMs = inforsv.ScheduleStudents?
                     .Where(ss => ss.Schedule != null)
                     .Select(ss => new ClassViewModel
@@ -221,6 +223,7 @@ namespace API.Services.Repositories
                 Address = ss.Student.User?.UserProfile?.Address,
                 Dob = ss.Student.User?.UserProfile?.Dob,
                 Status = ss.Student.User?.Statuss ?? false,
+                IsConfirmed = ss.Student.User?.IsConfirm ?? false,
                 CVMs = new List<ClassViewModel>
         {
             new ClassViewModel

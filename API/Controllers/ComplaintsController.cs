@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace API.Controllers
 {
@@ -15,9 +16,11 @@ namespace API.Controllers
     public class ComplaintsController : ControllerBase
     {
         private readonly IComplaintRepos _repos;
-        public ComplaintsController(IComplaintRepos complaint)
+        private readonly IAuditLogRepos _auditLogRepos;
+        public ComplaintsController(IComplaintRepos complaint, IAuditLogRepos auditLogRepos)
         {
             _repos = complaint;
+            _auditLogRepos = auditLogRepos;
         }
         [Authorize]
         [HttpGet("complaints")]
@@ -45,18 +48,40 @@ namespace API.Controllers
         }
         [Authorize(Roles = "3")]
         [HttpPost("class-change-complaint")]
-        public async Task<IActionResult> SubmitClassChangeComplaint([FromBody] ClassChangeComplaintDTO dto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> SubmitClassChangeComplaint([FromForm] ClassChangeComplaintDTO dto, IFormFile imgFile)
         {
             if (dto == null || dto.CurrentClassId == 0 || dto.RequestedClassId == 0 || string.IsNullOrWhiteSpace(dto.Reason))
             {
                 return BadRequest("Dữ liệu không hợp lệ.");
             }
+            if (imgFile == null || imgFile.Length == 0)
+            {
+                return BadRequest("Vui lòng tải lên hình ảnh minh chứng.");
+            }
             try
             {
                 // Lấy StudentId từ token
-                var studentId = User.FindFirstValue("UserCode");
+                var studentCode = User.FindFirstValue("UserCode");
+                if (string.IsNullOrEmpty(studentCode))
+                    return Unauthorized("Không xác định được sinh viên từ token.");
+                var result = await _repos.SubmitClassChangeComplaint(dto, studentCode, imgFile);
+                var performedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                Guid? performedByGuid = Guid.TryParse(performedBy, out var guid) ? guid : null;
 
-                var result = await _repos.SubmitClassChangeComplaint(dto, studentId);
+                await _auditLogRepos.LogAsync(
+                    performedByGuid,
+                    "SubmitClassChangeComplaint",
+                    $"{ dto.CurrentClassId}",
+                    JsonSerializer.Serialize(new
+                    {
+                        StudentCode = studentCode,
+                        CurrentClassId = dto.CurrentClassId,
+                        RequestedClassId = dto.RequestedClassId,
+                        Reason = dto.Reason
+                    }),
+                    performedByGuid // Người thực hiện hành động
+                );
                 return Ok(new { Message = "Đăng ký khiếu nại thành công.", ComplaintId = result });
             }
             catch (Exception ex)
@@ -109,6 +134,13 @@ namespace API.Controllers
                 // Convert handlerId to Guid
                 var guidHandler = Guid.Parse(handlerId);
                 var result = await _repos.ProcessClassChangeComplaint(id, dto, guidHandler);
+                await _auditLogRepos.LogAsync(
+                    guidHandler,
+                    "ProcessClassChangeComplaint",
+                    $"{id}",
+                    JsonSerializer.Serialize(dto),
+                    guidHandler // Người thực hiện hành động
+                );
                 return Ok(new { message = result });
             }
             catch (Exception ex)

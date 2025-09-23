@@ -171,10 +171,10 @@
                     </button>
                     <ul class="dropdown-menu w-100">
                         <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexUser">👤 Hồ sơ cá nhân</a></li>
-                        @if (User.IsInRole("Admin"))
-                        {
+                        @* @if (User.IsInRole("Admin"))
+                        { *@
                             <li><a class="dropdown-item" asp-controller="Users" asp-action="IndexLog">🕓 Nhật ký hoạt động</a></li>
-                        }
+                        @* } *@
                         <li>
                             <form method="post" asp-controller="Users" asp-action="Logout">
                                 <button type="submit" class="dropdown-item">🚪 Đăng xuất</button>

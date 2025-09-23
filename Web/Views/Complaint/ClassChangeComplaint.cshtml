@@ -21,7 +21,7 @@
         <h4 class="mb-0"><i class="bi bi-envelope-paper"></i> Gửi khiếu nại đổi lớp</h4>
     </div>
     <div class="card-body">
-        <form asp-action="ClassChangeComplaint" method="post">
+        <form asp-action="ClassChangeComplaint" method="post" enctype="multipart/form-data">
             <div class="mb-3">
                 <label asp-for="CurrentClassId" class="form-label fw-bold">Lớp hiện tại</label>
                 <select asp-for="CurrentClassId" class="form-select" asp-items="ViewBag.ClassList">
@@ -42,6 +42,13 @@
                 <label asp-for="Reason" class="form-label fw-bold">Lý do khiếu nại</label>
                 <textarea asp-for="Reason" class="form-control" rows="4" placeholder="Nhập lý do bạn muốn đổi lớp..."></textarea>
                 <span asp-validation-for="Reason" class="text-danger"></span>
+            </div>
+
+            <!-- Thêm upload hình ảnh -->
+            <div class="mb-3">
+                <label for="imgFile" class="form-label fw-bold">Minh chứng (hình ảnh)</label>
+                <input type="file" name="imgFile" class="form-control" required/>
+                <div class="form-text">Chỉ hỗ trợ file ảnh (.jpg, .png, .jpeg).</div>
             </div>
 
             <div class="d-flex justify-content-end">

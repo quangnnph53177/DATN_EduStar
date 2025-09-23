@@ -152,8 +152,8 @@
                                     <span class="badge @(student.Status == true ? "bg-success" : "bg-secondary")">
                                         @(student.Status == true ? "Hoạt động" : "Khóa")
                                     </span>
-                                    <span class="badge bg-@(student.IsConfirmed ? "success" : "secondary")">
-                                        @(student.IsConfirmed ? "Đã xác nhận" : "Chưa xác nhận")
+                                    <span class="badge @(student.IsConfirmed == true ? "bg-success" : "bg-secondary")">
+                                        @(student.IsConfirmed == true ? "Đã xác nhận" : "Chưa xác nhận")
                                     </span>
                                 </td>
                                 <td class="text-center">
