@@ -21,19 +21,19 @@
 
                 <div class="mb-3">
                     <label asp-for="SubjectName" class="form-label fw-semibold">📘 Tên môn học</label>
-                    <input asp-for="SubjectName" class="form-control" placeholder="Nhập tên môn học..." />
+                    <input asp-for="SubjectName" class="form-control" />
                     <span asp-validation-for="SubjectName" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="SubjectCode" class="form-label fw-semibold">🔖 Mã môn học</label>
-                    <input asp-for="SubjectCode" class="form-control" placeholder="VD: CS101" />
+                    <input asp-for="SubjectCode" class="form-control"  />
                     <span asp-validation-for="SubjectCode" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="Description" class="form-label fw-semibold">📝 Mô tả</label>
-                    <textarea asp-for="Description" class="form-control auto-resize" rows="3" placeholder="Mô tả ngắn gọn..."></textarea>
+                    <textarea asp-for="Description" class="form-control auto-resize" rows="3" ></textarea>
                     <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
 

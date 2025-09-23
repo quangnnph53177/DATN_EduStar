@@ -17,13 +17,13 @@
                 <div class="row g-4">
                     <div class="col-md-6">
                         <label asp-for="SubjectName" class="form-label fw-semibold">Tên môn học</label>
-                        <input asp-for="SubjectName" class="form-control shadow-sm" placeholder="VD: Cấu trúc dữ liệu" />
+                        <input asp-for="SubjectName" class="form-control shadow-sm"/>
                         <span asp-validation-for="SubjectName" class="text-danger small"></span>
                     </div>
 
                     <div class="col-md-6">
                         <label asp-for="SubjectCode" class="form-label fw-semibold">Mã môn học</label>
-                        <input asp-for="SubjectCode" class="form-control shadow-sm" placeholder="VD: IT001" />
+                        <input asp-for="SubjectCode" class="form-control shadow-sm"/>
                         <span asp-validation-for="SubjectCode" class="text-danger small"></span>
                     </div>
 
@@ -43,7 +43,7 @@
 
                     <div class="col-md-12">
                         <label asp-for="Description" class="form-label fw-semibold">Mô tả môn học</label>
-                        <textarea asp-for="Description" class="form-control shadow-sm auto-resize" rows="3" placeholder="Mô tả ngắn gọn về môn học..."></textarea>
+                        <textarea asp-for="Description" class="form-control shadow-sm auto-resize" rows="3"></textarea>
                         <span asp-validation-for="Description" class="text-danger small"></span>
                     </div>
 

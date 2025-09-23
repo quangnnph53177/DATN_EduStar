@@ -14,6 +14,10 @@
         public DateTime? enddate { get; set; }
         public string? Status { get; set; }
         public Guid? UserId { get; set; }
+        public bool CanCreateAttendance { get; set; }
+        public bool HasActiveAttendance { get; set; }
+        public int? ActiveAttendanceId { get; set; }
+        public string SessionCode { get; set; }
         public List<StudentViewModels>? Students { get; set; }
     }
 }

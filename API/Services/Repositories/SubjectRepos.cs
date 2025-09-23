@@ -50,9 +50,7 @@ namespace API.Services.Repositories
                 Id = c.Id,
                 SubjectName = c.SubjectName,
                 SubjectCode= c.Subjectcode,
-           
                 Description = c.Description,
-          
                 Status = c.Status,
             }).ToList();
             return item;
@@ -66,9 +64,7 @@ namespace API.Services.Repositories
                 Id= id,
                 SubjectName=details.SubjectName,
                 SubjectCode= details.Subjectcode,
-              
                 Description=details.Description,
-               
                 Status = details.Status,
             };
             return item;

@@ -396,6 +396,13 @@ namespace API.Services.Repositories
 
                     foreach (var date in datesForThisWeekday)
                     {
+                        var existingAttendance = await _context.Attendances
+                                .FirstOrDefaultAsync(a => a.SchedulesId == schedule.Id &&
+                              a.CreateAt.HasValue &&
+                              a.CreateAt.Value.Date == date.Date);
+
+                        // Kiểm tra có thể tạo phiên điểm danh không
+                        var canCreate = CanCreateAttendanceForSchedule(schedule, date);
                         result.Add(new SchedulesViewModel
                         {
                             Id = schedule.Id,
@@ -409,7 +416,11 @@ namespace API.Services.Repositories
                             startdate = date,
                             enddate = date,
                             Status = schedule.Status?.ToString() ?? "",
-                            UserId = Id
+                            UserId = Id,
+                            CanCreateAttendance = canCreate && existingAttendance == null,
+                            HasActiveAttendance = existingAttendance != null,
+                            ActiveAttendanceId = existingAttendance?.Id,
+                            SessionCode = existingAttendance?.SessionCode 
                         });
                     }
                 }
@@ -417,6 +428,30 @@ namespace API.Services.Repositories
 
             // Sắp xếp theo ngày và ca dạy
             return result.OrderBy(r => r.startdate).ThenBy(r => r.starttime).ToList();
+        }
+        private bool CanCreateAttendanceForSchedule(Schedule schedule, DateTime date)
+        {
+            // Chỉ cho phép tạo điểm danh cho ngày hôm nay
+            if (date.Date != DateTime.Today)
+                return false;
+
+            // Kiểm tra hôm nay có phải ngày học không
+            var today = (Weekday)DateTime.Today.DayOfWeek;
+            var validDays = schedule.ScheduleDays.Select(sd => sd.DayOfWeekk.Weekdays).ToList();
+
+            if (!validDays.Contains(today))
+                return false;
+
+            // Kiểm tra thời gian (trong 30 phút đầu ca học)
+            if (!schedule.StudyShift?.StartTime.HasValue == true)
+                return false;
+
+            var timeSpan = schedule.StudyShift.StartTime.Value.ToTimeSpan();
+            var now = DateTime.Now;
+            var startTime = DateTime.Today.Add(timeSpan);
+            var endTime = startTime.AddMinutes(30);
+
+            return now >= startTime && now <= endTime;
         }
         // Helper method để lấy tất cả các ngày thuộc thứ cụ thể trong khoảng thời gian
         private List<DateTime> GetDatesForWeekday(DateTime startDate, DateTime endDate, Weekday weekday)
@@ -503,9 +538,9 @@ namespace API.Services.Repositories
             if (classEntity == null)
                 return false;
 
-            // Lấy danh sách sinh viên hợp lệ
+            // Lấy danh sách sinh viên hợp lệ VÀ đang hoạt động
             var validStudentIds = await _context.StudentsInfors
-                .Where(s => request.StudentIds.Contains(s.UserId))
+                .Where(s => request.StudentIds.Contains(s.UserId) && s.User.Statuss == true) // Thêm điều kiện IsActive
                 .Select(s => s.UserId)
                 .ToListAsync();
 
@@ -523,14 +558,12 @@ namespace API.Services.Repositories
             {
                 SchedulesId = request.SchedulesId,
                 StudentsUserId = studentId,
-
             }).ToList();
 
             // Thêm vào context
             _context.ScheduleStudentsInfors.AddRange(newEntries);
 
             // Cập nhật số lượng sinh viên
-
             await _context.SaveChangesAsync();
             return true;
         }

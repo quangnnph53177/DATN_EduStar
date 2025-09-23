@@ -4,7 +4,7 @@
     ViewData["Title"] = "Quản lý lịch học";
 }
 
-<div class="container-fluid">
+<div class="container-fluid" >
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -43,7 +43,7 @@
                             <i class="bi bi-funnel me-1"></i>
                             Bộ lọc
                         </button>
-                        <div class="dropdown">
+                      @*   <div class="dropdown">
                             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-download me-1"></i>
                                 Xuất dữ liệu
@@ -301,16 +301,16 @@
                 <div class="text-center py-5">
                     <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
                     <h5 class="text-muted">Chưa có lịch học nào</h5>
-                    <p class="text-muted mb-4">Bắt đầu bằng cách tạo lịch học mới hoặc sử dụng tính năng tự động xếp lịch.</p>
+                    <p class="text-muted mb-4">Bắt đầu bằng cách tạo lịch học mới</p>
                     <div class="d-flex justify-content-center gap-2">
                         <a asp-action="Create" class="btn btn-success">
                             <i class="bi bi-plus-circle me-1"></i>
                             Tạo lịch mới
                         </a>
-                        <a asp-action="Auto" class="btn btn-info">
+@*                         <a asp-action="Auto" class="btn btn-info">
                             <i class="bi bi-magic me-1"></i>
                             Tự động xếp lịch
-                        </a>
+                        </a> *@
                     </div>
                 </div>
             }
@@ -396,6 +396,7 @@
         max-height: 70vh;
         overflow-y: auto;
     }
+
 </style>
 
 @section Scripts {

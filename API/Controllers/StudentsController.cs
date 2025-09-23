@@ -105,9 +105,10 @@ namespace API.Controllers
                 return StatusCode(500, $"Lỗi hệ thống: {ex.Message}");
             }
         }
+        // Sửa lại API Controller - StudentsController
         [HttpPut("profile")]
         [Authorize]
-        public async Task<IActionResult> UpdateMyProfile(StudentViewModels model, IFormFile? imgFile)
+        public async Task<IActionResult> UpdateMyProfile(StudentViewModels model)
         {
             try
             {
@@ -116,10 +117,9 @@ namespace API.Controllers
                     return Unauthorized("Không tìm thấy thông tin người dùng");
 
                 // Đảm bảo chỉ cập nhật profile của chính mình
-                if (model.id != userId)
-                    return Forbid("Bạn chỉ có thể cập nhật thông tin của chính mình");
+                model.id = userId;
 
-                await _service.UpdateByBeast(model, imgFile);
+                await _service.UpdatebyBoss(model);
                 return Ok(new { message = "Cập nhật thông tin cá nhân thành công" });
             }
             catch (Exception ex)

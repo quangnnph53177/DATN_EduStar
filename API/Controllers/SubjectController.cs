@@ -49,7 +49,7 @@ namespace API.Controllers
         {
             if (id != model.Id)
             {
-                return BadRequest("Id không khớp giữa route và body.");
+                return BadRequest("Id không khớp giữa.");
             }
 
             try

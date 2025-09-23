@@ -241,34 +241,33 @@ namespace Web.Controllers
 
             try
             {
-                using var content = new MultipartFormDataContent();
-
-                // Thêm các thông tin cơ bản
-                content.Add(new StringContent(model.id.ToString()), "id");
-                content.Add(new StringContent(model.Email ?? ""), "Email");
-                content.Add(new StringContent(model.PhoneNumber ?? ""), "PhoneNumber");
-                content.Add(new StringContent(model.FullName ?? ""), "FullName");
-                content.Add(new StringContent(model.Address ?? ""), "Address");
-
-                if (model.Dob.HasValue)
-                    content.Add(new StringContent(model.Dob.Value.ToString("yyyy-MM-dd")), "Dob");
-
-                if (model.Gender.HasValue)
-                    content.Add(new StringContent(model.Gender.Value.ToString()), "Gender");
-
-                // Thêm file avatar nếu có
+                // Nếu có file avatar, xử lý upload trước
                 if (avatarFile != null && avatarFile.Length > 0)
                 {
-                    var streamContent = new StreamContent(avatarFile.OpenReadStream());
-                    streamContent.Headers.ContentType = new MediaTypeHeaderValue(avatarFile.ContentType);
-                    content.Add(streamContent, "imgFile", avatarFile.FileName);
+                    var fileName = Path.GetFileNameWithoutExtension(avatarFile.FileName);
+                    var extension = Path.GetExtension(avatarFile.FileName);
+                    var newFileName = $"{fileName}_{Guid.NewGuid()}{extension}";
+
+                    var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "avatars");
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
+
+                    var filePath = Path.Combine(uploadsFolder, newFileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await avatarFile.CopyToAsync(stream);
+                    }
+
+                    model.Avatar = $"/uploads/avatars/{newFileName}";
                 }
 
-                var response = await client.PutAsync("api/Students/profile", content);
+                // Gửi model as JSON (như UpdateBoss)
+                var response = await client.PutAsJsonAsync("api/Students/profile", model);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"API Error Response: {error}");
                     TempData["ErrorMessage"] = $"Cập nhật thất bại: {error}";
                     return View(model);
                 }
@@ -278,10 +277,12 @@ namespace Web.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Exception: {ex.Message}");
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
                 return View(model);
             }
         }
+
         [HttpPost]
         public async Task<IActionResult> Lock(Guid id)
         {

@@ -119,7 +119,7 @@ namespace API.Controllers
             if (string.IsNullOrEmpty(currentUserName))
                 return Unauthorized("Không tìm thấy thông tin người dùng");
 
-            // Lấy danh sách users (giống GetAdminView)
+            // Lấy danh sách users 
             var users = await _userRepos.GetAllUsers(currentUserRoleIds, currentUserName);
 
             // Lọc ra RoleId = 1

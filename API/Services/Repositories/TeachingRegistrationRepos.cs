@@ -56,17 +56,7 @@ namespace API.Services.Repositories
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // ✅ Gửi mail thông báo
-                //var teacherEmail = reg.Teacher.Email;
-                //var subject = approve == ApprovedStatus.Approved
-                //    ? "Đăng ký giảng dạy đã được duyệt"
-                //    : "Đăng ký giảng dạy bị từ chối";
-
-                //var body = approve == ApprovedStatus.Approved
-                //    ? $"Xin chào {reg.Teacher.UserProfile.FullName},<br/>Đơn đăng ký giảng dạy của bạn cho lớp {reg.Schedule.Subject.SubjectName} đã được duyệt."
-                //    : $"Xin chào {reg.Teacher.UserProfile.FullName},<br/>Đơn đăng ký giảng dạy của bạn cho lớp {reg.Schedule.Subject.SubjectName} đã bị từ chối.";
-
-                //await _emailRepos.SendEmail(teacherEmail, subject, body);
+           
 
                 return approve == ApprovedStatus.Approved ? "Duyệt đăng ký thành công" : "Đã từ chối đăng ký";
             }

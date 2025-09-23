@@ -2,56 +2,59 @@
 @model List<IndexAttendanceViewModel>
 
 <style>
+    /* Header */
     .index-header {
-        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
         color: white;
         padding: 2.5rem;
         border-radius: 15px;
         margin-bottom: 2rem;
     }
 
+    /* Action bar (Filter) */
     .action-bar {
         background: white;
         padding: 1.5rem;
         border-radius: 15px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         margin-bottom: 2rem;
-        border: 1px solid var(--gray-200);
+        border: 1px solid #e5e7eb;
     }
 
     .filter-form .form-control,
     .filter-form .form-select {
-        border: 2px solid var(--gray-200);
+        border: 2px solid #e5e7eb;
         border-radius: 10px;
         padding: 0.75rem 1rem;
     }
 
-        .filter-form .form-control:focus,
-        .filter-form .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
+    .filter-form .form-control:focus,
+    .filter-form .form-select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
 
+    /* Buttons */
     .btn-search {
-        background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
         border: none;
-        color: white;
+        color: white !important;
         font-weight: 600;
         border-radius: 10px;
         padding: 0.75rem 1.5rem;
         transition: all 0.3s ease;
     }
 
-        .btn-search:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-            color: white;
-        }
+    .btn-search:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        color: white !important;
+    }
 
     .btn-create-new {
-        background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         border: none;
-        color: white;
+        color: white !important;
         font-weight: 600;
         border-radius: 10px;
         padding: 0.75rem 1.5rem;
@@ -59,13 +62,14 @@
         text-decoration: none;
     }
 
-        .btn-create-new:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-            color: white;
-            text-decoration: none;
-        }
+    .btn-create-new:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        color: white !important;
+        text-decoration: none;
+    }
 
+    /* Table */
     .sessions-table {
         background: white;
         border-radius: 15px;
@@ -91,11 +95,11 @@
 
     .class-name {
         font-weight: 600;
-        color: var(--gray-800);
+        color: #1f2937;
     }
 
     .subject-name {
-        color: var(--gray-600);
+        color: #4b5563;
         font-size: 0.9rem;
     }
 
@@ -113,17 +117,17 @@
     }
 
     .time-range {
-        background: var(--gray-100);
+        background: #f3f4f6;
         padding: 0.25rem 0.75rem;
         border-radius: 15px;
         font-weight: 600;
-        color: var(--gray-700);
+        color: #374151;
     }
 
     .btn-detail {
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
         border: none;
-        color: white;
+        color: white !important;
         font-weight: 600;
         border-radius: 8px;
         padding: 0.5rem 1rem;
@@ -132,24 +136,25 @@
         font-size: 0.9rem;
     }
 
-        .btn-detail:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
-            color: white;
-            text-decoration: none;
-        }
+    .btn-detail:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
+        color: white !important;
+        text-decoration: none;
+    }
 
+    /* Empty State */
     .empty-state {
         text-align: center;
         padding: 4rem 2rem;
-        color: var(--gray-600);
+        color: #6b7280;
     }
 
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
 </style>
 
 <div class="container-fluid px-4">
@@ -202,14 +207,13 @@
                 <div class="col-md-3">
                     <button type="submit" class="btn btn-search w-100">
                         <i class="bi bi-search me-2"></i>
-                        Tìm kiếm
+                        <span>Tìm kiếm</span>
                     </button>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- Error Alert -->
     @if (ViewBag.Error != null)
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -219,53 +223,29 @@
         </div>
     }
 
-    <!-- Sessions Table -->
     @if (Model.Any())
     {
         <div class="sessions-table">
             <table class="table table-hover mb-0">
                 <thead class="table-header">
                     <tr>
-                        <th style="width: 15%;">
-                            <i class="bi bi-qr-code me-1"></i>
-                            Mã phiên
-                        </th>
-                        <th style="width: 25%;">
-                            <i class="bi bi-mortarboard me-1"></i>
-                            Thông tin lớp
-                        </th>
-                        <th style="width: 20%;">
-                            <i class="bi bi-calendar-event me-1"></i>
-                            Lịch học
-                        </th>
-                        <th style="width: 15%;">
-                            <i class="bi bi-geo-alt me-1"></i>
-                            Phòng học
-                        </th>
-                        <th style="width: 15%;">
-                            <i class="bi bi-clock me-1"></i>
-                            Thời gian
-                        </th>
-                        <th style="width: 10%;" class="text-center">
-                            <i class="bi bi-gear me-1"></i>
-                            Thao tác
-                        </th>
+                        <th style="width: 15%;"><i class="bi bi-qr-code me-1"></i>Mã phiên</th>
+                        <th style="width: 25%;"><i class="bi bi-mortarboard me-1"></i>Thông tin lớp</th>
+                        <th style="width: 20%;"><i class="bi bi-calendar-event me-1"></i>Lịch học</th>
+                        <th style="width: 15%;"><i class="bi bi-geo-alt me-1"></i>Phòng học</th>
+                   @*      <th style="width: 15%;"><i class="bi bi-clock me-1"></i>Thời gian</th> *@
+                        <th style="width: 10%;" class="text-center"><i class="bi bi-gear me-1"></i>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td>
-                                <span class="session-code">@item.SessionCode</span>
-                            </td>
+                            <td><span class="session-code">@item.SessionCode</span></td>
                             <td>
                                 <div class="class-info">
                                     <div class="class-name">@item.ClassName</div>
-                                    <div class="subject-name">
-                                        <i class="bi bi-book me-1"></i>
-                                        @item.SubjectName
-                                    </div>
+                                    <div class="subject-name"><i class="bi bi-book me-1"></i>@item.SubjectName</div>
                                 </div>
                             </td>
                             <td>
@@ -281,26 +261,22 @@
                             </td>
                             <td>
                                 <span class="badge bg-secondary px-3 py-2">
-                                    <i class="bi bi-door-open me-1"></i>
-                                    @item.RoomCode
+                                    <i class="bi bi-door-open me-1"></i>@item.RoomCode
                                 </span>
                             </td>
-                            <td>
+                           @*  <td>
                                 @if (item.StartTime.HasValue && item.EndTime.HasValue)
                                 {
-                                    <span class="time-range">
-                                        @item.StartTime.Value.ToString("HH:mm") - @item.EndTime.Value.ToString("HH:mm")
-                                    </span>
+                                    <span class="time-range">@item.StartTime.Value.ToString("HH:mm") - @item.EndTime.Value.ToString("HH:mm")</span>
                                 }
                                 else
                                 {
                                     <span class="text-muted">--</span>
                                 }
-                            </td>
+                            </td> *@
                             <td class="text-center">
                                 <a asp-action="Detail" asp-route-id="@item.AttendanceId" class="btn btn-detail">
-                                    <i class="bi bi-eye me-1"></i>
-                                    Chi tiết
+                                    <i class="bi bi-eye me-1"></i> Chi tiết
                                 </a>
                             </td>
                         </tr>
@@ -316,8 +292,7 @@
             <h4>Không có phiên điểm danh nào</h4>
             <p class="mb-4">Hiện tại chưa có phiên điểm danh nào được tạo hoặc không tìm thấy kết quả phù hợp với bộ lọc.</p>
             <a asp-action="Create" class="btn btn-create-new">
-                <i class="bi bi-plus-circle me-2"></i>
-                Tạo phiên điểm danh đầu tiên
+                <i class="bi bi-plus-circle me-2"></i>Tạo phiên điểm danh đầu tiên
             </a>
         </div>
     }
@@ -326,37 +301,27 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Enhance table interactions
+            // Hover row
             $('.table tbody tr').hover(
-                function () {
-                    $(this).addClass('table-active');
-                },
-                function () {
-                    $(this).removeClass('table-active');
-                }
+                function () { $(this).addClass('table-active'); },
+                function () { $(this).removeClass('table-active'); }
             );
 
-            // Add loading state to search button
+            // Loading state
             $('.filter-form').on('submit', function () {
                 const submitBtn = $(this).find('button[type="submit"]');
-                const originalText = submitBtn.html();
+                const originalHtml = submitBtn.html();
 
                 submitBtn.prop('disabled', true).html(`
-                            <div class="spinner-border spinner-border-sm me-2" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            Đang tìm...
-                        `);
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div> Đang tìm...
+                `);
 
-                // Re-enable after 3 seconds (fallback)
                 setTimeout(() => {
-                    submitBtn.prop('disabled', false).html(originalText);
+                    submitBtn.prop('disabled', false).html(originalHtml);
                 }, 3000);
             });
         });
     </script>
-    <partial name="_ValidationScriptsPartial" />
-    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
-
 }

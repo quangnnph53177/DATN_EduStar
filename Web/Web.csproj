@@ -7,12 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Views\Scheduless\CreateQuickSession.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="Views\Attendance\Create.cshtml" />
     <None Include="Views\Attendance\Detail.cshtml" />
     <None Include="Views\Attendance\History.cshtml" />
     <None Include="Views\Attendance\IndexSession.cshtml" />
     <None Include="Views\Scheduless\AssignStudent.cshtml" />
     <None Include="Views\Scheduless\Create.cshtml" />
+    <None Include="Views\Scheduless\CreateQuickSession.cshtml" />
     <None Include="Views\Scheduless\Details.cshtml" />
     <None Include="Views\Scheduless\Edit.cshtml" />
     <None Include="Views\Scheduless\Index.cshtml" />
@@ -49,6 +54,14 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\uploads\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Views\Scheduless\CreateQuickSession.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Views\Scheduless\CreateQuickSession.cshtml" />
   </ItemGroup>
 
 </Project>

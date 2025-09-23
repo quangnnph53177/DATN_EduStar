@@ -1,5 +1,6 @@
 ﻿using API.Data;
 using API.Services;
+using API.Services.Repositories;
 using API.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -11,18 +12,17 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Yêu cầu đăng nhập
+    [Authorize] 
     public class TeacherAttendanceController : ControllerBase
     {
        
         private readonly IAttendance _attendanceService;
         private readonly AduDbcontext _context;
-        public TeacherAttendanceController(IAttendance attendanceService)
+        public TeacherAttendanceController(IAttendance attendanceService, AduDbcontext context)
         {
+            _context = context;
             _attendanceService = attendanceService;
         }
-
-        // Lấy danh sách các lớp giảng viên dạy
         [HttpGet("my-classes")]
         public async Task<IActionResult> GetMyClasses()
         {
@@ -41,32 +41,53 @@ namespace API.Controllers
             }
         }
 
-        // Tạo phiên điểm danh cho lớp của giảng viên
-        [HttpPost("create-session")]
-        public async Task<IActionResult> CreateSessionForMyClass([FromBody] CreateAttendanceViewModel model)
+
+        // Trong AttendanceController hoặc SchedulesController
+        [HttpPost("CreateQuickSession")]
+        public async Task<IActionResult> CreateQuickSession([FromBody] CreateQuickSessionDto dto)
         {
             try
             {
-                var teacherIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (!Guid.TryParse(teacherIdString, out var teacherId))
-                    return Unauthorized("Không xác định được giảng viên");
+                var userId = User.GetUserId();
 
-                // Kiểm tra lớp có thuộc về giảng viên này không
-                var schedule = await _context.Schedules
-                    .FirstOrDefaultAsync(s => s.Id == model.SchedulesId && s.UsersId == teacherId);
+                // Tạo model cho CreateSession
+                var model = new CreateAttendanceViewModel
+                {
+                    SchedulesId = dto.ScheduleId,
+                    SessionCode = dto.SessionCode ?? GenerateSessionCode(),
+                    Starttime = DateTime.Now,
+                    Endtime = DateTime.Now.AddMinutes(30) // Hoặc thời gian kết thúc phù hợp
+                };
 
-                if (schedule == null)
-                    return BadRequest("Bạn không có quyền tạo phiên cho lớp này");
-
-                // Sử dụng lại method CreateSession đã có
+                // Gọi method CreateSession từ AttendanceRepos
                 await _attendanceService.CreateSession(model);
 
-                return Ok(new { message = "Tạo phiên điểm danh thành công", data = model });
+                return Ok(new
+                {
+                    success = true,
+                    message = "Tạo phiên điểm danh thành công!",
+                    sessionCode = model.SessionCode
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
             }
+        }
+
+        private string GenerateSessionCode()
+        {
+            return DateTime.Now.ToString("yyyyMMddHHmm") + new Random().Next(1000, 9999);
+        }
+
+        public class CreateQuickSessionDto
+        {
+            public int ScheduleId { get; set; }
+            public string? SessionCode { get; set; }
         }
 
         // Xem chi tiết phiên điểm danh của lớp mình

@@ -176,10 +176,10 @@ namespace API.Controllers
                 var success = await _services.AssignStudentToClassAsync(request);
                 if (success)
                 {
-                    return Ok(new { success = true, message = "Gán sinh viên vào lớp thành công." });
+                    return Ok(new { success = true, message = "Gán học viên vào lớp thành công." });
                 }
 
-                return Conflict("Một số sinh viên đã được gán hoặc lớp/sinh viên không tồn tại.");
+                return Conflict("Một số học viên đã được gán hoặc lớp/học viên không tồn tại.");
             }
             catch (Exception ex)
             {

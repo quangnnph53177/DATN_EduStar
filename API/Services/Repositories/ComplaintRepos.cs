@@ -179,9 +179,12 @@ namespace API.Services.Repositories
                     .FirstOrDefault(ss => ss.SchedulesId == newClassId);
                 if (existingScheduleStudent == null)
                 {
+                    var studentsUserId = studentInfo.ScheduleStudents.FirstOrDefault()?.StudentsUserId
+                      ?? studentInfo.UserId;
+
                     var newScheduleStudent = new ScheduleStudentsInfor
                     {
-                        StudentsUserId = studentInfo.ScheduleStudents.FirstOrDefault().StudentsUserId, // hoặc thuộc tính ID tương ứng
+                        StudentsUserId = studentsUserId,
                         SchedulesId = newClassId.Value
                     };
                     studentInfo.ScheduleStudents.Add(newScheduleStudent);

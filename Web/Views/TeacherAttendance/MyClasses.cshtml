@@ -1,4 +1,4 @@
-﻿
+﻿@using API.ViewModel
 @model List<TeacherClassViewModel>
 @{
     ViewData["Title"] = "Quản lý lớp học - Giảng viên";
@@ -45,7 +45,7 @@
                                         <th><i class="fas fa-clock me-1"></i>Ca học</th>
                                         @* <th><i class="fas fa-calendar me-1"></i>Thứ trong tuần</th> *@
                                         <th><i class="fas fa-door-open me-1"></i>Phòng</th>
-                                       @*  <th><i class="fas fa-info-circle me-1"></i>Trạng thái</th> *@
+                                        <th><i class="fas fa-info-circle me-1"></i>Trạng thái</th>
                                         <th width="200"><i class="fas fa-cogs me-1"></i>Hành động</th>
                                     </tr>
                                 </thead>
@@ -71,7 +71,7 @@
                                             <td>
                                                 <strong>@classItem.RoomCode</strong>
                                             </td>
-                                          @*   <td>
+                                            <td>
                                                 @if (classItem.HasActiveSession)
                                                 {
                                                     <span class="badge bg-success">
@@ -90,7 +90,7 @@
                                                         <i class="fas fa-times-circle me-1"></i>Không thể tạo
                                                     </span>
                                                 }
-                                            </td> *@
+                                            </td>
                                             <td>
                                                 @if (classItem.CanCreateSession)
                                                 {

@@ -397,6 +397,7 @@ namespace API.Services.Repositories
             return $"/images/avatars/{uniqueName}";
         }
 
+        // Sửa method UpdatebyBoss trong StudentsRepos
         public async Task UpdatebyBoss(StudentViewModels model)
         {
             await Validate(model, isupdate: true);
@@ -405,81 +406,87 @@ namespace API.Services.Repositories
                  .Include(r => r.Roles)
                  .Include(p => p.StudentsInfor)
                  .ThenInclude(c => c.ScheduleStudents).Include(c => c.Schedules)
-
                 .ThenInclude(s => s.Subject)
                 .ThenInclude(S => S.Classes).ThenInclude(r => r.Room)
                 .ThenInclude(S => S.Schedules).ThenInclude(r => r.StudyShift)
                 .ThenInclude(S => S.Schedules).ThenInclude(s => s.ScheduleDays).ThenInclude(r => r.DayOfWeekk)
                  .FirstOrDefaultAsync(d => d.Id == model.id);
-            var olddataClass = inforvs.Schedules.Select(u => new ClassViewModel
+
+            if (inforvs == null)
+                throw new Exception("Không tìm thấy người dùng.");
+
+            // Đảm bảo UserProfile tồn tại
+            if (inforvs.UserProfile == null)
+            {
+                inforvs.UserProfile = new UserProfile { UserId = inforvs.Id };
+            }
+
+            var olddataClass = inforvs.Schedules?.Select(u => new ClassViewModel
             {
                 ClassName = u.ClassName,
-                SubjectName = u.Subject.SubjectName,
-               
-                RoomCode = u.Room.RoomCode,
-                StudyShiftName = u.StudyShift.StudyShiftName,
-                starttime = u.StudyShift.StartTime,
+                SubjectName = u.Subject?.SubjectName,
+                RoomCode = u.Room?.RoomCode,
+                StudyShiftName = u.StudyShift?.StudyShiftName,
+                starttime = u.StudyShift?.StartTime,
                 endtime = u.StudyShift?.EndTime,
-                WeekDay = u.ScheduleDays.FirstOrDefault().DayOfWeekk.Weekdays.ToString(),
-                TeacherName = u.User.UserProfile.FullName
-            }).ToList();
+                WeekDay = u.ScheduleDays?.FirstOrDefault()?.DayOfWeekk?.Weekdays.ToString(),
+                TeacherName = u.User?.UserProfile?.FullName
+            }).ToList() ?? new List<ClassViewModel>();
+
             var olddata = JsonConvert.SerializeObject(new
             {
                 inforvs.UserName,
                 inforvs.Email,
                 inforvs.PhoneNumber,
-                inforvs.UserProfile.FullName,
-                inforvs.UserProfile.Gender,
-                inforvs.UserProfile.Avatar,
-                inforvs.UserProfile.Address,
-                inforvs.UserProfile.Dob,
+                FullName = inforvs.UserProfile.FullName,
+                Gender = inforvs.UserProfile.Gender,
+                Avatar = inforvs.UserProfile.Avatar,
+                Address = inforvs.UserProfile.Address,
+                Dob = inforvs.UserProfile.Dob,
                 Classes = olddataClass
             });
+
+            // Cập nhật thông tin User
             inforvs.UserName = model.UserName;
-            //inforvs.User.PassWordHash = model.PassWordHash;
             inforvs.Email = model.Email;
             inforvs.PhoneNumber = model.PhoneNumber;
+
+            // Cập nhật thông tin UserProfile
             inforvs.UserProfile.FullName = model.FullName;
             inforvs.UserProfile.Gender = model.Gender;
             inforvs.UserProfile.Address = model.Address;
             inforvs.UserProfile.Avatar = model.Avatar;
             inforvs.UserProfile.Dob = model.Dob;
-            inforvs.Schedules.Select(u => new ClassViewModel
-            {
-                ClassName = u.ClassName,
-                SubjectName = u.Subject.SubjectName,
-                RoomCode = u.Room?.RoomCode,
-                StudyShiftName = u.StudyShift?.StudyShiftName,
-                starttime = u.StudyShift?.StartTime,
-                endtime = u.StudyShift?.EndTime,
-                WeekDay = u.ScheduleDays.FirstOrDefault().DayOfWeekk?.Weekdays.ToString(),
-                TeacherName = u.User?.UserProfile?.FullName
-            }).ToList();
+
             _context.Users.Update(inforvs);
-            var newataClass = inforvs.Schedules.Select(u => new ClassViewModel
+
+            var newataClass = inforvs.Schedules?.Select(u => new ClassViewModel
             {
                 ClassName = u.ClassName,
-                SubjectName = u.Subject.SubjectName,
+                SubjectName = u.Subject?.SubjectName,
                 RoomCode = u.Room?.RoomCode,
                 StudyShiftName = u.StudyShift?.StudyShiftName,
                 starttime = u.StudyShift?.StartTime,
                 endtime = u.StudyShift?.EndTime,
-                WeekDay = u.ScheduleDays.FirstOrDefault().DayOfWeekk?.Weekdays.ToString(),
+                WeekDay = u.ScheduleDays?.FirstOrDefault()?.DayOfWeekk?.Weekdays.ToString(),
                 TeacherName = u.User?.UserProfile?.FullName
-            }).ToList();
+            }).ToList() ?? new List<ClassViewModel>();
+
             var newData = JsonConvert.SerializeObject(new
             {
                 inforvs.UserName,
                 inforvs.Email,
                 inforvs.PhoneNumber,
-                inforvs.UserProfile.FullName,
-                inforvs.UserProfile.Gender,
-                inforvs.UserProfile.Avatar,
-                inforvs.UserProfile.Address,
-                inforvs.UserProfile.Dob,
-                Classes = olddataClass
+                FullName = inforvs.UserProfile.FullName,
+                Gender = inforvs.UserProfile.Gender,
+                Avatar = inforvs.UserProfile.Avatar,
+                Address = inforvs.UserProfile.Address,
+                Dob = inforvs.UserProfile.Dob,
+                Classes = newataClass
             });
+
             await _context.SaveChangesAsync();
+
             var currentUserId = GetCurrentUserId();
             Guid? performeBy = currentUserId != Guid.Empty ? currentUserId : null;
             var audit = new Auditlog
@@ -488,7 +495,7 @@ namespace API.Services.Repositories
                 PerformeBy = performeBy,
                 NewData = newData,
                 OldData = olddata,
-                Active = "UpdateSVByBoss",
+                Active = "UpdateProfile", // Đổi tên cho rõ ràng
                 Timestamp = DateTime.Now,
             };
             _context.Auditlogs.Add(audit);

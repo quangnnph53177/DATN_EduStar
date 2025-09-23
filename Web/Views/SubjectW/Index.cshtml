@@ -25,12 +25,12 @@
             <form method="get" asp-action="Index" class="row gy-2 gx-3 align-items-end mb-4">
                 <div class="col-md-4">
                     <label class="form-label">Tên môn học</label>
-                    <input type="text" name="subjectName" class="form-control" placeholder="Ví dụ: Cơ sở dữ liệu"
+                    <input type="text" name="subjectName" class="form-control"
                            value="@ViewContext.HttpContext.Request.Query["subjectName"]" />
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Mã môn học</label>
-                    <input type="text" name="subcode" class="form-control" placeholder="VD: CS101"
+                    <input type="text" name="subcode" class="form-control" 
                            value="@ViewContext.HttpContext.Request.Query["subcode"]" />
                 </div>
             @*     <div class="col-md-2">

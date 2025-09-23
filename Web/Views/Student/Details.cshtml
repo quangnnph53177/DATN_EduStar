@@ -1,122 +1,496 @@
 ﻿@model API.ViewModel.StudentViewModels
-
 @{
     ViewData["Title"] = "Chi tiết sinh viên";
 }
 
-<h1>Chi tiết sinh viên</h1>
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-1">
+                <i class="bi bi-person-lines-fill me-2"></i>
+                Chi tiết sinh viên
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="#">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Index">Sinh viên</a></li>
+                    <li class="breadcrumb-item active">Chi tiết</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <button onclick="window.print()" class="btn btn-outline-secondary">
+                <i class="bi bi-printer me-1"></i>
+                In trang
+            </button>
+        </div>
+    </div>
 
-<div>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">Tên đăng nhập</dt>
-        <dd class="col-sm-10">@Model.UserName</dd>
+    <div class="row">
+        <!-- Left Column - Main Info -->
+        <div class="col-lg-8">
+            <!-- Basic Information Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Thông tin cơ bản
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="text-muted small mb-1">
+                                    <i class="bi bi-person-badge me-1"></i>Mã sinh viên
+                                </label>
+                                <div class="fw-bold">
+                                    <code class="text-primary fs-5">@Model.StudentCode</code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="text-muted small mb-1">
+                                    <i class="bi bi-person me-1"></i>Họ và tên
+                                </label>
+                                <div class="fw-bold text-uppercase">@Model.FullName</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="text-muted small mb-1">
+                                    <i class="bi bi-at me-1"></i>Tên đăng nhập
+                                </label>
+                                <div class="fw-semibold">@Model.UserName</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="text-muted small mb-1">
+                                    <i class="bi bi-envelope me-1"></i>Email
+                                </label>
+                                <div>
+                                    <a href="mailto:@Model.Email" class="text-decoration-none">
+                                        @Model.Email
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="text-muted small mb-1">
+                                    <i class="bi bi-telephone me-1"></i>Số điện thoại
+                                </label>
+                                <div>
+                                    @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                                    {
+                                        <a href="tel:@Model.PhoneNumber" class="text-decoration-none">
+                                            @Model.PhoneNumber
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic">Chưa cập nhật</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="text-muted small mb-1">
+                                    <i class="bi bi-shield-check me-1"></i>Trạng thái
+                                </label>
+                                <div>
+                                    @if (Model.Status == true)
+                                    {
+                                        <span class="badge bg-success px-3 py-2">
+                                            <i class="bi bi-check-circle-fill me-1"></i>
+                                            Đang hoạt động
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger px-3 py-2">
+                                            <i class="bi bi-x-circle-fill me-1"></i>
+                                            Đã khóa
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <dt class="col-sm-2">Mã sinh viên</dt>
-        <dd class="col-sm-10">@Model.StudentCode</dd>
+            <!-- Personal Information Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-vcard me-2"></i>
+                        Thông tin cá nhân
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <label class="text-muted small mb-1">
+                                    <i class="bi bi-gender-ambiguous me-1"></i>Giới tính
+                                </label>
+                                <div>
+                                    @if (Model.Gender.HasValue)
+                                    {
+                                        if (Model.Gender.Value)
+                                        {
+                                            <span class="badge bg-primary px-3 py-2">
+                                                <i class="bi bi-gender-male me-1"></i>Nam
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-pink px-3 py-2">
+                                                <i class="bi bi-gender-female me-1"></i>Nữ
+                                            </span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic">Chưa cập nhật</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <label class="text-muted small mb-1">
+                                    <i class="bi bi-calendar-heart me-1"></i>Ngày sinh
+                                </label>
+                                <div>
+                                    @if (Model.Dob.HasValue)
+                                    {
+                                        <span>@Model.Dob.Value.ToString("dd/MM/yyyy")</span>
+                                        <span class="text-muted small ms-2">
+                                            (@((DateTime.Now.Year - Model.Dob.Value.Year)) tuổi)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic">Chưa cập nhật</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <label class="text-muted small mb-1">
+                                    <i class="bi bi-person-workspace me-1"></i>Vai trò
+                                </label>
+                                <div>
+                                    @if (Model.RoleId == 1)
+                                    {
+                                        <span class="badge bg-danger px-3 py-2">
+                                            <i class="bi bi-star-fill me-1"></i>Admin
+                                        </span>
+                                    }
+                                    else if (Model.RoleId == 2)
+                                    {
+                                        <span class="badge bg-warning px-3 py-2">
+                                            <i class="bi bi-mortarboard-fill me-1"></i>Giảng viên
+                                        </span>
+                                    }
+                                    else if (Model.RoleId == 3)
+                                    {
+                                        <span class="badge bg-info px-3 py-2">
+                                            <i class="bi bi-backpack-fill me-1"></i>Sinh viên
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="info-item">
+                                <label class="text-muted small mb-1">
+                                    <i class="bi bi-geo-alt me-1"></i>Địa chỉ
+                                </label>
+                                <div>
+                                    @if (!string.IsNullOrEmpty(Model.Address))
+                                    {
+                                        <address class="mb-0">@Model.Address</address>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic">Chưa cập nhật</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <dt class="col-sm-2">Email</dt>
-        <dd class="col-sm-10">@Model.Email</dd>
-
-        <dt class="col-sm-2">Số điện thoại</dt>
-        <dd class="col-sm-10">@Model.PhoneNumber</dd>
-
-        <dt class="col-sm-2">Họ tên</dt>
-        <dd class="col-sm-10">@Model.FullName</dd>
-
-        <dt class="col-sm-2">Giới tính</dt>
-        <dd class="col-sm-10">
-            @(Model.Gender.HasValue ? (Model.Gender.Value ? "Nam" : "Nữ") : "Không rõ")
-        </dd>
-
-        <dt class="col-sm-2">Ngày sinh</dt>
-        <dd class="col-sm-10">
-            @(Model.Dob.HasValue ? Model.Dob.Value.ToString("dd/MM/yyyy") : "Chưa cập nhật")
-        </dd>
-
-        <dt class="col-sm-2">Địa chỉ</dt>
-        <dd class="col-sm-10">@Model.Address</dd>
-
-        <dt class="col-sm-2">Avatar</dt>
-        <dd class="col-sm-10">
-            @if (!string.IsNullOrEmpty(Model.Avatar))
+            <!-- Classes Information (if student) -->
+            @if (Model.RoleId == 3 && Model.CVMs != null && Model.CVMs.Any())
             {
-                <img src="@Model.Avatar" alt="Avatar" width="100" height="100" />
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-journal-bookmark me-2"></i>
+                            Danh sách lớp học (@Model.CVMs.Count() lớp)
+                        </h5>
+                        <span class="badge bg-primary">
+                            Tổng: @Model.CVMs.Sum(x => x.NumberOfCredits) tín chỉ
+                        </span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-center" style="width: 50px;">#</th>
+                                        <th>Lớp học</th>
+                                        <th>Môn học</th>
+                                        <th class="text-center">Tín chỉ</th>
+                                        <th>Thời gian</th>
+                                        <th>Phòng</th>
+                                        <th>Giảng viên</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int index = 1;
+                                        foreach (var item in Model.CVMs)
+                                        {
+                                            <tr>
+                                                <td class="text-center text-muted">@index</td>
+                                                <td>
+                                                    <div class="fw-semibold">@item.ClassName</div>
+                                                    <small class="text-muted">
+                                                        @item.WeekDay.ToString()
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <div>@item.SubjectName</div>
+                                                   
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-primary">@item.NumberOfCredits</span>
+                                                </td>
+                                                <td>
+                                                    <div class="small">
+                                                        <i class="bi bi-clock me-1"></i>
+                                                        @item.starttime - @item.endtime
+                                                    </div>
+                                                    <small class="text-muted">Ca: @item.StudyShiftName</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-door-open me-1"></i>@item.RoomCode
+                                                    </span>
+                                                </td>
+                                                <td>@item.TeacherName</td>
+                                            </tr>
+                                            index++;
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             }
-            else
-            {
-                <span>Không có</span>
-            }
-        </dd>
+        </div>
 
-        <dt class="col-sm-2">Trạng thái</dt>
-        <dd class="col-sm-10">
-            @(Model.Status == true ? "Đang hoạt động" : "Đã khóa")
-        </dd>
-        @if (Model.RoleId == 3)
-        {
-            <dt class="col-sm-2">Danh sách lớp</dt>
-            <dd class="col-sm-10">
-                @if (Model.CVMs != null && Model.CVMs.Any())
-                {
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Tên lớp</th>
-                                <th>Môn học</th>
-                                <th>Tín chỉ</th>
-                                <th>Ca</th>
-                                <th>Phòng</th>
-                                <th>Bắt đầu</th>
-                                <th>Kết thúc</th>
-                                <th>Ngày học</th>
-                                <th>Giảng viên</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model.CVMs)
-                            {
-                                <tr>
-                                    <td>@item.ClassName</td>
-                                    <td>@item.SubjectName</td>
-                                    <td>@item.NumberOfCredits</td>
-                                    <td>@item.StudyShiftName</td>
-                                    <td>@item.RoomCode</td>
-                                    <td>@item.starttime</td>
-                                    <td>@item.endtime</td>
-                                    <td>@item.WeekDay.ToString()</td>
-                                    <td>@item.TeacherName</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
-               
-            </dd>
-        }
-       
-    </dl>
+        <!-- Right Column - Sidebar -->
+        <div class="col-lg-4">
+            <!-- Avatar Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <div class="position-relative d-inline-block mb-3">
+                        @if (!string.IsNullOrEmpty(Model.Avatar))
+                        {
+                            <img src="@Url.Content(Model.Avatar.StartsWith("/") ? Model.Avatar : "/" + Model.Avatar)"
+                                 alt="Avatar của @Model.FullName"
+                                 class="rounded-circle shadow"
+                                 style="width: 180px; height: 180px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center shadow"
+                                 style="width: 180px; height: 180px;">
+                                <i class="bi bi-person display-1 text-muted"></i>
+                            </div>
+                        }
+                        @if (Model.Status == true)
+                        {
+                            <span class="position-absolute bottom-0 end-0 p-2 bg-success border border-white rounded-circle">
+                                <i class="bi bi-circle-fill text-white"></i>
+                            </span>
+                        }
+                    </div>
+                    <h4 class="mb-1">@Model.FullName</h4>
+                    <p class="text-muted mb-3">
+                        <i class="bi bi-at me-1"></i>@Model.UserName
+                    </p>
+
+                   
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-lightning me-2"></i>
+                        Thao tác nhanh
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                       
+                            <a asp-action="EditBoss" asp-route-id="@Model.id" class="btn btn-primary">
+                                <i class="bi bi-pencil-square me-1"></i>
+                                Chỉnh sửa thông tin
+                            </a>
+
+                        <a asp-controller="Student" asp-action="ChangeRole" asp-route-username="@Model.UserName"
+                           class="btn btn-warning">
+                            <i class="bi bi-arrow-repeat me-1"></i>
+                            Đổi vai trò
+                        </a>
+
+                        @if (Model.Status == true)
+                        {
+                            <form asp-action="Lock" asp-route-id="@Model.id" method="post" class="d-grid">
+                                <button type="submit" class="btn btn-danger"
+                                        onclick="return confirm('Bạn có chắc muốn khóa tài khoản này?')">
+                                    <i class="bi bi-lock me-1"></i>
+                                    Khóa tài khoản
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form asp-action="Lock" asp-route-id="@Model.id" method="post" class="d-grid">
+                                <button type="submit" class="btn btn-success"
+                                        onclick="return confirm('Bạn có chắc muốn mở khóa tài khoản này?')">
+                                    <i class="bi bi-unlock me-1"></i>
+                                    Mở khóa tài khoản
+                                </button>
+                            </form>
+                        }
+
+                        <hr class="my-2">
+
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Quay lại danh sách
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-@if (Model.RoleId == 1)
-{
-    <div class="mb-3">
-        <form asp-action="Lock" asp-controller="Student" asp-route-id="@Model.id" method="post" style="display:inline;">
-            <button type="submit" class="btn btn-sm @(Model.Status == true ? "btn-danger" : "btn-success")">
-                @(Model.Status == true ? "Khóa tài khoản" : "Mở khóa")
-            </button>
-        </form>
-    </div>
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
 
-    <div>
-        @Html.ActionLink("Chỉnh sửa", "EditBoss", new { id = Model.id }, new { @class = "btn btn-warning" }) |
-        <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
-    </div>
-}
-else if (Model.RoleId == 3)
-{
-    <div>
-        @Html.ActionLink("Chỉnh sửa", "EditBeast", new { id = Model.id }, new { @class = "btn btn-warning" }) |
-        <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
-    </div>
+    .bg-pink {
+        background-color: #e91e63;
+    }
+
+    .text-pink {
+        color: #e91e63;
+    }
+
+    .bg-pink-soft {
+        background-color: rgba(233, 30, 99, 0.1);
+    }
+
+    .bg-primary-soft {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+
+    .bg-success-soft {
+        background-color: rgba(25, 135, 84, 0.1);
+    }
+
+    .text-success {
+        color: #198754 !important;
+    }
+
+    .info-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+    .avatar-sm {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+
+    .card {
+        border: none;
+        transition: transform 0.2s;
+    }
+
+    .card-header {
+        border-bottom: 2px solid #e9ecef;
+        font-weight: 500;
+    }
+
+    .badge {
+        font-weight: 500;
+    }
+
+    .btn {
+        transition: all 0.2s;
+    }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+    .table th {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    @@media print {
+        .btn, .card-header, .breadcrumb {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .col-lg-4, button, a.btn {
+            display: none !important;
+        }
+
+        .col-lg-8 {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+        });
+    </script>
 }

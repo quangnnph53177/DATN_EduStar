@@ -1,0 +1,253 @@
+﻿@model API.ViewModel.CreateAttendanceViewModel
+
+<style>
+    .create-session-container {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin: 20px auto;
+        max-width: 600px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .session-header {
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        color: white;
+        padding: 20px 25px;
+        margin: -30px -30px 30px -30px;
+        border-radius: 12px 12px 0 0;
+        text-align: center;
+    }
+
+        .session-header i {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .session-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #27ae60;
+            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+        }
+
+    .readonly-field {
+        background-color: #f8f9fa;
+        color: #6c757d;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        color: white;
+    }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .schedule-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-left: 4px solid #27ae60;
+    }
+
+        .schedule-info h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .info-value {
+        color: #6c757d;
+    }
+
+    .session-code-info {
+        background: #e8f5e8;
+        border: 1px solid #c3e6c3;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #155724;
+    }
+</style>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+@{
+    ViewData["Title"] = "Tạo phiên điểm danh";
+}
+
+<div class="create-session-container">
+    <div class="session-header">
+        <i class="fas fa-plus-circle"></i>
+        <h2>Tạo phiên điểm danh</h2>
+    </div>
+
+    @if (ViewBag.Schedule != null)
+    {
+        <div class="schedule-info">
+            <h4><i class="fas fa-info-circle"></i> Thông tin lịch dạy</h4>
+            <div class="info-row">
+                <span class="info-label">Môn học:</span>
+                <span class="info-value">@ViewBag.Schedule.SubjectName</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Lớp:</span>
+                <span class="info-value">@ViewBag.Schedule.ClassName</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Ngày dạy:</span>
+                <span class="info-value">@ViewBag.Schedule.startdate?.ToString("dd/MM/yyyy")</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Ca dạy:</span>
+                <span class="info-value">@ViewBag.Schedule.StudyShift</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phòng:</span>
+                <span class="info-value">@ViewBag.Schedule.RoomCode</span>
+            </div>
+        </div>
+    }
+
+    <form asp-action="CreateSession" method="post">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="ScheduleId" />
+
+        <div class="form-group">
+            <label asp-for="SessionCode" class="form-label">
+                <i class="fas fa-key"></i> Mã phiên điểm danh
+            </label>
+            <input asp-for="SessionCode" class="form-control" placeholder="Nhập mã phiên hoặc để trống để tự động tạo" />
+            <div class="session-code-info">
+                <i class="fas fa-lightbulb"></i>
+                Mã phiên sẽ được tự động tạo nếu bạn để trống.
+                Sinh viên sẽ sử dụng mã này để điểm danh.
+            </div>
+            <span asp-validation-for="SessionCode" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="StartTime" class="form-label">
+                <i class="fas fa-clock"></i> Thời gian bắt đầu
+            </label>
+            <input asp-for="StartTime" type="datetime-local" class="form-control" />
+            <span asp-validation-for="StartTime" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="EndTime" class="form-label">
+                <i class="fas fa-clock"></i> Thời gian kết thúc
+            </label>
+            <input asp-for="EndTime" type="datetime-local" class="form-control" />
+            <span asp-validation-for="EndTime" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Note" class="form-label">
+                <i class="fas fa-sticky-note"></i> Ghi chú (tùy chọn)
+            </label>
+            <textarea asp-for="Note" class="form-control" rows="3" placeholder="Nhập ghi chú cho phiên điểm danh này..."></textarea>
+            <span asp-validation-for="Note" class="text-danger"></span>
+        </div>
+
+        <div class="action-buttons">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Tạo phiên điểm danh
+            </button>
+            <a href="@Url.Action("ByTeacher")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Tự động set thời gian hiện tại
+    document.addEventListener('DOMContentLoaded', function () {
+        const now = new Date();
+        const nowString = now.toISOString().slice(0, 16);
+
+        const startTimeInput = document.querySelector('input[name="StartTime"]');
+        const endTimeInput = document.querySelector('input[name="EndTime"]');
+
+        if (startTimeInput && !startTimeInput.value) {
+            startTimeInput.value = nowString;
+        }
+
+        if (endTimeInput && !endTimeInput.value) {
+            const endTime = new Date(now.getTime() + 2 * 60 * 60 * 1000); // +2 giờ
+            endTimeInput.value = endTime.toISOString().slice(0, 16);
+        }
+    });
+</script>
+   

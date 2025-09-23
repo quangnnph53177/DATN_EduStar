@@ -4,137 +4,555 @@
     ViewData["Title"] = "Tải lên tệp Excel";
 }
 
-<div class="container mt-5">
-    <div class="card shadow-sm rounded-4">
-        <div class="card-body">
-            <h2 class="text-primary text-center mb-4">@ViewData["Title"]</h2>
+<style>
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
 
+    .loading-content {
+        background: white;
+        padding: 40px;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        max-width: 350px;
+        width: 90%;
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        font-size: 18px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .loading-subtext {
+        font-size: 14px;
+        color: #6b7280;
+    }
+
+    .upload-section {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 30px;
+        border: 2px dashed #cbd5e1;
+        transition: all 0.3s ease;
+    }
+
+    .upload-section:hover {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    }
+
+    .upload-section.dragover {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    }
+
+    .upload-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .upload-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .upload-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+    }
+
+    .upload-body {
+        padding: 40px;
+    }
+
+    .file-input-wrapper {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .file-input {
+        width: 100%;
+        padding: 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+    }
+
+    .file-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .upload-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .upload-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .upload-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .preview-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+
+    .preview-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #059669;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        background: #f8fafc;
+        padding: 12px 8px;
+        font-weight: 600;
+        font-size: 13px;
+        color: #374151;
+        border: 1px solid #e5e7eb;
+        text-align: center;
+    }
+
+    .data-table td {
+        padding: 8px;
+        border: 1px solid #e5e7eb;
+        text-align: center;
+    }
+
+    .data-table input {
+        width: 100%;
+        padding: 6px 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .data-table input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
+        gap: 15px;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-success {
+        background: #059669;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #047857;
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-outline-secondary {
+        background: transparent;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #f3f4f6;
+        color: #6b7280;
+        text-decoration: none;
+    }
+
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: none;
+    }
+
+    .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border-left: 4px solid #059669;
+    }
+
+    .alert-danger {
+        background: #fee2e2;
+        color: #991b1b;
+        border-left: 4px solid #dc2626;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6b7280;
+    }
+
+    .checkbox-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    #checkAll {
+        transform: scale(1.2);
+        accent-color: #667eea;
+    }
+
+    input[type="checkbox"][name="selectedIndexes"] {
+        transform: scale(1.1);
+        accent-color: #667eea;
+    }
+
+    @@media (max-width: 768px) {
+        .upload-body {
+            padding: 20px;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .data-table {
+            font-size: 12px;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 6px 4px;
+        }
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="upload-card">
+        <div class="upload-header">
+            <h2><i class="fas fa-file-excel me-2"></i>@ViewData["Title"]</h2>
+        </div>
+        
+        <div class="upload-body">
             <!-- Hiển thị thông báo -->
             @if (TempData["SuccessMessage"] != null)
             {
-                <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                </div>
             }
             @if (TempData["ErrorMessage"] != null)
             {
-                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                </div>
             }
 
             <!-- Form upload file Excel -->
-            <form asp-action="Upload" method="post" enctype="multipart/form-data" class="mb-4">
-                <div class="row align-items-end">
-                    <div class="col-md-8">
-                        <label class="form-label">Chọn tệp Excel:</label>
-                        <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required />
+            <div class="upload-section">
+                <form asp-action="Upload" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <div class="row align-items-end">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-file-upload me-2"></i>Chọn tệp Excel:
+                            </label>
+                            <input type="file" name="file" class="file-input" accept=".xlsx,.xls" required id="fileInput" />
+                            <small class="text-muted d-block mt-1">Hỗ trợ file .xlsx, .xls</small>
+                        </div>
+                        <div class="col-md-4 mt-3 mt-md-0">
+                            <button type="submit" class="upload-btn" id="uploadBtn">
+                                <i class="fas fa-eye me-2"></i>
+                                <span id="btnText">Xem trước danh sách</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-eye-fill"></i> Xem trước danh sách
-                        </button>
+                </form>
+            </div>
+
+            @if (Model != null && Model.Any())
+            {
+                <!-- Preview Section -->
+                <div class="preview-section">
+                    <div class="preview-header">
+                        <i class="fas fa-list-ul"></i>
+                        Dữ liệu xem trước (@Model.Count bản ghi)
                     </div>
+
+                    <form asp-action="CreateFromPreview" method="post" id="createForm">
+                        <div class="table-container">
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Họ tên</th>
+                                            <th>Tên đăng nhập</th>
+                                            <th>Email</th>
+                                            <th>Mật khẩu</th>
+                                            <th>SĐT</th>
+                                            <th>Ngày sinh</th>
+                                            <th>Giới tính</th>
+                                            <th>Địa chỉ</th>
+                                            <th>Vai trò</th>
+                                            <th class="checkbox-header">
+                                                <span>✔ Tạo?</span>
+                                                <input type="checkbox" id="checkAll" />
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (int i = 0; i < Model.Count; i++)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <input type="text" name="users[@i].FullName" value="@Model[i].FullName" class="form-control form-control-sm" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="users[@i].UserName" value="@Model[i].UserName" class="form-control form-control-sm" />
+                                                </td>
+                                                <td>
+                                                    <input type="email" name="users[@i].Email" value="@Model[i].Email" class="form-control form-control-sm" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="users[@i].PassWord" value="@Model[i].Password" class="form-control form-control-sm" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="users[@i].PhoneNumber" value="@Model[i].PhoneNumber" class="form-control form-control-sm" />
+                                                </td>
+                                                <td>
+                                                    <input type="date" name="users[@i].Dob" value="@Model[i].Dob?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="users[@i].Gender" value="@(Model[i].Gender?.ToString())" class="form-control form-control-sm" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="users[@i].Address" value="@Model[i].Address" class="form-control form-control-sm" />
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info">Student</span>
+                                                    <input type="hidden" name="users[@i].RoleIds[0]" value="3" />
+                                                </td>
+                                                <td>
+                                                    <input type="checkbox" name="selectedIndexes" value="@i" />
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button type="submit" class="btn btn-success" id="createBtn">
+                                <i class="fas fa-user-plus me-2"></i>
+                                <span id="createBtnText">Tạo tài khoản</span>
+                            </button>
+
+                            <a asp-controller="Student" asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Quay lại
+                            </a>
+                        </div>
+                    </form>
                 </div>
-            </form>
-
-            <hr />
-
-            <!-- Hiển thị bảng duy nhất -->
-            <form asp-action="CreateFromPreview" method="post">
-                <h4 class="text-success mb-3">📋 Dữ liệu xem trước</h4>
-
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle text-center">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Họ tên</th>
-                                <th>Tên đăng nhập</th>
-                                <th>Email</th>
-                                <th>Mật khẩu</th>
-                                <th>SĐT</th>
-                                <th>Ngày sinh</th>
-                                <th>Giới tính</th>
-                                <th>Địa chỉ</th>
-                                <th>Vai trò</th>
-                                <th>
-                                    ✔ Tạo?
-                                    <br />
-                                    <input type="checkbox" id="checkAll" />
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model != null && Model.Any())
-                            {
-                                @for (int i = 0; i < Model.Count; i++)
-                                {
-                                    <tr>
-                                        <td>
-                                            <input type="text" name="users[@i].FullName" value="@Model[i].FullName" class="form-control" />
-                                        </td>
-                                        <td>
-                                            <input type="text" name="users[@i].UserName" value="@Model[i].UserName" class="form-control" />
-                                        </td>
-                                        <td>
-                                            <input type="email" name="users[@i].Email" value="@Model[i].Email" class="form-control" />
-                                        </td>
-                                        <td>
-                                            <input type="text" name="users[@i].PassWord" value="@Model[i].Password" class="form-control" />
-                                        </td>
-                                        <td>
-                                            <input type="text" name="users[@i].PhoneNumber" value="@Model[i].PhoneNumber" class="form-control" />
-                                        </td>
-                                        <td>
-                                            <input type="date" name="users[@i].Dob" value="@Model[i].Dob?.ToString("yyyy-MM-dd")" class="form-control" />
-                                        </td>
-                                        <td>
-                                            <input type="text" name="users[@i].Gender" value="@(Model[i].Gender?.ToString())" class="form-control" />
-                                        </td>
-                                        <td>
-                                            <input type="text" name="users[@i].Address" value="@Model[i].Address" class="form-control" />
-                                        </td>
-                                        <td>
-                                            <input type="hidden" name="users[@i].RoleIds[0]" value="3" />
-                                        </td>
-                                        <td>
-                                            <input type="checkbox" name="selectedIndexes" value="@i" />
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="9" class="text-muted">Chưa có dữ liệu. Vui lòng tải lên file Excel.</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-file-excel" style="font-size: 48px; color: #cbd5e1; margin-bottom: 15px;"></i>
+                    <p>Chưa có dữ liệu. Vui lòng tải lên file Excel để xem trước.</p>
                 </div>
-
-                <!-- Nút hành động -->
-                <div class="d-flex justify-content-between mt-4">
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle-fill"></i> Tạo tài khoản
-                    </button>
-
-                    <a asp-controller="Student" asp-action="Index" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left-circle"></i> Quay lại
-                    </a>
-                </div>
-            </form>
+            }
         </div>
     </div>
 </div>
 
-@section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Đang xử lý...</div>
+        <div class="loading-subtext" id="loadingSubtext">Vui lòng đợi trong giây lát</div>
+    </div>
+</div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const checkAll = document.getElementById("checkAll");
-            const checkboxes = document.querySelectorAll("input[type='checkbox'][name='selectedIndexes']");
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const uploadForm = document.getElementById("uploadForm");
+        const createForm = document.getElementById("createForm");
+        const loadingOverlay = document.getElementById("loadingOverlay");
+        const loadingText = document.getElementById("loadingText");
+        const loadingSubtext = document.getElementById("loadingSubtext");
+        const uploadBtn = document.getElementById("uploadBtn");
+        const createBtn = document.getElementById("createBtn");
+        const btnText = document.getElementById("btnText");
+        const createBtnText = document.getElementById("createBtnText");
+        const fileInput = document.getElementById("fileInput");
+        const checkAll = document.getElementById("checkAll");
+        const checkboxes = document.querySelectorAll("input[type='checkbox'][name='selectedIndexes']");
+
+        // Show loading for upload
+        uploadForm.addEventListener("submit", function(e) {
+            const file = fileInput.files[0];
+            if (!file) {
+                e.preventDefault();
+                alert("Vui lòng chọn file Excel!");
+                return;
+            }
+
+            // Show loading
+            loadingOverlay.style.display = "flex";
+            loadingText.textContent = "Đang đọc file Excel...";
+            loadingSubtext.textContent = "Đang phân tích dữ liệu, vui lòng đợi";
+            
+            uploadBtn.disabled = true;
+            btnText.textContent = "Đang xử lý...";
+        });
+
+        // Show loading for create accounts
+        if (createForm) {
+            createForm.addEventListener("submit", function(e) {
+                const selectedCheckboxes = document.querySelectorAll("input[type='checkbox'][name='selectedIndexes']:checked");
+                
+                if (selectedCheckboxes.length === 0) {
+                    e.preventDefault();
+                    alert("Vui lòng chọn ít nhất một tài khoản để tạo!");
+                    return;
+                }
+
+                // Show loading
+                loadingOverlay.style.display = "flex";
+                loadingText.textContent = "Đang tạo tài khoản...";
+                loadingSubtext.textContent = `Đang tạo ${selectedCheckboxes.length} tài khoản`;
+                
+                createBtn.disabled = true;
+                createBtnText.textContent = "Đang tạo...";
+            });
+        }
+
+        // Check all functionality
+        if (checkAll) {
             checkAll.addEventListener("change", function () {
                 checkboxes.forEach(cb => cb.checked = this.checked);
             });
+        }
+
+        // File input validation
+        fileInput.addEventListener("change", function() {
+            const file = this.files[0];
+            if (file) {
+                const fileType = file.name.split('.').pop().toLowerCase();
+                if (!['xlsx', 'xls'].includes(fileType)) {
+                    alert("Vui lòng chọn file Excel (.xlsx hoặc .xls)");
+                    this.value = "";
+                    return;
+                }
+                
+                const fileSize = file.size / (1024 * 1024); // MB
+                if (fileSize > 10) {
+                    alert("File quá lớn! Vui lòng chọn file nhỏ hơn 10MB");
+                    this.value = "";
+                    return;
+                }
+            }
         });
-    </script>
-}
+
+        // Hide loading on page errors or if user navigates back
+        window.addEventListener("pageshow", function() {
+            loadingOverlay.style.display = "none";
+            uploadBtn.disabled = false;
+            btnText.textContent = "Xem trước danh sách";
+            if (createBtn) {
+                createBtn.disabled = false;
+                createBtnText.textContent = "Tạo tài khoản";
+            }
+        });
+    });
+</script>

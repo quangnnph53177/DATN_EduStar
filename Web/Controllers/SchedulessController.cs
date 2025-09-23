@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Text;
 
 namespace Web.Controllers
 {
@@ -209,7 +210,53 @@ namespace Web.Controllers
 
             return RedirectToAction(nameof(Index1));
         }
+        [HttpGet]
+        public async Task<IActionResult> CreateQuickSession()
+        {
+            return View();
+        }
 
+        private string GenerateSessionCode()
+        {
+            return DateTime.Now.ToString("yyyyMMddHHmm") + new Random().Next(1000, 9999);
+        }
+        // Giữ nguyên action POST hiện tại của bạn
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateQuickSession(int scheduleId, string sessionCode)
+        {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                return Json(new { success = false, message = "Phiên đăng nhập hết hạn" });
+            }
+
+            try
+            {
+                var data = new { scheduleId, sessionCode };
+                var json = JsonConvert.SerializeObject(data);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync("api/TeacherAttendance/CreateQuickSession", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = JsonConvert.DeserializeObject<dynamic>(responseContent);
+                    TempData["SuccessMessage"] = "Tạo phiên điểm danh thành công!";
+                    return RedirectToAction("ByTeacher"); // về danh sách lịch dạy hoặc view bạn muốn
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Có lỗi xảy ra khi tạo phiên điểm danh";
+                    return RedirectToAction("ByTeacher");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
         // ... Các method khác giữ nguyên ...
         public async Task LoadSelectitem()
         {
