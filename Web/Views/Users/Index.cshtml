@@ -132,6 +132,9 @@
                                     <span class="badge bg-@(user.Statuss ? "success" : "secondary")">
                                         @(user.Statuss ? "Hoạt động" : "Đã khóa")
                                     </span>
+                                    <span class="badge bg-@(user.IsConfirm ? "success" : "secondary")">
+                                        @(user.IsConfirm ? "Đã xác nhận" : "Chưa xác nhận")
+                                    </span>
                                 </td>
                                 <td class="text-center">
                                     <a asp-controller="Users" asp-action="IndexUser" asp-route-username="@user.UserName" class="btn btn-outline-info btn-sm mx-1" title="Xem">

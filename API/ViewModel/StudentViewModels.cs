@@ -20,6 +20,8 @@ namespace API.ViewModel
 
         public DateOnly? Dob { get; set; }
         public bool? Status { get; set; }
+        public bool IsConfirmed { get; set; }
+        public bool IsDeleted { get; set; }
         public List<ClassViewModel>? CVMs { get; set; }
     }
 }
