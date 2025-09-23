@@ -22,7 +22,7 @@ namespace API.Services.Repositories
                 throw new Exception("Ngày bắt đầu không được để trống.");
 
             var startDate = model.StartDate.Value.Date;
-            var endDate = startDate.AddDays(30);
+            var endDate =model.EndDate.Value.Date;
 
             // Kiểm tra trùng lịch theo từng thứ được chọn
             foreach (var dayId in model.WeekDayId)
@@ -85,7 +85,7 @@ namespace API.Services.Repositories
                 .Include(r => r.Room)
                 .Include(s => s.StudyShift)
                 .Include(s => s.ScheduleDays).ThenInclude(sd => sd.DayOfWeekk)
-                .AsSplitQuery()
+                .AsSplitQuery().OrderByDescending(s => s.Id)
                 .ToListAsync();
         }
 
@@ -117,6 +117,10 @@ namespace API.Services.Repositories
                 enddate = schedule.EndDate,
                 Status = schedule.Status.ToString(),
                 UserId = schedule.UsersId,
+                SubjectId = schedule.SubjectId,
+                RoomId = schedule.RoomId,
+                StudyShiftId = schedule.StudyShiftId,
+                WeekDayIds = schedule.ScheduleDays?.Select(d => d.DayOfWeekkId).ToList(),
                 Students = schedule.ScheduleStudents?.Select(s => new StudentViewModels
                 {
                     id = s.StudentsUserId,
@@ -272,15 +276,15 @@ namespace API.Services.Repositories
         private string GetDayName(int dayId)
         {
             var dayNames = new Dictionary<int, string>
-    {
-        { 1, "Thứ 2" },
-        { 2, "Thứ 3" },
-        { 3, "Thứ 4" },
-        { 4, "Thứ 5" },
-        { 5, "Thứ 6" },
-        { 6, "Thứ 7" },
-        { 7, "Chủ nhật" }
-    };
+            {
+                { 1, "Thứ 2" },
+                { 2, "Thứ 3" },
+                { 3, "Thứ 4" },
+                { 4, "Thứ 5" },
+                { 5, "Thứ 6" },
+                { 6, "Thứ 7" },
+                { 7, "Chủ nhật" }
+            };
 
             return dayNames.TryGetValue(dayId, out var name) ? name : $"Ngày {dayId}";
         }

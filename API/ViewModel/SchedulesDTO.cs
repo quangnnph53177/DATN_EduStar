@@ -29,9 +29,9 @@ namespace API.ViewModel
         public int StudyShiftId { get; set; }
 
         [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc")]
-        public DateTime? StartDate { get; set; } // Đổi tên từ startdate
-
-        public DateTime? EndDate { get; set; } // Đổi tên từ enddate
+        public DateTime? StartDate { get; set; }
+        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc")]
+        public DateTime? EndDate { get; set; } 
 
         public Guid? TeacherId { get; set; }
 
@@ -45,7 +45,11 @@ namespace API.ViewModel
                 yield return new ValidationResult("Ngày bắt đầu không thể trong quá khứ",
                     new[] { nameof(StartDate) });
             }
-
+            if (StartDate.HasValue && EndDate.HasValue && StartDate.Value > EndDate.Value)
+            {
+                yield return new ValidationResult("Ngày bắt đầu không được sau ngày kết thúc",
+                    new[] { nameof(StartDate), nameof(EndDate) });
+            }
             if (StartDate.HasValue && EndDate.HasValue)
             {
                 var duration = (EndDate.Value - StartDate.Value).TotalDays;

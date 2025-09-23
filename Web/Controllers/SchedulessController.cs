@@ -257,7 +257,7 @@ namespace Web.Controllers
                 return Json(new { success = false, message = ex.Message });
             }
         }
-        // ... Các method khác giữ nguyên ...
+
         public async Task LoadSelectitem()
         {
             var roomlist = await _context.Rooms.ToListAsync();
@@ -274,11 +274,12 @@ namespace Web.Controllers
                 Text = w.Weekdays.ToString()
             }).ToList();
 
+            // ✅ Ca học kèm giờ bắt đầu - giờ kết thúc
             var studyShift = await _context.StudyShifts.ToListAsync();
             ViewBag.ShiftList = studyShift.Select(s => new SelectListItem
             {
                 Value = s.Id.ToString(),
-                Text = s.StudyShiftName
+                Text = $"{s.StudyShiftName} ({s.StartTime:hh\\:mm} - {s.EndTime:hh\\:mm})"
             }).ToList();
 
             var subjectList = await _context.Subjects.ToListAsync();
@@ -314,11 +315,12 @@ namespace Web.Controllers
                 Selected = model.WeekDayId != null && model.WeekDayId.Contains(w.Id)
             }).ToList();
 
+            // ✅ Ca học kèm giờ bắt đầu - giờ kết thúc
             var studyShift = await _context.StudyShifts.ToListAsync();
             ViewBag.ShiftList = studyShift.Select(s => new SelectListItem
             {
                 Value = s.Id.ToString(),
-                Text = s.StudyShiftName,
+                Text = $"{s.StudyShiftName} ({s.StartTime:hh\\:mm} - {s.EndTime:hh\\:mm})",
                 Selected = model.StudyShiftId == s.Id
             }).ToList();
 
@@ -341,6 +343,7 @@ namespace Web.Controllers
                 Selected = model.TeacherId == t.Id
             }).ToList();
         }
+
 
         [HttpGet]
         public async Task<IActionResult> AssignStudent(int Id)
@@ -384,6 +387,7 @@ namespace Web.Controllers
                 .Select(s => new StudentDTO
                 {
                     id = s.UserId,
+                    StudentCode= s.StudentsCode,
                     FullName = s.User.UserProfile.FullName,
                     Email = s.User.Email
                 })

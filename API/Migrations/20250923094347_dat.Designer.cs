@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Migrations
 {
     [DbContext(typeof(AduDbcontext))]
-    [Migration("20250918140556_diemdanh")]
-    partial class diemdanh
+    [Migration("20250923094347_dat")]
+    partial class dat
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -101,7 +101,7 @@ namespace API.Services.Repositories
                 .Include(s => s.Room)
                 .Include(s => s.ScheduleDays).ThenInclude(sd => sd.DayOfWeekk)
                 .Include(s => s.Attendances.Where(a => a.CreateAt.Value == DateTime.Today))
-                .Where(s => s.UsersId == teacherId) // Giả sử có TeacherId trong Schedule model
+                .Where(s => s.UsersId == teacherId) 
                 .ToListAsync();
 
             var result = teacherClasses.Select(s => new TeacherClassViewModel
@@ -191,7 +191,8 @@ namespace API.Services.Repositories
                         FullName = c.Student.User.UserProfile.FullName,
                         Email = c.Student.User.Email,
                         HasCheckedIn = detail?.CheckinTime != null,
-                        Status = detail?.Status.ToString()
+                        // MẶC ĐỊNH LÀ "Present" NẾU CHƯA CÓ DETAIL
+                        Status = detail?.Status.ToString() ?? "Present"
                     };
                 }).ToList()
             };

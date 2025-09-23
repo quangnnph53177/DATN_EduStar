@@ -214,8 +214,7 @@ namespace API.Migrations
                     Status = table.Column<int>(type: "int", nullable: true),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UsersId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    SemesterId = table.Column<int>(type: "int", nullable: true)
+                    UsersId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -250,7 +249,8 @@ namespace API.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StudentsCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true)
+                    StudentsCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    FaceFeatures = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -660,11 +660,6 @@ namespace API.Migrations
                 name: "IX_Schedules_RoomId",
                 table: "Schedules",
                 column: "RoomId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Schedules_SemesterId",
-                table: "Schedules",
-                column: "SemesterId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Schedules_StudyShiftId",

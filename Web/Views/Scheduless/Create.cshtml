@@ -36,14 +36,14 @@
                         </select>
                         <span asp-validation-for="RoomId" class="text-danger"></span>
                     </div>
-
                     <div class="col-md-6">
                         <label asp-for="StudyShiftId" class="form-label">Ca học</label>
                         <select asp-for="StudyShiftId" asp-items="ViewBag.ShiftList" class="form-select shadow-sm">
-                            <option value="">--Thêm cái này thì hãy chọn--</option>
+                            <option value="">--Chọn ca học--</option>
                         </select>
                         <span asp-validation-for="StudyShiftId" class="text-danger"></span>
                     </div>
+
 
                     <div class="col-md-12">
                         <label class="form-label">🗓️ Chọn thứ trong tuần</label>
@@ -69,10 +69,15 @@
                         <input asp-for="StartDate" type="date" class="form-control shadow-sm" />
                         <span asp-validation-for="StartDate" class="text-danger"></span>
                     </div>
+                    <div class="col-md-6">
+                        <label asp-for="EndDate" class="form-label">📆 Ngày kết thúc</label>
+                        <input asp-for="EndDate" type="date" class="form-control shadow-sm" />
+                        <span asp-validation-for="EndDate" class="text-danger"></span>
+                    </div>
                     <div class="form-group mb-3">
                         <label asp-for="TeacherId" class="control-label">Giảng viên phụ trách</label>
                         <select asp-for="TeacherId" asp-items="ViewBag.TeacherList" class="form-select">
-                            <option value="">--Thêm cái này thì hãy chọn--</option>
+                            <option value="">--Chọn giảng viên--</option>
                         </select>
                         <span asp-validation-for="TeacherId" class="text-danger"></span>
                     </div>
