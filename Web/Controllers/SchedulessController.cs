@@ -268,6 +268,11 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int Id)
         {
+            var client = GetClientWithToken();
+            if (client == null)
+            {
+                return RedirectToAction("Login", "Users");
+            }
             try
             {
                 var response = await _client.PutAsync($"api/Schedules/toggle-status/{Id}", null);
