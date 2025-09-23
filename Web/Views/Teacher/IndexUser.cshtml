@@ -45,7 +45,9 @@
                 <span class="badge rounded-pill bg-@(Model.Statuss ? "success" : "secondary")">
                     @(Model.Statuss ? "Hoạt động" : "Đã khóa")
                 </span>
-
+                <span class="badge bg-@(Model.IsConfirm ? "success" : "secondary")">
+                    @(Model.IsConfirm ? "Đã xác nhận" : "Chưa xác nhận")
+                </span>
                 <!-- Nút hành động -->
                 <div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
                     @if (User.Identity?.Name == Model.UserName || User.IsInRole("Admin"))

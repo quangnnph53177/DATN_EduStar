@@ -150,7 +150,10 @@
                                 <td class="text-truncate" style="max-width:150px">@student.Address</td>
                                 <td class="text-center">
                                     <span class="badge @(student.Status == true ? "bg-success" : "bg-secondary")">
-                                        @(student.Status == true ? "Hoạt động" : "Không")
+                                        @(student.Status == true ? "Hoạt động" : "Khóa")
+                                    </span>
+                                    <span class="badge bg-@(student.IsConfirmed ? "success" : "secondary")">
+                                        @(student.IsConfirmed ? "Đã xác nhận" : "Chưa xác nhận")
                                     </span>
                                 </td>
                                 <td class="text-center">

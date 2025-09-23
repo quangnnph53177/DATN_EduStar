@@ -26,7 +26,7 @@ namespace API.ViewModel
         public List<int>? RoleIds { get; set; } = new();
 
         public bool Statuss { get; set; } = true;
-        public bool? IsConfirm { get; set; } = true;
+        public bool IsConfirm { get; set; } = true;
         public DateTime? CreateAt { get; set; }
 
         [StringLength(20, ErrorMessage = "Mã người dùng không quá 20 ký tự")]
